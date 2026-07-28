@@ -59,6 +59,67 @@ Reputation protocol-caller wiring: [`50dde25f…`](https://explorer.hiro.so/txid
 Deployed with [`scripts/deploy-mainnet.mjs`](../scripts/deploy-mainnet.mjs). The deployer is the
 PerkOS wallet, so it is also the contract owner (no handoff needed).
 
+## sBTC escrow (Milestone 1)
+
+`sbtc-commerce.clar` is the sBTC-denominated successor to `agentic-commerce.clar`. Jobs are escrowed
+and settled in sBTC (SIP-010, 8 decimals, sats) instead of STX, so payouts are Bitcoin-denominated.
+
+It ships with hardening over the STX version:
+
+| Change | Why |
+|---|---|
+| Only the evaluator may `reject-job` | In the STX version a client could reject delivered work and reclaim the escrow. A client also can no longer name themselves evaluator. |
+| `rate-provider` is gated to the client or evaluator of a COMPLETED job, once per job | Ratings could previously be submitted by any wallet for any agent, making reputation farmable. |
+| `submit-work` / `complete-job` refuse expired jobs | Removes the race between settlement and the expiry refund. |
+| Reputation updates are non-blocking | A reputation failure can never trap escrowed funds. |
+| `print` event on every transition | Makes indexing (Chainhooks, stats) reliable. |
+| `average-score-x100` in reputation v2 | Integer division previously truncated 4.5 to 4. |
+
+Escrow currency is not hardcoded: `set-payment-token` (owner only) points the contract at the
+canonical sBTC contract for the network, and every escrow call validates the token against it.
+
+- mainnet sBTC: `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`
+- testnet sBTC: `ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token`
+
+`mock-sbtc-token.clar` exists only for simnet tests and is never deployed to a public network.
+
+### sBTC stack on testnet — deployed ✅
+
+Deployer `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`.
+
+| Contract | Address | Deploy tx |
+|----------|---------|-----------|
+| sip-010-trait | `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.sip-010-trait` | [`46612ba9…`](https://explorer.hiro.so/txid/46612ba928ac5b8a7fa3348c1e31d083aa9d102f5926dfefadae3b37c78d050f?chain=testnet) |
+| reputation-registry-v2 | `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.reputation-registry-v2` | [`7bccb143…`](https://explorer.hiro.so/txid/7bccb1437190194fbd55e04e98d302301966fe5a80b5e0d2a8fe8a5fa3d37c5b?chain=testnet) |
+| sbtc-commerce | `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.sbtc-commerce` | [`51cead50…`](https://explorer.hiro.so/txid/51cead50d601d8d3d9c644fb960352633658feb2c837ecabe0f9fd8c076c7b15?chain=testnet) |
+
+Deploy with [`scripts/deploy-sbtc-testnet.mjs`](../scripts/deploy-sbtc-testnet.mjs). Order matters:
+`sbtc-commerce` statically references `.sip-010-trait` and `.reputation-registry-v2`.
+
+### End-to-end sBTC job on testnet — verified ✅
+
+[`scripts/e2e-sbtc-testnet.mjs`](../scripts/e2e-sbtc-testnet.mjs) plays a real job with real sBTC and
+asserts 14 checks, all passing: escrow funded, provider paid, reputation updated at settlement,
+rating recorded, and a client reject correctly refused with `u309`.
+
+| Step | Transaction |
+|---|---|
+| create-job | [`59e1092c…`](https://explorer.hiro.so/txid/59e1092ce90924fe7cade576b06d510e31bf360645c4ed425c80bd991f4f0336?chain=testnet) |
+| fund-job (sBTC escrowed) | [`ad57d85b…`](https://explorer.hiro.so/txid/ad57d85b7c65d1a2e748a93157bbf71fca90eb72f4d22b31a243046b5a001ece?chain=testnet) |
+| submit-work | [`c8f1638e…`](https://explorer.hiro.so/txid/c8f1638e07fe2f3e4a0b1e36d58d65cbcabe0b7655b5c00418a639af7c86fe87?chain=testnet) |
+| reject by client (refused, `u309`) | [`97e2eb44…`](https://explorer.hiro.so/txid/97e2eb4499c3119d468f610e5bf8759af41556464a2d59849b5025f2148757cf?chain=testnet) |
+| complete-job (sBTC paid out) | [`a12afd54…`](https://explorer.hiro.so/txid/a12afd54d1f39b6e689efcd6ff217d9cfa560e11346dc843b01bebac4511a8c2?chain=testnet) |
+| rate-provider | [`6a8c2c26…`](https://explorer.hiro.so/txid/6a8c2c26017a8db2dfc357bfc836bf54260ad28b6b1b671c6764899dfb19206d?chain=testnet) |
+
+### Post-deploy wiring for the sBTC stack
+
+```clarity
+;; 1. point the escrow at the canonical sBTC token for this network
+(contract-call? .sbtc-commerce set-payment-token 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)
+;; 2. let the escrow write reputation at settlement
+(contract-call? .reputation-registry-v2 add-protocol-caller '<deployer>.sbtc-commerce)
+```
+
 ### Required post-deploy step
 
 `complete-job` / `reject-job` call `reputation-registry.update-job-stats` as the contract, which is
