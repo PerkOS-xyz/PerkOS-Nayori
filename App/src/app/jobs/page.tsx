@@ -12,7 +12,7 @@ import {
   Star,
   Wallet,
 } from "lucide-react";
-import { request, isConnected, getLocalStorage } from "@stacks/connect";
+import { request, isConnected } from "@stacks/connect";
 import { Cl, Pc } from "@stacks/transactions";
 import {
   assignSbtcProvider,
@@ -50,10 +50,10 @@ import {
   AGENTIC_COMMERCE_CONTRACT,
 } from "../../constants/contract";
 import { NETWORK_NAME } from "../../constants/network";
+import { getConnectedStxAddress } from "../../services/wallet";
 
 const AGENTIC_COMMERCE =
   AGENTIC_COMMERCE_CONTRACT as `${string}.${string}`;
-const connectedStx = () => getLocalStorage()?.addresses?.stx?.[0]?.address ?? "";
 const STATUS_OPTIONS = ["all", "open", "funded", "submitted", "completed", "rejected", "expired"] as const;
 const STATUS_INDEX: Record<string, number> = {
   open: 0,
@@ -115,7 +115,7 @@ export default function JobsPage() {
   const unit = isSbtc ? "sBTC" : "STX";
 
   const refreshWallet = useCallback(() => {
-    const next = connectedStx();
+    const next = getConnectedStxAddress();
     setAddress(next);
     setConnected(isConnected() && Boolean(next));
   }, []);
@@ -622,7 +622,7 @@ export default function JobsPage() {
                   </div>
                 )}
 
-                {isSbtc && ratingFor === job.id && (
+                {ratingFor === job.id && (
                   <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
                     <span className="text-sm text-mist-300">Rate the provider</span>
                     {[1, 2, 3, 4, 5].map((score) => (

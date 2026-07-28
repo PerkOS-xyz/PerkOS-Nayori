@@ -1,9 +1,14 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { connect, disconnect, isConnected, getLocalStorage } from "@stacks/connect";
+import { connect, disconnect, isConnected } from "@stacks/connect";
 import { Wallet } from "lucide-react";
 import { useToast } from "./Toast";
+import { NETWORK_NAME } from "../constants/network";
+import {
+  getConnectedStxAddress,
+  isStxAddressForNetwork,
+} from "../services/wallet";
 
 const shorten = (a: string) => `${a.slice(0, 5)}…${a.slice(-4)}`;
 
@@ -13,7 +18,7 @@ export default function WalletConnect() {
   const toast = useToast();
 
   function refresh() {
-    setAddress(getLocalStorage()?.addresses?.stx?.[0]?.address ?? null);
+    setAddress(getConnectedStxAddress() || null);
   }
   useEffect(() => {
     if (isConnected()) refresh();
@@ -22,11 +27,16 @@ export default function WalletConnect() {
   async function onConnect() {
     setConnecting(true);
     try {
-      const response = await connect();
+      const response = await connect({ network: NETWORK_NAME });
+      const networkAddress = response.addresses.find((item) =>
+        isStxAddressForNetwork(item.address, NETWORK_NAME)
+      )?.address;
       refresh();
       window.dispatchEvent(new Event("perkos-wallet-change"));
-      if (!response.addresses.some((item) => item.address.startsWith("S"))) {
-        throw new Error("The wallet did not return a Stacks address");
+      if (!networkAddress) {
+        throw new Error(
+          `Leather did not return a Stacks ${NETWORK_NAME} address.`
+        );
       }
       toast.success("Wallet connected");
     } catch (e) {
@@ -34,7 +44,9 @@ export default function WalletConnect() {
       const message = e instanceof Error ? e.message : String(e);
       if (!/cancel/i.test(message)) {
         toast.error(
-          "Leather could not connect. Unlock the extension, allow access to localhost and try again."
+          /did not return a Stacks/.test(message)
+            ? message
+            : "Leather could not connect. Unlock the extension, allow access to localhost and try again."
         );
       }
     } finally {

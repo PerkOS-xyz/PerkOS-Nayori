@@ -9,16 +9,16 @@ import { isVerified } from "../../services/validation";
 import { trackTx, txIdOf } from "../../services/tx";
 import Addr from "../../components/Addr";
 import { useToast } from "../../components/Toast";
-import { request, getLocalStorage, isConnected } from "@stacks/connect";
+import { request, isConnected } from "@stacks/connect";
 import { Cl } from "@stacks/transactions";
 import { CONTRACT_ADDRESS } from "../../constants/contract";
 import { NETWORK_NAME } from "../../constants/network";
 import { humanizeContractError } from "../../services/contract-errors";
 import { isValidStacksAddress } from "../../services/commerce";
+import { getConnectedStxAddress } from "../../services/wallet";
 
 const AGENT_REGISTRY = `${CONTRACT_ADDRESS}.agent-registry` as `${string}.${string}`;
 
-const connectedStx = () => getLocalStorage()?.addresses?.stx?.[0]?.address ?? "";
 const PAGE_SIZE = 24;
 
 export default function AgentsPage() {
@@ -46,11 +46,11 @@ export default function AgentsPage() {
   const [activeOnly, setActiveOnly] = useState(false);
 
   useEffect(() => {
-    const wallet = connectedStx();
+    const wallet = getConnectedStxAddress();
     setConnected(isConnected() && Boolean(wallet));
     setAddress(wallet);
     const refreshWallet = () => {
-      const next = connectedStx();
+      const next = getConnectedStxAddress();
       setConnected(isConnected() && Boolean(next));
       setAddress(next);
     };
@@ -181,7 +181,12 @@ export default function AgentsPage() {
             const opening = !showForm;
             setShowForm(opening);
             setEditingAgent(null);
-            if (opening) setFormData((f) => ({ ...f, wallet: f.wallet || connectedStx() }));
+            if (opening) {
+              setFormData((f) => ({
+                ...f,
+                wallet: f.wallet || getConnectedStxAddress(),
+              }));
+            }
           }}
           className={showForm ? "btn-ghost" : "btn-primary"}
           disabled={!connected || !!activeAction}
