@@ -83,6 +83,28 @@ canonical sBTC contract for the network, and every escrow call validates the tok
 
 `mock-sbtc-token.clar` exists only for simnet tests and is never deployed to a public network.
 
+### sBTC stack on mainnet — deployed ✅
+
+Deployer `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` (PerkOS wallet), which is also the contract owner.
+
+| Contract | Address | Deploy tx |
+|----------|---------|-----------|
+| sip-010-trait | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sip-010-trait` | [`89a4a24a…`](https://explorer.hiro.so/txid/89a4a24a03805b12e6f710675b4cdc75201c227213a94a42eeb18712b1e048b9?chain=mainnet) |
+| reputation-registry-v2 | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.reputation-registry-v2` | [`b08b1ece…`](https://explorer.hiro.so/txid/b08b1ecee6dfe66e66d6ae4886fbc639aae4b994361fc7eca27218a22c00d9b6?chain=mainnet) |
+| sbtc-commerce | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce` | [`eada97f5…`](https://explorer.hiro.so/txid/eada97f5acc6787fdf7e9a7fe2205d3d803f47b987e2107bdb6af487a987d17c?chain=mainnet) |
+
+Post-deploy wiring, both confirmed on mainnet:
+
+| Step | Transaction |
+|---|---|
+| `set-payment-token` to canonical sBTC | [`a7d5f0a6…`](https://explorer.hiro.so/txid/a7d5f0a637d0cfb7add9d8928d971acebfb7636e5f3c2074a6ab3d559ca11f9f?chain=mainnet) |
+| `add-protocol-caller` for the escrow | [`d752c14a…`](https://explorer.hiro.so/txid/d752c14a072dac33486c9ab4b2d7b5900f94b1c3db01362252351eb98f958299?chain=mainnet) |
+
+Verified on-chain: `get-payment-token` returns `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`
+and `is-registered-caller` returns true for `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce`.
+
+Deploy with [`scripts/deploy-sbtc-mainnet.mjs`](../scripts/deploy-sbtc-mainnet.mjs).
+
 ### sBTC stack on testnet — deployed ✅
 
 Deployer `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`.

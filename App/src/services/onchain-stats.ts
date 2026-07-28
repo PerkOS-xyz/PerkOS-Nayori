@@ -12,6 +12,9 @@ const CONTRACTS = [
   "agentic-commerce",
   "reputation-registry",
   "validation-registry",
+  // sBTC escrow stack (Milestone 1)
+  "sbtc-commerce",
+  "reputation-registry-v2",
 ] as const;
 
 export interface RecentTx {
