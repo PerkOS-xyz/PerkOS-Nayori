@@ -87,3 +87,18 @@ export async function getEscrowBalance(jobId: number): Promise<number> {
     return 0;
   }
 }
+
+export async function hasRatedJob(
+  jobId: number,
+  rater: string
+): Promise<boolean> {
+  const cv = await fetchCallReadOnlyFunction({
+    contractAddress: CONTRACT_ADDRESS,
+    contractName: STX_COMMERCE_CONTRACT_NAME,
+    functionName: "has-rated-job",
+    functionArgs: [Cl.uint(jobId), Cl.principal(rater)],
+    network: NETWORK,
+    senderAddress: CONTRACT_ADDRESS,
+  });
+  return cvToValue(cv) === true;
+}

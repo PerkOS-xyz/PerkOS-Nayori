@@ -22,8 +22,8 @@ export default function HomeStats() {
   const items = [
     { value: s ? String(s.agents) : "…", label: "Agents on-chain" },
     { value: s ? String(s.tx) : "…", label: "On-chain transactions" },
-    { value: "49", label: "Contract tests passing" },
-    { value: "4", label: "Live smart contracts" },
+    { value: "77", label: "Contract tests passing" },
+    { value: "4", label: "Smart contracts" },
   ];
 
   return (

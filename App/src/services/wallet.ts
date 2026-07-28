@@ -1,9 +1,11 @@
 import { getLocalStorage } from "@stacks/connect";
-import { NETWORK_NAME } from "../constants/network";
+import { NETWORK_NAME, NetworkName } from "../constants/network";
+
+type StxAddressEntry = { address: string };
 
 export function isStxAddressForNetwork(
   address: string,
-  network: "mainnet" | "testnet" = NETWORK_NAME
+  network: NetworkName = NETWORK_NAME
 ) {
   const normalized = address.toUpperCase();
   return network === "mainnet"
@@ -11,11 +13,26 @@ export function isStxAddressForNetwork(
     : normalized.startsWith("ST") || normalized.startsWith("SN");
 }
 
-export function getConnectedStxAddress() {
-  const addresses = getLocalStorage()?.addresses?.stx ?? [];
+export function selectStxAddressForNetwork(
+  addresses: StxAddressEntry[],
+  network: NetworkName = NETWORK_NAME
+) {
   return (
     addresses.find((entry) =>
-      isStxAddressForNetwork(entry.address, NETWORK_NAME)
+      isStxAddressForNetwork(entry.address, network)
     )?.address ?? ""
   );
+}
+
+export function getWalletNetworkState() {
+  const addresses = getLocalStorage()?.addresses?.stx ?? [];
+  const address = selectStxAddressForNetwork(addresses, NETWORK_NAME);
+  return {
+    address,
+    mismatch: addresses.length > 0 && !address,
+  };
+}
+
+export function getConnectedStxAddress() {
+  return getWalletNetworkState().address;
 }

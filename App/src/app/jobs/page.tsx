@@ -28,15 +28,18 @@ import {
 import {
   CommerceJob,
   Currency,
+  canOfferRating,
   currencyDescription,
   durationToBlocks,
   expiryText,
   formatJobAmount,
   getCommerceJobCount,
   getCommerceJobs,
+  getRatingAvailability,
   isValidStacksAddress,
   jobHref,
   jobPermissions,
+  RatingAvailability,
 } from "../../services/commerce";
 import { getBlockHeight } from "../../services/onchain-stats";
 import { humanizeContractError } from "../../services/contract-errors";
@@ -100,6 +103,9 @@ export default function JobsPage() {
   const [actionForm, setActionForm] = useState<ActionForm | null>(null);
   const [ratingFor, setRatingFor] = useState<number | null>(null);
   const [ratingScore, setRatingScore] = useState(5);
+  const [ratingStates, setRatingStates] = useState<
+    Record<string, RatingAvailability>
+  >({});
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_OPTIONS)[number]>("all");
   const [mineOnly, setMineOnly] = useState(false);
   const [txProgress, setTxProgress] = useState<TxProgress | null>(null);
@@ -160,6 +166,40 @@ export default function JobsPage() {
     };
   }, [loadJobs, refreshWallet]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const candidates = jobs.filter(
+      (job) => jobPermissions(job, address).canRate
+    );
+
+    if (!connected || !address || candidates.length === 0) {
+      setRatingStates({});
+      return;
+    }
+
+    setRatingStates(
+      Object.fromEntries(
+        candidates.map((job) => [`${job.currency}:${job.id}`, "checking"])
+      )
+    );
+    void Promise.all(
+      candidates.map(async (job) => {
+        const state = await getRatingAvailability(
+          job.id,
+          job.currency,
+          address
+        );
+        return [`${job.currency}:${job.id}`, state] as const;
+      })
+    ).then((entries) => {
+      if (!cancelled) setRatingStates(Object.fromEntries(entries));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address, connected, jobs]);
+
   const filteredJobs = useMemo(
     () =>
       jobs.filter((job) => {
@@ -177,7 +217,13 @@ export default function JobsPage() {
     [address, jobs, mineOnly, statusFilter]
   );
 
-  async function run(fn: () => Promise<any>, actionKey: string, label: string, after?: () => void) {
+  async function run(
+    fn: () => Promise<any>,
+    actionKey: string,
+    label: string,
+    after?: () => void,
+    onStatus?: (status: "pending" | "success" | "failed") => void
+  ) {
     if (!connected) {
       toast.error("Connect a wallet before submitting a transaction.");
       return;
@@ -187,8 +233,8 @@ export default function JobsPage() {
     try {
       const res = await fn();
       const id = txIdOf(res);
-      after?.();
       if (!id) throw new Error("No transaction id returned");
+      after?.();
       setTxProgress({ state: "submitted", label, txid: id });
       void trackTx(id, toast, loadJobs, (state) => {
         setTxProgress({
@@ -196,6 +242,7 @@ export default function JobsPage() {
           label,
           txid: id,
         });
+        onStatus?.(state);
       });
     } catch (err) {
       console.error(`Error ${actionKey}:`, err);
@@ -349,8 +396,9 @@ export default function JobsPage() {
       "Expire job and refund escrow"
     );
 
-  const handleRate = (jobId: number) =>
-    run(
+  const handleRate = (jobId: number) => {
+    const ratingKey = `${currency}:${jobId}`;
+    return run(
       () =>
         isSbtc
           ? rateSbtcProvider(jobId, ratingScore, "Rated via PerkOS")
@@ -361,8 +409,23 @@ export default function JobsPage() {
             ]),
       `rating-${jobId}`,
       "Rate provider",
-      () => setRatingFor(null)
+      () => {
+        setRatingFor(null);
+        setRatingStates((current) => ({
+          ...current,
+          [ratingKey]: "checking",
+        }));
+      },
+      (state) => {
+        if (state === "success" || state === "failed") {
+          setRatingStates((current) => ({
+            ...current,
+            [ratingKey]: state === "success" ? "rated" : "available",
+          }));
+        }
+      }
     );
+  };
 
   return (
     <div className="container-x py-12">
@@ -398,6 +461,8 @@ export default function JobsPage() {
                 setCurrency(value);
                 setPage(0);
                 setActionForm(null);
+                setRatingFor(null);
+                setRatingStates({});
               }}
               className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition ${
                 currency === value
@@ -541,6 +606,11 @@ export default function JobsPage() {
         <div className="mt-6 space-y-4">
           {filteredJobs.map((job) => {
             const permissions = jobPermissions(job, address);
+            const ratingState = ratingStates[`${job.currency}:${job.id}`];
+            const canRate = canOfferRating(
+              permissions.canRate,
+              ratingState
+            );
             const expired = height > 0 && height >= job.expiredAt;
             const canExpire = expired && (job.status === 0 || job.status === 1);
             const hasActions =
@@ -622,7 +692,7 @@ export default function JobsPage() {
                   </div>
                 )}
 
-                {ratingFor === job.id && (
+                {ratingFor === job.id && canRate && (
                   <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
                     <span className="text-sm text-mist-300">Rate the provider</span>
                     {[1, 2, 3, 4, 5].map((score) => (
@@ -660,10 +730,28 @@ export default function JobsPage() {
                       <Clock3 className="h-3.5 w-3.5" /> Expire & refund
                     </button>
                   )}
-                  {permissions.canRate && (
+                  {canRate && (
                     <button onClick={() => setRatingFor(ratingFor === job.id ? null : job.id)} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white">
                       <Star className="h-3.5 w-3.5" /> Rate provider
                     </button>
+                  )}
+                  {permissions.canRate && ratingState === "rated" && (
+                    <span className="self-center text-xs text-emerald-300">
+                      Rating submitted
+                    </span>
+                  )}
+                  {permissions.canRate && ratingState === "checking" && (
+                    <span className="self-center text-xs text-mist-500">
+                      Checking rating…
+                    </span>
+                  )}
+                  {permissions.canRate && ratingState === "unavailable" && (
+                    <span
+                      className="self-center text-xs text-amber-300"
+                      title="Reload to retry the on-chain rating check"
+                    >
+                      Rating status unavailable
+                    </span>
                   )}
                   {!hasActions && connected && (
                     <span className="self-center text-xs text-mist-500">No actions available for this wallet.</span>

@@ -2,6 +2,8 @@
 const nextConfig = {
   // Lint is decoupled from the production build; run `npm run lint` separately.
   eslint: { ignoreDuringBuilds: true },
+  // This repository intentionally has separate lockfiles for contracts and the app.
+  outputFileTracingRoot: __dirname,
   webpack: (config) => {
     // @stacks/connect pulls in WalletConnect/pino, which optionally requires
     // pino-pretty (and others) that aren't needed in the browser bundle.

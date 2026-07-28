@@ -1,6 +1,6 @@
 # App - PerkOS Stacks Agentic Commerce Frontend
 
-Next.js 14 frontend for PerkOS Stacks Agentic Commerce.
+Next.js 15 frontend for PerkOS Stacks Agentic Commerce.
 
 ## Overview
 
@@ -33,7 +33,7 @@ safeguards for users who prefer STX-denominated work.
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Wallet**: @stacks/connect
@@ -128,6 +128,14 @@ NEXT_PUBLIC_STACKS_NETWORK=mainnet
 NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
 NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v2
 ```
+
+For a Vercel testnet release candidate, use the public values in
+`testnet.env.example` for the **Preview** environment only. Keep Production unchanged until the
+mainnet release is explicitly approved. Branch-scoped Preview variables are preferred so unrelated
+preview deployments retain their own configuration.
+
+An invalid `NEXT_PUBLIC_STACKS_NETWORK` now fails the build instead of silently falling back to
+mainnet.
 
 ## Wallet Setup
 
