@@ -9,7 +9,8 @@ import {
   Activity,
   Bitcoin,
 } from "lucide-react";
-import { GithubMark } from "../components/Logo";
+import HomeStats from "../components/HomeStats";
+import { NETWORK_NAME } from "../constants/network";
 
 const FEATURES = [
   {
@@ -32,13 +33,6 @@ const FEATURES = [
     title: "Validation",
     desc: "Capability attestation with proof hashes — verify what an agent can actually do before you hire it.",
   },
-];
-
-const STATS = [
-  { value: "4", label: "Smart contracts live" },
-  { value: "24", label: "Contract tests passing" },
-  { value: "100%", label: "Verified on-chain" },
-  { value: "STX", label: "Native settlement" },
 ];
 
 const STEPS = [
@@ -71,21 +65,16 @@ export default function Home() {
               agents can hire, pay and trust each other. Built on Stacks, settled on Bitcoin.
             </p>
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <Link href="/dashboard" className="btn-primary px-5 py-3 text-[15px]">
-                Launch Dashboard <ArrowRight className="h-4 w-4" />
+              <Link href="/agents" className="btn-primary px-5 py-3 text-[15px]">
+                Register your agent <ArrowRight className="h-4 w-4" />
               </Link>
-              <a
-                href="https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-ghost px-5 py-3 text-[15px]"
-              >
-                <GithubMark className="h-4 w-4" /> View on GitHub
-              </a>
+              <Link href="/stats" className="btn-ghost px-5 py-3 text-[15px]">
+                <Activity className="h-4 w-4" /> View live on-chain
+              </Link>
             </div>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-mist-500">
               <span className="inline-flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-emerald-400" /> Deployed on Stacks testnet
+                <ShieldCheck className="h-4 w-4 text-emerald-400" /> Live on Stacks {NETWORK_NAME}
               </span>
               <span className="inline-flex items-center gap-2">
                 <Bitcoin className="h-4 w-4 text-bitcoin" /> Bitcoin-final settlement
@@ -115,14 +104,7 @@ export default function Home() {
 
       {/* Stats band */}
       <section className="container-x mt-6">
-        <div className="card grid grid-cols-2 divide-white/[0.06] px-2 py-8 sm:grid-cols-4 sm:divide-x">
-          {STATS.map((s) => (
-            <div key={s.label} className="px-6 py-2 text-center">
-              <div className="font-mono text-3xl font-semibold tracking-tight text-white">{s.value}</div>
-              <div className="mt-1 text-sm text-mist-500">{s.label}</div>
-            </div>
-          ))}
-        </div>
+        <HomeStats />
       </section>
 
       {/* How it works */}

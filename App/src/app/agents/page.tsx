@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Pencil, Power, Fingerprint, Star, BadgeCheck } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Power, Fingerprint, Star, BadgeCheck, Wallet } from "lucide-react";
 import { getAgent, getAgentCount, Agent } from "../../services/agent-registry";
 import { getReputation, rateAgent } from "../../services/reputation";
 import { isVerified } from "../../services/validation";
-import { request, getLocalStorage } from "@stacks/connect";
+import { trackTx, txIdOf } from "../../services/tx";
+import Addr from "../../components/Addr";
+import { useToast } from "../../components/Toast";
+import { request, getLocalStorage, isConnected } from "@stacks/connect";
 import { Cl } from "@stacks/transactions";
 import { CONTRACT_ADDRESS } from "../../constants/contract";
 import { NETWORK_NAME } from "../../constants/network";
@@ -16,10 +19,12 @@ const AGENT_REGISTRY = `${CONTRACT_ADDRESS}.agent-registry` as `${string}.${stri
 const connectedStx = () => getLocalStorage()?.addresses?.stx?.[0]?.address ?? "";
 
 export default function AgentsPage() {
+  const toast = useToast();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [connected, setConnected] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -34,6 +39,7 @@ export default function AgentsPage() {
   const [ratingScore, setRatingScore] = useState(5);
 
   useEffect(() => {
+    setConnected(isConnected());
     loadAgents();
   }, []);
 
@@ -42,11 +48,8 @@ export default function AgentsPage() {
     setError(null);
     try {
       const count = await getAgentCount();
-      const agentList: Agent[] = [];
-      for (let i = 1; i <= count; i++) {
-        const agent = await getAgent(i);
-        if (agent) agentList.push(agent);
-      }
+      const ids = Array.from({ length: count }, (_, i) => i + 1);
+      const agentList = (await Promise.all(ids.map((i) => getAgent(i)))).filter(Boolean) as Agent[];
       setAgents(agentList);
       // Load on-chain reputation + verification per agent (keyed by wallet).
       const entries = await Promise.all(
@@ -63,93 +66,61 @@ export default function AgentsPage() {
     setLoading(false);
   }
 
-  async function handleRegister(e: React.FormEvent) {
-    e.preventDefault();
-    setActiveAction("registering");
-
+  // Submit a write, toast the result, poll the chain, then refresh on confirmation.
+  async function submit(fn: string, args: any[], actionKey: string, after?: () => void) {
+    setActiveAction(actionKey);
     try {
-      await request("stx_callContract", {
-        contract: AGENT_REGISTRY,
-        functionName: "register-agent",
-        functionArgs: [
-          Cl.stringAscii(formData.name),
-          Cl.stringAscii(formData.description),
-          Cl.principal(formData.wallet),
-          formData.endpointUrl
-            ? Cl.list([
-                Cl.tuple({
-                  name: Cl.stringAscii(formData.endpointName || "web"),
-                  url: Cl.stringAscii(formData.endpointUrl),
-                }),
-              ])
-            : Cl.list([]),
-        ],
-        network: NETWORK_NAME,
-      });
-      setShowForm(false);
-      setFormData({ name: "", description: "", wallet: "", endpointName: "", endpointUrl: "" });
-      loadAgents();
+      const res = await request("stx_callContract", { contract: AGENT_REGISTRY, functionName: fn, functionArgs: args, network: NETWORK_NAME });
+      const id = txIdOf(res);
+      after?.();
+      if (id) trackTx(id, toast, loadAgents);
+      else toast.error("No transaction id returned");
     } catch (error) {
-      console.error("Error registering agent:", error);
+      console.error(`Error ${fn}:`, error);
+      toast.error("Transaction cancelled or failed");
     } finally {
       setActiveAction(null);
     }
+  }
+
+  const resetForm = () => setFormData({ name: "", description: "", wallet: "", endpointName: "", endpointUrl: "" });
+
+  async function handleRegister(e: React.FormEvent) {
+    e.preventDefault();
+    await submit("register-agent", [
+      Cl.stringAscii(formData.name),
+      Cl.stringAscii(formData.description),
+      Cl.principal(formData.wallet),
+      formData.endpointUrl
+        ? Cl.list([Cl.tuple({ name: Cl.stringAscii(formData.endpointName || "web"), url: Cl.stringAscii(formData.endpointUrl) })])
+        : Cl.list([]),
+    ], "registering", () => { setShowForm(false); resetForm(); });
   }
 
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault();
     if (!editingAgent) return;
-
-    setActiveAction(`updating-${editingAgent.id}`);
-
-    try {
-      await request("stx_callContract", {
-        contract: AGENT_REGISTRY,
-        functionName: "update-agent",
-        functionArgs: [
-          Cl.uint(editingAgent.id),
-          formData.name ? Cl.some(Cl.stringAscii(formData.name)) : Cl.none(),
-          formData.description ? Cl.some(Cl.stringAscii(formData.description)) : Cl.none(),
-          formData.wallet ? Cl.some(Cl.principal(formData.wallet)) : Cl.none(),
-        ],
-        network: NETWORK_NAME,
-      });
-      setEditingAgent(null);
-      setFormData({ name: "", description: "", wallet: "", endpointName: "", endpointUrl: "" });
-      loadAgents();
-    } catch (error) {
-      console.error("Error updating agent:", error);
-    } finally {
-      setActiveAction(null);
-    }
+    await submit("update-agent", [
+      Cl.uint(editingAgent.id),
+      formData.name ? Cl.some(Cl.stringAscii(formData.name)) : Cl.none(),
+      formData.description ? Cl.some(Cl.stringAscii(formData.description)) : Cl.none(),
+      formData.wallet ? Cl.some(Cl.principal(formData.wallet)) : Cl.none(),
+    ], `updating-${editingAgent.id}`, () => { setEditingAgent(null); resetForm(); });
   }
 
-  async function handleDeactivate(agentId: number) {
-    setActiveAction(`deactivating-${agentId}`);
-
-    try {
-      await request("stx_callContract", {
-        contract: AGENT_REGISTRY,
-        functionName: "deactivate-agent",
-        functionArgs: [Cl.uint(agentId)],
-        network: NETWORK_NAME,
-      });
-      loadAgents();
-    } catch (error) {
-      console.error("Error deactivating agent:", error);
-    } finally {
-      setActiveAction(null);
-    }
-  }
+  const handleDeactivate = (agentId: number) =>
+    submit("deactivate-agent", [Cl.uint(agentId)], `deactivating-${agentId}`);
 
   async function handleRate(agent: Agent, score: number) {
     setActiveAction(`rating-${agent.id}`);
     try {
-      await rateAgent(agent.wallet, score, 0, "Rated via PerkOS");
+      const res = await rateAgent(agent.wallet, score, 0, "Rated via PerkOS");
       setRatingFor(null);
-      loadAgents();
+      const id = txIdOf(res);
+      if (id) trackTx(id, toast, loadAgents);
     } catch (error) {
       console.error("Error rating agent:", error);
+      toast.error("Transaction cancelled or failed");
     } finally {
       setActiveAction(null);
     }
@@ -192,6 +163,12 @@ export default function AgentsPage() {
           {showForm ? "Cancel" : <><Plus className="h-4 w-4" /> Register Agent</>}
         </button>
       </div>
+
+      {!connected && (
+        <div className="mt-6 flex items-center gap-2 rounded-lg border border-brand/25 bg-brand/[0.06] px-4 py-3 text-sm text-mist-300">
+          <Wallet className="h-4 w-4 text-brand-300" /> Connect your wallet to register and rate agents.
+        </div>
+      )}
 
       {error && (
         <div className="mt-6 flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
@@ -272,7 +249,7 @@ export default function AgentsPage() {
                     <Fingerprint className="h-5 w-5" strokeWidth={1.75} />
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold text-white">{agent.name}</h3>
+                    <Link href={`/agents/${agent.id}`} className="text-base font-semibold text-white transition hover:text-brand-300">{agent.name}</Link>
                     <p className="mt-0.5 text-sm text-mist-300">{agent.description}</p>
                   </div>
                 </div>
@@ -296,8 +273,8 @@ export default function AgentsPage() {
               </div>
 
               <dl className="mt-4 grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
-                <div className="flex gap-2"><dt className="text-mist-500">Creator</dt><dd className="truncate font-mono text-xs text-mist-300">{agent.creator}</dd></div>
-                <div className="flex gap-2"><dt className="text-mist-500">Wallet</dt><dd className="truncate font-mono text-xs text-mist-300">{agent.wallet}</dd></div>
+                <div className="flex gap-2"><dt className="text-mist-500">Creator</dt><dd className="truncate text-xs text-mist-300"><Addr value={agent.creator} /></dd></div>
+                <div className="flex gap-2"><dt className="text-mist-500">Wallet</dt><dd className="truncate text-xs text-mist-300"><Addr value={agent.wallet} /></dd></div>
               </dl>
               {agent.endpoints.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">

@@ -2,12 +2,16 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Briefcase } from "lucide-react";
+import { ArrowLeft, Plus, Briefcase, Wallet } from "lucide-react";
 import { getJob, getJobCount, getEscrowBalance, Job } from "../../services/agentic-commerce";
 import { getBlockHeight } from "../../services/onchain-stats";
+import { trackTx, txIdOf } from "../../services/tx";
 import StatusBadge from "../../components/StatusBadge";
 import JobStepper from "../../components/JobStepper";
-import { request } from "@stacks/connect";
+import Addr from "../../components/Addr";
+import { useToast } from "../../components/Toast";
+import { formatStx, stxToMicro } from "../../utils/format";
+import { request, isConnected } from "@stacks/connect";
 import { Cl } from "@stacks/transactions";
 import { CONTRACT_ADDRESS } from "../../constants/contract";
 import { NETWORK_NAME } from "../../constants/network";
@@ -15,21 +19,18 @@ import { NETWORK_NAME } from "../../constants/network";
 const AGENTIC_COMMERCE = `${CONTRACT_ADDRESS}.agentic-commerce` as `${string}.${string}`;
 
 export default function JobsPage() {
+  const toast = useToast();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [connected, setConnected] = useState(false);
   const [activeAction, setActiveAction] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    description: "",
-    evaluator: "",
-    provider: "",
-    budget: "",
-    duration: "100",
-  });
+  const [formData, setFormData] = useState({ description: "", evaluator: "", provider: "", budget: "", duration: "100" });
   const [actionForm, setActionForm] = useState<{ jobId: number; budget?: string; provider?: string } | null>(null);
 
   useEffect(() => {
+    setConnected(isConnected());
     loadJobs();
   }, []);
 
@@ -38,15 +39,13 @@ export default function JobsPage() {
     setError(null);
     try {
       const count = await getJobCount();
-      const jobList: Job[] = [];
-      for (let i = 1; i <= count; i++) {
+      const ids = Array.from({ length: count }, (_, i) => i + 1);
+      const list = (await Promise.all(ids.map(async (i) => {
         const job = await getJob(i);
-        if (job) {
-          job.escrow = await getEscrowBalance(i);
-          jobList.push(job);
-        }
-      }
-      setJobs(jobList);
+        if (job) job.escrow = await getEscrowBalance(i);
+        return job;
+      }))).filter(Boolean) as Job[];
+      setJobs(list);
     } catch (error) {
       console.error("Error loading jobs:", error);
       setError("Failed to load jobs. Please try again.");
@@ -54,141 +53,47 @@ export default function JobsPage() {
     setLoading(false);
   }
 
+  // Submit a write, toast the result, poll the chain, then refresh on confirmation.
+  async function submit(fn: string, args: any[], actionKey: string, after?: () => void) {
+    setActiveAction(actionKey);
+    try {
+      const res = await request("stx_callContract", { contract: AGENTIC_COMMERCE, functionName: fn, functionArgs: args, network: NETWORK_NAME });
+      const id = txIdOf(res);
+      after?.();
+      if (id) trackTx(id, toast, loadJobs);
+      else toast.error("No transaction id returned");
+    } catch (error) {
+      console.error(`Error ${fn}:`, error);
+      toast.error("Transaction cancelled or failed");
+    } finally {
+      setActiveAction(null);
+    }
+  }
+
   async function handleCreateJob(e: React.FormEvent) {
     e.preventDefault();
-    setActiveAction("creating");
-
-    try {
-      const currentBlock = await getBlockHeight();
-      const expiredAt = (currentBlock || 1) + parseInt(formData.duration);
-
-      await request("stx_callContract", {
-        contract: AGENTIC_COMMERCE,
-        functionName: "create-job",
-        functionArgs: [
-          formData.provider ? Cl.some(Cl.principal(formData.provider)) : Cl.none(),
-          Cl.principal(formData.evaluator),
-          Cl.uint(expiredAt),
-          Cl.stringAscii(formData.description),
-        ],
-        network: NETWORK_NAME,
-      });
-      setShowForm(false);
-      loadJobs();
-    } catch (error) {
-      console.error("Error creating job:", error);
-    } finally {
-      setActiveAction(null);
-    }
+    const currentBlock = await getBlockHeight();
+    const expiredAt = (currentBlock || 1) + parseInt(formData.duration || "100");
+    await submit("create-job", [
+      formData.provider ? Cl.some(Cl.principal(formData.provider)) : Cl.none(),
+      Cl.principal(formData.evaluator),
+      Cl.uint(expiredAt),
+      Cl.stringAscii(formData.description),
+    ], "creating", () => setShowForm(false));
   }
 
-  async function handleSetBudget(jobId: number) {
+  function handleSetBudget(jobId: number) {
     if (!actionForm?.budget) return;
-    setActiveAction(`setting-budget-${jobId}`);
-
-    try {
-      await request("stx_callContract", {
-        contract: AGENTIC_COMMERCE,
-        functionName: "set-budget",
-        functionArgs: [Cl.uint(jobId), Cl.uint(parseInt(actionForm.budget))],
-        network: NETWORK_NAME,
-      });
-      setActionForm(null);
-      loadJobs();
-    } catch (error) {
-      console.error("Error setting budget:", error);
-    } finally {
-      setActiveAction(null);
-    }
+    submit("set-budget", [Cl.uint(jobId), Cl.uint(stxToMicro(actionForm.budget))], `setting-budget-${jobId}`, () => setActionForm(null));
   }
-
-  async function handleAssignProvider(jobId: number) {
+  function handleAssignProvider(jobId: number) {
     if (!actionForm?.provider) return;
-    setActiveAction(`assigning-provider-${jobId}`);
-
-    try {
-      await request("stx_callContract", {
-        contract: AGENTIC_COMMERCE,
-        functionName: "assign-provider",
-        functionArgs: [Cl.uint(jobId), Cl.principal(actionForm.provider)],
-        network: NETWORK_NAME,
-      });
-      setActionForm(null);
-      loadJobs();
-    } catch (error) {
-      console.error("Error assigning provider:", error);
-    } finally {
-      setActiveAction(null);
-    }
+    submit("assign-provider", [Cl.uint(jobId), Cl.principal(actionForm.provider)], `assigning-provider-${jobId}`, () => setActionForm(null));
   }
-
-  async function handleFundJob(jobId: number) {
-    setActiveAction(`funding-${jobId}`);
-    try {
-      await request("stx_callContract", {
-        contract: AGENTIC_COMMERCE,
-        functionName: "fund-job",
-        functionArgs: [Cl.uint(jobId)],
-        network: NETWORK_NAME,
-      });
-      loadJobs();
-    } catch (error) {
-      console.error("Error funding job:", error);
-    } finally {
-      setActiveAction(null);
-    }
-  }
-
-  async function handleSubmitWork(jobId: number) {
-    setActiveAction(`submitting-${jobId}`);
-    try {
-      await request("stx_callContract", {
-        contract: AGENTIC_COMMERCE,
-        functionName: "submit-work",
-        functionArgs: [Cl.uint(jobId), Cl.bufferFromAscii("work-submitted")],
-        network: NETWORK_NAME,
-      });
-      loadJobs();
-    } catch (error) {
-      console.error("Error submitting work:", error);
-    } finally {
-      setActiveAction(null);
-    }
-  }
-
-  async function handleCompleteJob(jobId: number) {
-    setActiveAction(`completing-${jobId}`);
-    try {
-      await request("stx_callContract", {
-        contract: AGENTIC_COMMERCE,
-        functionName: "complete-job",
-        functionArgs: [Cl.uint(jobId)],
-        network: NETWORK_NAME,
-      });
-      loadJobs();
-    } catch (error) {
-      console.error("Error completing job:", error);
-    } finally {
-      setActiveAction(null);
-    }
-  }
-
-  async function handleRejectJob(jobId: number) {
-    setActiveAction(`rejecting-${jobId}`);
-    try {
-      await request("stx_callContract", {
-        contract: AGENTIC_COMMERCE,
-        functionName: "reject-job",
-        functionArgs: [Cl.uint(jobId)],
-        network: NETWORK_NAME,
-      });
-      loadJobs();
-    } catch (error) {
-      console.error("Error rejecting job:", error);
-    } finally {
-      setActiveAction(null);
-    }
-  }
+  const handleFundJob = (jobId: number) => submit("fund-job", [Cl.uint(jobId)], `funding-${jobId}`);
+  const handleSubmitWork = (jobId: number) => submit("submit-work", [Cl.uint(jobId), Cl.bufferFromAscii("work-submitted")], `submitting-${jobId}`);
+  const handleCompleteJob = (jobId: number) => submit("complete-job", [Cl.uint(jobId)], `completing-${jobId}`);
+  const handleRejectJob = (jobId: number) => submit("reject-job", [Cl.uint(jobId)], `rejecting-${jobId}`);
 
   return (
     <div className="container-x py-12">
@@ -205,6 +110,12 @@ export default function JobsPage() {
           {showForm ? "Cancel" : <><Plus className="h-4 w-4" /> Create Job</>}
         </button>
       </div>
+
+      {!connected && (
+        <div className="mt-6 flex items-center gap-2 rounded-lg border border-brand/25 bg-brand/[0.06] px-4 py-3 text-sm text-mist-300">
+          <Wallet className="h-4 w-4 text-brand-300" /> Connect your wallet to create jobs and act on escrow.
+        </div>
+      )}
 
       {error && (
         <div className="mt-6 flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
@@ -230,7 +141,7 @@ export default function JobsPage() {
               <input type="text" value={formData.provider} onChange={(e) => setFormData({ ...formData, provider: e.target.value })} className="field font-mono" placeholder="ST…" />
             </div>
             <div>
-              <label className="label">Duration (blocks)</label>
+              <label className="label">Duration (blocks until expiry)</label>
               <input type="number" value={formData.duration} onChange={(e) => setFormData({ ...formData, duration: e.target.value })} className="field" required />
             </div>
           </div>
@@ -256,7 +167,7 @@ export default function JobsPage() {
             <div key={job.id} className="card card-hover p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-base font-semibold text-white">Job #{job.id}</h3>
+                  <Link href={`/jobs/${job.id}`} className="text-base font-semibold text-white hover:text-brand-300">Job #{job.id}</Link>
                   <p className="mt-0.5 text-sm text-mist-300">{job.description}</p>
                 </div>
                 <StatusBadge status={job.status} />
@@ -267,25 +178,25 @@ export default function JobsPage() {
               <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-4">
                 <div>
                   <dt className="text-xs text-mist-500">Client</dt>
-                  <dd className="truncate font-mono text-xs text-mist-300">{job.client}</dd>
+                  <dd className="truncate text-xs text-mist-300"><Addr value={job.client} /></dd>
                 </div>
                 <div>
                   <dt className="text-xs text-mist-500">Provider</dt>
-                  <dd className="truncate font-mono text-xs text-mist-300">{job.provider || "Not assigned"}</dd>
+                  <dd className="truncate text-xs text-mist-300"><Addr value={job.provider} /></dd>
                 </div>
                 <div>
                   <dt className="text-xs text-mist-500">Evaluator</dt>
-                  <dd className="truncate font-mono text-xs text-mist-300">{job.evaluator}</dd>
+                  <dd className="truncate text-xs text-mist-300"><Addr value={job.evaluator} /></dd>
                 </div>
                 <div>
                   <dt className="text-xs text-mist-500">Budget</dt>
-                  <dd className="text-white">{job.budget} <span className="text-mist-500">µSTX</span></dd>
+                  <dd className="text-white">{formatStx(job.budget)} <span className="text-mist-500">STX</span></dd>
                 </div>
               </dl>
 
               {job.escrow !== undefined && job.escrow > 0 && (
                 <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-bitcoin/25 bg-bitcoin/10 px-2.5 py-1 text-xs text-bitcoin-400">
-                  Escrow locked: <span className="font-mono">{job.escrow} µSTX</span>
+                  Escrow locked: <span className="font-mono">{formatStx(job.escrow)} STX</span>
                 </div>
               )}
 
@@ -293,7 +204,7 @@ export default function JobsPage() {
                 <div className="mt-4 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
                   {activeAction?.startsWith("setting-budget") && (
                     <div className="flex gap-2">
-                      <input type="number" placeholder="Budget in µSTX" value={actionForm.budget || ""} onChange={(e) => setActionForm({ ...actionForm, budget: e.target.value })} className="field flex-1" />
+                      <input type="number" step="0.000001" placeholder="Budget in STX" value={actionForm.budget || ""} onChange={(e) => setActionForm({ ...actionForm, budget: e.target.value })} className="field flex-1" />
                       <button onClick={() => handleSetBudget(job.id)} className="btn-primary">Set</button>
                       <button onClick={() => setActionForm(null)} className="btn-ghost">Cancel</button>
                     </div>
@@ -343,6 +254,9 @@ export default function JobsPage() {
                     </button>
                   </>
                 )}
+                <Link href={`/jobs/${job.id}`} className="btn-sm ml-auto border border-white/[0.12] text-mist-300 hover:text-white">
+                  Details
+                </Link>
               </div>
             </div>
           ))}

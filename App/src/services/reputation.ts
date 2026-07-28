@@ -74,8 +74,8 @@ export async function rateAgent(
   score: number,
   jobId: number,
   comment: string
-): Promise<void> {
-  await request("stx_callContract", {
+): Promise<any> {
+  return request("stx_callContract", {
     contract: REPUTATION_CONTRACT,
     functionName: "rate-agent",
     functionArgs: [

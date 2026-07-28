@@ -4,10 +4,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Fingerprint, Briefcase, Coins, CheckCircle2, ArrowRight } from "lucide-react";
 import { getAgent, getAgentCount, Agent } from "../../services/agent-registry";
-import { getJob, getJobCount, Job } from "../../services/agentic-commerce";
+import { getJob, getJobCount, getEscrowBalance, Job } from "../../services/agentic-commerce";
+import { formatStx } from "../../utils/format";
 import StatusBadge from "../../components/StatusBadge";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorMessage from "../../components/ErrorMessage";
+
+const trunc = (s: string, n = 64) => (s.length > n ? s.slice(0, n) + "…" : s);
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({ agents: 0, jobs: 0, fundedJobs: 0, completedJobs: 0, totalEscrow: 0 });
@@ -24,31 +27,22 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const agentCount = await getAgentCount();
-      const agents: Agent[] = [];
-      for (let i = 1; i <= Math.min(agentCount, 5); i++) {
-        const agent = await getAgent(i);
-        if (agent) agents.push(agent);
-      }
+      const [agentCount, jobCount] = await Promise.all([getAgentCount(), getJobCount()]);
+
+      const agentIds = Array.from({ length: Math.min(agentCount, 5) }, (_, i) => i + 1);
+      const agents = (await Promise.all(agentIds.map((i) => getAgent(i)))).filter(Boolean) as Agent[];
       setRecentAgents(agents);
 
-      const jobCount = await getJobCount();
-      const jobs: Job[] = [];
-      let fundedCount = 0;
-      let completedCount = 0;
-      let totalEscrow = 0;
+      const jobIds = Array.from({ length: jobCount }, (_, i) => i + 1);
+      const allJobs = (await Promise.all(jobIds.map((i) => getJob(i)))).filter(Boolean) as Job[];
+      const fundedCount = allJobs.filter((j) => j.status === 1).length;
+      const completedCount = allJobs.filter((j) => j.status === 3).length;
+      const escrows = await Promise.all(
+        allJobs.filter((j) => j.status === 1 || j.status === 2).map((j) => getEscrowBalance(j.id))
+      );
+      const totalEscrow = escrows.reduce((a, b) => a + (b || 0), 0);
 
-      for (let i = 1; i <= jobCount; i++) {
-        const job = await getJob(i);
-        if (job) {
-          if (job.status === 1) fundedCount++;
-          if (job.status === 3) completedCount++;
-          totalEscrow += job.escrow || 0;
-          if (jobs.length < 5) jobs.push(job);
-        }
-      }
-
-      setRecentJobs(jobs);
+      setRecentJobs(allJobs.slice(0, 5));
       setStats({ agents: agentCount, jobs: jobCount, fundedJobs: fundedCount, completedJobs: completedCount, totalEscrow });
     } catch (err) {
       console.error("Dashboard error:", err);
@@ -90,7 +84,7 @@ export default function DashboardPage() {
 
       {stats.totalEscrow > 0 && (
         <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-bitcoin/25 bg-bitcoin/10 px-4 py-2.5 text-sm text-bitcoin-400">
-          <Coins className="h-4 w-4" /> Total escrow locked: <span className="font-mono">{stats.totalEscrow} µSTX</span>
+          <Coins className="h-4 w-4" /> Total escrow locked: <span className="font-mono">{formatStx(stats.totalEscrow)} STX</span>
         </div>
       )}
 
@@ -124,7 +118,7 @@ export default function DashboardPage() {
             {recentAgents.length === 0 ? (
               <p className="text-sm text-mist-500">No agents registered yet.</p>
             ) : recentAgents.map((agent) => (
-              <div key={agent.id} className="card p-4">
+              <Link key={agent.id} href={`/agents/${agent.id}`} className="card card-hover block p-4">
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-white">{agent.name}</p>
                   <span className={`badge ${agent.active ? "border-emerald-500/30 text-emerald-300" : "border-white/10 text-mist-500"}`}>
@@ -132,8 +126,8 @@ export default function DashboardPage() {
                     {agent.active ? "Active" : "Inactive"}
                   </span>
                 </div>
-                <p className="mt-1 text-sm text-mist-500">{agent.description.slice(0, 64)}…</p>
-              </div>
+                <p className="mt-1 text-sm text-mist-500">{trunc(agent.description)}</p>
+              </Link>
             ))}
           </div>
         </div>
@@ -144,14 +138,14 @@ export default function DashboardPage() {
             {recentJobs.length === 0 ? (
               <p className="text-sm text-mist-500">No jobs created yet.</p>
             ) : recentJobs.map((job) => (
-              <div key={job.id} className="card p-4">
+              <Link key={job.id} href={`/jobs/${job.id}`} className="card card-hover block p-4">
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-white">Job #{job.id}</p>
                   <StatusBadge status={job.status} />
                 </div>
-                <p className="mt-1 text-sm text-mist-500">{job.description.slice(0, 64)}…</p>
-                <p className="mt-2 font-mono text-xs text-mist-300">{job.budget} µSTX</p>
-              </div>
+                <p className="mt-1 text-sm text-mist-500">{trunc(job.description)}</p>
+                <p className="mt-2 font-mono text-xs text-mist-300">{formatStx(job.budget)} STX</p>
+              </Link>
             ))}
           </div>
         </div>

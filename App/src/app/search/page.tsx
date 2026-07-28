@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Search as SearchIcon, Fingerprint, Briefcase, ChevronRight } from "lucide-react";
 import { getAgent, getAgentCount } from "../../services/agent-registry";
 import { getJob, getJobCount } from "../../services/agentic-commerce";
+import { formatStx } from "../../utils/format";
 
 interface SearchResult {
   id: string;
@@ -27,29 +28,35 @@ export default function SearchPage() {
     setSearched(true);
     try {
       const searchResults: SearchResult[] = [];
-      const lowerQuery = query.toLowerCase();
+      const q = query.toLowerCase();
 
-      const agentCount = await getAgentCount();
-      for (let i = 1; i <= agentCount; i++) {
-        const agent = await getAgent(i);
-        if (agent && (agent.name.toLowerCase().includes(lowerQuery) || agent.description.toLowerCase().includes(lowerQuery) || agent.wallet.toLowerCase().includes(lowerQuery))) {
+      const [agentCount, jobCount] = await Promise.all([getAgentCount(), getJobCount()]);
+      const agentIds = Array.from({ length: agentCount }, (_, i) => i + 1);
+      const jobIds = Array.from({ length: jobCount }, (_, i) => i + 1);
+      const [agents, jobs] = await Promise.all([
+        Promise.all(agentIds.map((i) => getAgent(i))),
+        Promise.all(jobIds.map((i) => getJob(i))),
+      ]);
+
+      agents.forEach((agent, idx) => {
+        const i = idx + 1;
+        if (agent && (agent.name.toLowerCase().includes(q) || agent.description.toLowerCase().includes(q) || agent.wallet.toLowerCase().includes(q))) {
           searchResults.push({
-            id: `agent-${i}`, type: "agent", title: agent.name, description: agent.description, link: "/agents",
+            id: `agent-${i}`, type: "agent", title: agent.name, description: agent.description, link: `/agents/${i}`,
             metadata: { wallet: agent.wallet, status: agent.active ? "Active" : "Inactive" },
           });
         }
-      }
+      });
 
-      const jobCount = await getJobCount();
-      for (let i = 1; i <= jobCount; i++) {
-        const job = await getJob(i);
-        if (job && (job.description.toLowerCase().includes(lowerQuery) || job.client.toLowerCase().includes(lowerQuery) || (job.provider && job.provider.toLowerCase().includes(lowerQuery)))) {
+      jobs.forEach((job, idx) => {
+        const i = idx + 1;
+        if (job && (job.description.toLowerCase().includes(q) || job.client.toLowerCase().includes(q) || (job.provider && job.provider.toLowerCase().includes(q)))) {
           searchResults.push({
-            id: `job-${i}`, type: "job", title: `Job #${i}`, description: job.description, link: "/jobs",
-            metadata: { budget: `${job.budget} µSTX`, status: ["Open", "Funded", "Submitted", "Completed", "Rejected", "Expired"][job.status] || "Unknown" },
+            id: `job-${i}`, type: "job", title: `Job #${i}`, description: job.description, link: `/jobs/${i}`,
+            metadata: { budget: `${formatStx(job.budget)} STX`, status: ["Open", "Funded", "Submitted", "Completed", "Rejected", "Expired"][job.status] || "Unknown" },
           });
         }
-      }
+      });
       setResults(searchResults);
     } catch (error) {
       console.error("Search error:", error);
