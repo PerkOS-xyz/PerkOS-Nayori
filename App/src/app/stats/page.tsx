@@ -13,7 +13,7 @@ import {
   Plus,
 } from "lucide-react";
 import { getAgentCount } from "../../services/agent-registry";
-import { getJobCount } from "../../services/agentic-commerce";
+import { getCommerceJobCount } from "../../services/commerce";
 import { getOnchainStats, EXPLORER, CHAIN_PARAM, OnchainStats } from "../../services/onchain-stats";
 import { CONTRACT_ADDRESS } from "../../constants/contract";
 
@@ -29,6 +29,8 @@ const FN_LABEL: Record<string, string> = {
   "submit-work": "Work submitted",
   "complete-job": "Job completed",
   "reject-job": "Job rejected",
+  "expire-job": "Job expired and refunded",
+  "rate-provider": "Provider rated",
   "rate-agent": "Agent rated",
   "add-protocol-caller": "Protocol caller added",
   "verify-agent": "Agent verified",
@@ -42,9 +44,14 @@ export default function StatsPage() {
 
   useEffect(() => {
     (async () => {
-      const [a, j, s] = await Promise.all([getAgentCount(), getJobCount(), getOnchainStats()]);
+      const [a, sbtcJobs, stxJobs, s] = await Promise.all([
+        getAgentCount(),
+        getCommerceJobCount("sbtc"),
+        getCommerceJobCount("stx"),
+        getOnchainStats(),
+      ]);
       setAgents(a);
-      setJobs(j);
+      setJobs(sbtcJobs + stxJobs);
       setStats(s);
       setLoading(false);
     })();
@@ -56,7 +63,7 @@ export default function StatsPage() {
     { icon: Activity, label: "On-chain transactions", value: stats?.totalTx ?? 0 },
     { icon: Users, label: "Distinct wallets", value: stats?.distinctWallets ?? 0 },
     { icon: Coins, label: "Fees (STX)", value: stats ? stats.feesSTX.toFixed(3) : "0" },
-    { icon: FileCode2, label: "Live contracts", value: 4 },
+    { icon: FileCode2, label: "Indexed contracts", value: stats?.perContract.length ?? 0 },
   ];
 
   return (
@@ -96,7 +103,7 @@ export default function StatsPage() {
         {(stats?.perContract ?? []).map((c) => (
           <a
             key={c.name}
-            href={`${EXPLORER}/txid/${CONTRACT_ADDRESS}.${c.name}?chain=${CHAIN_PARAM}`}
+            href={`${EXPLORER}/address/${CONTRACT_ADDRESS}.${c.name}?chain=${CHAIN_PARAM}`}
             target="_blank"
             rel="noopener noreferrer"
             className="card card-hover group p-5"
@@ -145,6 +152,9 @@ export default function StatsPage() {
 
       <p className="mt-6 text-xs text-mist-500">
         Source: Hiro API for {CONTRACT_ADDRESS} on Stacks {CHAIN_PARAM}. Click any row to verify on the explorer.
+        {stats?.truncated
+          ? ` Wallet and fee totals are based on ${stats.indexedTransactions.toLocaleString()} indexed transactions; contract totals remain complete.`
+          : " Wallet and fee totals include every indexed transaction."}
       </p>
     </div>
   );

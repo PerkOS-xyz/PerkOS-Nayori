@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Pencil, Power, Fingerprint, Star, BadgeCheck, Wallet } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Power, Fingerprint, Star, BadgeCheck, Wallet, Search } from "lucide-react";
 import { getAgent, getAgentCount, Agent } from "../../services/agent-registry";
-import { getReputation, rateAgent } from "../../services/reputation";
+import { getReputationV2 } from "../../services/reputation-v2";
 import { isVerified } from "../../services/validation";
 import { trackTx, txIdOf } from "../../services/tx";
 import Addr from "../../components/Addr";
@@ -13,18 +13,24 @@ import { request, getLocalStorage, isConnected } from "@stacks/connect";
 import { Cl } from "@stacks/transactions";
 import { CONTRACT_ADDRESS } from "../../constants/contract";
 import { NETWORK_NAME } from "../../constants/network";
+import { humanizeContractError } from "../../services/contract-errors";
+import { isValidStacksAddress } from "../../services/commerce";
 
 const AGENT_REGISTRY = `${CONTRACT_ADDRESS}.agent-registry` as `${string}.${string}`;
 
 const connectedStx = () => getLocalStorage()?.addresses?.stx?.[0]?.address ?? "";
+const PAGE_SIZE = 24;
 
 export default function AgentsPage() {
   const toast = useToast();
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [agentPage, setAgentPage] = useState(0);
+  const [totalAgents, setTotalAgents] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [address, setAddress] = useState("");
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -35,26 +41,45 @@ export default function AgentsPage() {
     endpointUrl: "",
   });
   const [reps, setReps] = useState<Record<number, { avg: number; count: number; verified: boolean }>>({});
-  const [ratingFor, setRatingFor] = useState<number | null>(null);
-  const [ratingScore, setRatingScore] = useState(5);
+  const [query, setQuery] = useState("");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [activeOnly, setActiveOnly] = useState(false);
 
   useEffect(() => {
-    setConnected(isConnected());
-    loadAgents();
+    const wallet = connectedStx();
+    setConnected(isConnected() && Boolean(wallet));
+    setAddress(wallet);
+    const refreshWallet = () => {
+      const next = connectedStx();
+      setConnected(isConnected() && Boolean(next));
+      setAddress(next);
+    };
+    window.addEventListener("perkos-wallet-change", refreshWallet);
+    return () => window.removeEventListener("perkos-wallet-change", refreshWallet);
   }, []);
+
+  useEffect(() => {
+    void loadAgents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentPage]);
 
   async function loadAgents() {
     setLoading(true);
     setError(null);
     try {
       const count = await getAgentCount();
-      const ids = Array.from({ length: count }, (_, i) => i + 1);
+      setTotalAgents(count);
+      const start = count - agentPage * PAGE_SIZE;
+      const ids = Array.from(
+        { length: Math.max(0, Math.min(PAGE_SIZE, start)) },
+        (_, i) => start - i
+      );
       const agentList = (await Promise.all(ids.map((i) => getAgent(i)))).filter(Boolean) as Agent[];
       setAgents(agentList);
       // Load on-chain reputation + verification per agent (keyed by wallet).
       const entries = await Promise.all(
         agentList.map(async (a) => {
-          const [rep, verified] = await Promise.all([getReputation(a.wallet), isVerified(a.wallet)]);
+          const [rep, verified] = await Promise.all([getReputationV2(a.wallet), isVerified(a.wallet)]);
           return [a.id, { avg: rep.averageScore, count: rep.ratingCount, verified }] as const;
         })
       );
@@ -77,7 +102,7 @@ export default function AgentsPage() {
       else toast.error("No transaction id returned");
     } catch (error) {
       console.error(`Error ${fn}:`, error);
-      toast.error("Transaction cancelled or failed");
+      toast.error(humanizeContractError(error));
     } finally {
       setActiveAction(null);
     }
@@ -87,6 +112,14 @@ export default function AgentsPage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    if (!connected || !address) {
+      toast.error("Connect the wallet that will control this agent.");
+      return;
+    }
+    if (formData.wallet !== address || !isValidStacksAddress(formData.wallet)) {
+      toast.error("The agent wallet must match the connected wallet.");
+      return;
+    }
     await submit("register-agent", [
       Cl.stringAscii(formData.name),
       Cl.stringAscii(formData.description),
@@ -111,21 +144,6 @@ export default function AgentsPage() {
   const handleDeactivate = (agentId: number) =>
     submit("deactivate-agent", [Cl.uint(agentId)], `deactivating-${agentId}`);
 
-  async function handleRate(agent: Agent, score: number) {
-    setActiveAction(`rating-${agent.id}`);
-    try {
-      const res = await rateAgent(agent.wallet, score, 0, "Rated via PerkOS");
-      setRatingFor(null);
-      const id = txIdOf(res);
-      if (id) trackTx(id, toast, loadAgents);
-    } catch (error) {
-      console.error("Error rating agent:", error);
-      toast.error("Transaction cancelled or failed");
-    } finally {
-      setActiveAction(null);
-    }
-  }
-
   function startEdit(agent: Agent) {
     setEditingAgent(agent);
     setFormData({
@@ -138,6 +156,14 @@ export default function AgentsPage() {
   }
 
   const submitting = activeAction === "registering" || activeAction?.startsWith("updating");
+  const visibleAgents = agents.filter((agent) => {
+    const q = query.trim().toLowerCase();
+    if (q && ![agent.name, agent.description, agent.wallet, ...agent.endpoints.map((ep) => `${ep.name} ${ep.url}`)]
+      .some((value) => value.toLowerCase().includes(q))) return false;
+    if (verifiedOnly && !reps[agent.id]?.verified) return false;
+    if (activeOnly && !agent.active) return false;
+    return true;
+  });
 
   return (
     <div className="container-x py-12">
@@ -158,7 +184,8 @@ export default function AgentsPage() {
             if (opening) setFormData((f) => ({ ...f, wallet: f.wallet || connectedStx() }));
           }}
           className={showForm ? "btn-ghost" : "btn-primary"}
-          disabled={!!activeAction}
+          disabled={!connected || !!activeAction}
+          title={!connected ? "Connect a wallet first" : undefined}
         >
           {showForm ? "Cancel" : <><Plus className="h-4 w-4" /> Register Agent</>}
         </button>
@@ -192,11 +219,17 @@ export default function AgentsPage() {
             </div>
             <div>
               <label className="label">Agent Wallet</label>
-              <input type="text" value={formData.wallet} onChange={(e) => setFormData({ ...formData, wallet: e.target.value })} className="field font-mono" placeholder="connect wallet to autofill" required />
+              <input
+                type="text"
+                value={formData.wallet}
+                readOnly
+                onChange={(e) => setFormData({ ...formData, wallet: e.target.value })}
+                className="field font-mono read-only:cursor-not-allowed read-only:opacity-70"
+                placeholder="connect wallet to autofill"
+                required
+              />
               {!editingAgent && (
-                <button type="button" onClick={() => setFormData((f) => ({ ...f, wallet: connectedStx() }))} className="mt-1.5 text-xs text-brand-400 hover:text-brand-300">
-                  Use my connected wallet
-                </button>
+                <p className="mt-1.5 text-xs text-emerald-300">Bound to the connected wallet as proof of control.</p>
               )}
             </div>
             <div className="md:col-span-2">
@@ -229,19 +262,32 @@ export default function AgentsPage() {
         </form>
       )}
 
+      <div className="mt-6 flex flex-wrap gap-2">
+        <div className="relative min-w-[240px] flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-mist-500" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} className="field pl-10" placeholder="Search name, wallet, capability or endpoint…" />
+        </div>
+        <label className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 text-sm text-mist-300">
+          <input type="checkbox" checked={verifiedOnly} onChange={(e) => setVerifiedOnly(e.target.checked)} /> Verified
+        </label>
+        <label className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 text-sm text-mist-300">
+          <input type="checkbox" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} /> Active
+        </label>
+      </div>
+
       {loading ? (
         <div className="py-16 text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-brand-400" />
           <p className="mt-3 text-sm text-mist-500">Loading agents from chain…</p>
         </div>
-      ) : agents.length === 0 ? (
+      ) : visibleAgents.length === 0 ? (
         <div className="card mt-6 p-12 text-center">
           <Fingerprint className="mx-auto h-8 w-8 text-mist-500" strokeWidth={1.5} />
           <p className="mt-3 text-mist-300">No agents registered yet. Be the first.</p>
         </div>
       ) : (
         <div className="mt-6 grid gap-4">
-          {agents.map((agent) => (
+          {visibleAgents.map((agent) => (
             <div key={agent.id} className="card card-hover p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3.5">
@@ -286,35 +332,32 @@ export default function AgentsPage() {
                 </div>
               )}
 
-              {ratingFor === agent.id && (
-                <div className="mt-4 flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
-                  <span className="text-sm text-mist-300">Your rating</span>
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <button key={s} type="button" onClick={() => setRatingScore(s)} className="p-0.5" aria-label={`${s} stars`}>
-                      <Star className={`h-5 w-5 ${s <= ratingScore ? "fill-amber-300 text-amber-300" : "text-mist-500"}`} />
-                    </button>
-                  ))}
-                  <button onClick={() => handleRate(agent, ratingScore)} className="btn-sm ml-auto bg-brand text-white hover:bg-brand-600" disabled={activeAction === `rating-${agent.id}`}>
-                    {activeAction === `rating-${agent.id}` ? "Submitting…" : "Submit"}
-                  </button>
-                </div>
-              )}
-
               <div className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.06] pt-4">
-                <button onClick={() => setRatingFor(ratingFor === agent.id ? null : agent.id)} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white" disabled={!!activeAction}>
-                  <Star className="h-3.5 w-3.5" /> Rate
-                </button>
-                <button onClick={() => startEdit(agent)} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white" disabled={!!activeAction}>
-                  <Pencil className="h-3.5 w-3.5" /> Edit
-                </button>
-                {agent.active && (
-                  <button onClick={() => handleDeactivate(agent.id)} className="btn-sm border border-red-500/25 text-red-300 hover:bg-red-500/10" disabled={activeAction === `deactivating-${agent.id}`}>
-                    <Power className="h-3.5 w-3.5" /> {activeAction === `deactivating-${agent.id}` ? "Deactivating…" : "Deactivate"}
-                  </button>
+                {agent.creator.toUpperCase() === address.toUpperCase() && (
+                  <>
+                    <button onClick={() => startEdit(agent)} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white" disabled={!!activeAction}>
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </button>
+                    {agent.active && (
+                      <button onClick={() => handleDeactivate(agent.id)} className="btn-sm border border-red-500/25 text-red-300 hover:bg-red-500/10" disabled={activeAction === `deactivating-${agent.id}`}>
+                        <Power className="h-3.5 w-3.5" /> {activeAction === `deactivating-${agent.id}` ? "Deactivating…" : "Deactivate"}
+                      </button>
+                    )}
+                  </>
                 )}
+                <Link href="/jobs?status=completed" className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white">
+                  <Star className="h-3.5 w-3.5" /> Ratings come from completed jobs
+                </Link>
               </div>
             </div>
           ))}
+          {totalAgents > PAGE_SIZE && (
+            <div className="flex items-center justify-between pt-2">
+              <button className="btn-ghost" disabled={agentPage === 0} onClick={() => setAgentPage((value) => Math.max(0, value - 1))}>Previous</button>
+              <span className="text-sm text-mist-500">Page {agentPage + 1} of {Math.ceil(totalAgents / PAGE_SIZE)}</span>
+              <button className="btn-ghost" disabled={(agentPage + 1) * PAGE_SIZE >= totalAgents} onClick={() => setAgentPage((value) => value + 1)}>Next</button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -5,22 +5,17 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Fingerprint, Star, BadgeCheck, CheckCircle2, AlertCircle } from "lucide-react";
 import { getAgent, Agent } from "../../../services/agent-registry";
-import { getReputation, rateAgent, Reputation } from "../../../services/reputation";
+import { getReputationV2, ReputationV2 } from "../../../services/reputation-v2";
 import { getVerification, isVerified, Verification } from "../../../services/validation";
-import { trackTx, txIdOf } from "../../../services/tx";
 import Addr from "../../../components/Addr";
-import { useToast } from "../../../components/Toast";
 
 export default function AgentDetailPage() {
   const id = Number(useParams().id);
-  const toast = useToast();
   const [agent, setAgent] = useState<Agent | null>(null);
-  const [rep, setRep] = useState<Reputation | null>(null);
+  const [rep, setRep] = useState<ReputationV2 | null>(null);
   const [ver, setVer] = useState<Verification | null>(null);
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [ratingScore, setRatingScore] = useState(5);
-  const [rating, setRating] = useState(false);
 
   useEffect(() => {
     load();
@@ -32,27 +27,12 @@ export default function AgentDetailPage() {
     const a = await getAgent(id);
     setAgent(a);
     if (a) {
-      const [r, v, isv] = await Promise.all([getReputation(a.wallet), getVerification(a.wallet), isVerified(a.wallet)]);
+      const [r, v, isv] = await Promise.all([getReputationV2(a.wallet), getVerification(a.wallet), isVerified(a.wallet)]);
       setRep(r);
       setVer(v);
       setVerified(isv);
     }
     setLoading(false);
-  }
-
-  async function rate() {
-    if (!agent) return;
-    setRating(true);
-    try {
-      const res = await rateAgent(agent.wallet, ratingScore, 0, "Rated via PerkOS");
-      const txid = txIdOf(res);
-      if (txid) trackTx(txid, toast, load);
-    } catch (e) {
-      console.error(e);
-      toast.error("Transaction cancelled or failed");
-    } finally {
-      setRating(false);
-    }
   }
 
   if (loading) {
@@ -132,27 +112,18 @@ export default function AgentDetailPage() {
           </h2>
           {rep && rep.ratingCount > 0 ? (
             <div className="mt-4 grid grid-cols-2 gap-4">
-              <Metric label="Average score" value={`${rep.averageScore}/5`} />
+              <Metric label="Average score" value={`${rep.averageScore.toFixed(2)}/5`} />
               <Metric label="Ratings" value={String(rep.ratingCount)} />
               <Metric label="Completed jobs" value={String(rep.completedJobs)} />
               <Metric label="Disputed jobs" value={String(rep.disputedJobs)} />
             </div>
           ) : (
-            <p className="mt-4 text-sm text-mist-500">No ratings yet. Be the first to rate this agent.</p>
+            <p className="mt-4 text-sm text-mist-500">No job-linked ratings yet.</p>
           )}
 
-          <div className="mt-5 border-t border-white/[0.06] pt-4">
-            <p className="text-sm text-mist-300">Rate this agent</p>
-            <div className="mt-2 flex items-center gap-2">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <button key={s} type="button" onClick={() => setRatingScore(s)} aria-label={`${s} stars`} className="p-0.5">
-                  <Star className={`h-6 w-6 ${s <= ratingScore ? "fill-amber-300 text-amber-300" : "text-mist-500"}`} />
-                </button>
-              ))}
-              <button onClick={rate} disabled={rating} className="btn-sm ml-auto bg-brand text-white hover:bg-brand-600">
-                {rating ? "Submitting…" : "Submit rating"}
-              </button>
-            </div>
+          <div className="mt-5 border-t border-white/[0.06] pt-4 text-sm text-mist-500">
+            Ratings can only be submitted by the client or evaluator of a completed sBTC job.
+            <Link href="/jobs" className="ml-1 text-brand-300 hover:text-brand-200">View jobs</Link>
           </div>
         </div>
 
@@ -167,6 +138,11 @@ export default function AgentDetailPage() {
               <div>
                 <p className="text-xs text-mist-500">Verified by</p>
                 <p className="mt-0.5 text-sm"><Addr value={ver.verifiedBy} className="text-mist-200" /></p>
+              </div>
+              <div>
+                <p className="text-xs text-mist-500">Evidence commitment</p>
+                <p className="mt-0.5 break-all font-mono text-xs text-mist-200">{ver.proofHash || "Not provided"}</p>
+                <p className="mt-1 text-xs text-mist-500">Recorded at Stacks block #{ver.verifiedAt}. Verification is an owner-authorized protocol attestation.</p>
               </div>
               {ver.capabilities.length > 0 && (
                 <div>

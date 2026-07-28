@@ -2,10 +2,16 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Fingerprint, Briefcase, Coins, CheckCircle2, ArrowRight } from "lucide-react";
+import { Fingerprint, Briefcase, Coins, ArrowRight, Bitcoin } from "lucide-react";
 import { getAgent, getAgentCount, Agent } from "../../services/agent-registry";
-import { getJob, getJobCount, getEscrowBalance, Job } from "../../services/agentic-commerce";
-import { formatStx } from "../../utils/format";
+import {
+  CommerceJob,
+  currencyProtocolLabel,
+  formatJobAmount,
+  getCommerceJobCount,
+  getCommerceJobs,
+  jobHref,
+} from "../../services/commerce";
 import StatusBadge from "../../components/StatusBadge";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorMessage from "../../components/ErrorMessage";
@@ -13,9 +19,14 @@ import ErrorMessage from "../../components/ErrorMessage";
 const trunc = (s: string, n = 64) => (s.length > n ? s.slice(0, n) + "…" : s);
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState({ agents: 0, jobs: 0, fundedJobs: 0, completedJobs: 0, totalEscrow: 0 });
+  const [stats, setStats] = useState({
+    agents: 0,
+    jobs: 0,
+    sbtcJobs: 0,
+    stxJobs: 0,
+  });
   const [recentAgents, setRecentAgents] = useState<Agent[]>([]);
-  const [recentJobs, setRecentJobs] = useState<Job[]>([]);
+  const [recentJobs, setRecentJobs] = useState<CommerceJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,23 +38,28 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [agentCount, jobCount] = await Promise.all([getAgentCount(), getJobCount()]);
+      const [agentCount, sbtcCount, stxCount, sbtcJobs, stxJobs] = await Promise.all([
+        getAgentCount(),
+        getCommerceJobCount("sbtc"),
+        getCommerceJobCount("stx"),
+        getCommerceJobs("sbtc", { limit: 3 }),
+        getCommerceJobs("stx", { limit: 3 }),
+      ]);
 
-      const agentIds = Array.from({ length: Math.min(agentCount, 5) }, (_, i) => i + 1);
+      const agentIds = Array.from(
+        { length: Math.min(agentCount, 5) },
+        (_, i) => agentCount - i
+      );
       const agents = (await Promise.all(agentIds.map((i) => getAgent(i)))).filter(Boolean) as Agent[];
       setRecentAgents(agents);
 
-      const jobIds = Array.from({ length: jobCount }, (_, i) => i + 1);
-      const allJobs = (await Promise.all(jobIds.map((i) => getJob(i)))).filter(Boolean) as Job[];
-      const fundedCount = allJobs.filter((j) => j.status === 1).length;
-      const completedCount = allJobs.filter((j) => j.status === 3).length;
-      const escrows = await Promise.all(
-        allJobs.filter((j) => j.status === 1 || j.status === 2).map((j) => getEscrowBalance(j.id))
-      );
-      const totalEscrow = escrows.reduce((a, b) => a + (b || 0), 0);
-
-      setRecentJobs(allJobs.slice(0, 5));
-      setStats({ agents: agentCount, jobs: jobCount, fundedJobs: fundedCount, completedJobs: completedCount, totalEscrow });
+      setRecentJobs([...sbtcJobs, ...stxJobs]);
+      setStats({
+        agents: agentCount,
+        jobs: sbtcCount + stxCount,
+        sbtcJobs: sbtcCount,
+        stxJobs: stxCount,
+      });
     } catch (err) {
       console.error("Dashboard error:", err);
       setError("Failed to load dashboard data.");
@@ -56,8 +72,8 @@ export default function DashboardPage() {
   const STATS = [
     { icon: Fingerprint, label: "Agents", value: stats.agents },
     { icon: Briefcase, label: "Jobs", value: stats.jobs },
-    { icon: Coins, label: "Funded", value: stats.fundedJobs },
-    { icon: CheckCircle2, label: "Completed", value: stats.completedJobs },
+    { icon: Bitcoin, label: "sBTC jobs", value: stats.sbtcJobs },
+    { icon: Coins, label: "STX jobs", value: stats.stxJobs },
   ];
 
   return (
@@ -82,12 +98,6 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {stats.totalEscrow > 0 && (
-        <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-bitcoin/25 bg-bitcoin/10 px-4 py-2.5 text-sm text-bitcoin-400">
-          <Coins className="h-4 w-4" /> Total escrow locked: <span className="font-mono">{formatStx(stats.totalEscrow)} STX</span>
-        </div>
-      )}
-
       <div className="mt-8 grid gap-4 md:grid-cols-2">
         <Link href="/agents" className="card card-hover group flex items-start gap-4 p-6">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-brand/25 bg-brand/10 text-brand-300">
@@ -105,7 +115,7 @@ export default function DashboardPage() {
           </div>
           <div>
             <h3 className="font-semibold text-white">Job Escrow</h3>
-            <p className="mt-1 text-sm text-mist-300">Create and settle jobs with STX escrow.</p>
+            <p className="mt-1 text-sm text-mist-300">Create and settle jobs with sBTC or STX; both remain first-class product options.</p>
             <span className="mt-2 inline-flex items-center gap-1 text-sm text-brand-300">View jobs <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span>
           </div>
         </Link>
@@ -138,13 +148,13 @@ export default function DashboardPage() {
             {recentJobs.length === 0 ? (
               <p className="text-sm text-mist-500">No jobs created yet.</p>
             ) : recentJobs.map((job) => (
-              <Link key={job.id} href={`/jobs/${job.id}`} className="card card-hover block p-4">
+              <Link key={`${job.currency}-${job.id}`} href={jobHref(job.id, job.currency)} className="card card-hover block p-4">
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold text-white">Job #{job.id}</p>
+                  <p className="font-semibold text-white">Job #{job.id} <span className="ml-1 text-xs text-mist-500">{currencyProtocolLabel(job.currency)}</span></p>
                   <StatusBadge status={job.status} />
                 </div>
                 <p className="mt-1 text-sm text-mist-500">{trunc(job.description)}</p>
-                <p className="mt-2 font-mono text-xs text-mist-300">{formatStx(job.budget)} STX</p>
+                <p className="mt-2 font-mono text-xs text-mist-300">{formatJobAmount(job.budget, job.currency)}</p>
               </Link>
             ))}
           </div>

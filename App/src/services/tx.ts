@@ -29,21 +29,30 @@ interface Toaster {
 }
 
 // Toast on submit, poll the chain, then toast + refresh on confirmation.
-export async function trackTx(txid: string, toast: Toaster, onConfirmed?: () => void) {
+export async function trackTx(
+  txid: string,
+  toast: Toaster,
+  onConfirmed?: () => void,
+  onStatus?: (status: "pending" | "success" | "failed") => void
+) {
   toast.info("Transaction submitted", txExplorer(txid));
+  onStatus?.("pending");
   for (let i = 0; i < 24; i++) {
     await sleep(8000);
     const s = await txStatus(txid);
     if (s === "success") {
+      onStatus?.("success");
       toast.success("Confirmed on-chain", txExplorer(txid));
       onConfirmed?.();
       return;
     }
     if (s.startsWith("abort")) {
+      onStatus?.("failed");
       toast.error("Transaction failed on-chain", txExplorer(txid));
       return;
     }
   }
+  onStatus?.("pending");
   toast.info("Still pending, check the explorer", txExplorer(txid));
   onConfirmed?.();
 }

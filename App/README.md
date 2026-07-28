@@ -4,7 +4,9 @@ Next.js 14 frontend for PerkOS Stacks Agentic Commerce.
 
 ## Overview
 
-React-based web application for interacting with PerkOS Stacks Agentic Commerce smart contracts. Provides UI for agent management, job escrow, reputation tracking, and analytics.
+React application for the PerkOS contracts on Stacks. Users can settle jobs in sBTC or STX. sBTC is
+the recommended Bitcoin-denominated path; the STX contract provides the same hardened lifecycle
+safeguards for users who prefer STX-denominated work.
 
 ## Features
 
@@ -14,21 +16,19 @@ React-based web application for interacting with PerkOS Stacks Agentic Commerce 
 |------|-------|-------------|
 | Home | `/` | Hero section, features overview |
 | Dashboard | `/dashboard` | Protocol stats, recent activity |
-| Agents | `/agents` | Agent CRUD, profiles, ratings |
-| Jobs | `/jobs` | Job creation, funding, completion |
-| Analytics | `/analytics` | Metrics, charts, KPIs |
+| Agents | `/agents` | Paginated agent directory, ownership controls, reputation and validation |
+| Jobs | `/jobs` | Role-aware sBTC and STX job lifecycle |
+| Job detail | `/jobs/[id]?currency=sbtc` | Currency-safe job detail and deliverable commitment |
+| Analytics | `/analytics` | Currency-separated protocol metrics |
 | Activity | `/activity` | Protocol event timeline |
 | Search | `/search` | Full-text search |
 
 ### Components
 
-- **WalletConnect**: Stacks wallet integration
-- **AgentProfile**: Agent details with reputation
-- **X402PaymentButton**: Payment-native requests
-- **Notification**: Toast notifications system
-- **TransactionButton**: Action buttons with states
-- **LoadingSpinner**: Loading states
-- **ErrorMessage**: Error display with retry
+- **WalletConnect**: Leather-compatible Stacks wallet integration
+- **X402PaymentButton**: Currency-aware, on-chain verified payment requests
+- **Toast**: Transaction and wallet feedback
+- **JobStepper**: Escrow lifecycle visualization
 - **StatusBadge**: Status indicators
 
 ## Tech Stack
@@ -36,15 +36,18 @@ React-based web application for interacting with PerkOS Stacks Agentic Commerce 
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **Wallet**: @stacks/connect-react
+- **Wallet**: @stacks/connect
 - **Blockchain**: @stacks/transactions
 
 ## Installation
 
 ```bash
 cd App
+nvm use
 npm install
 ```
+
+Node.js 20 or newer is required.
 
 ## Development
 
@@ -74,17 +77,16 @@ src/
 │   └── page.tsx
 ├── components/             # Reusable UI components
 │   ├── WalletConnect.tsx
-│   ├── AgentProfile.tsx
 │   ├── X402PaymentButton.tsx
-│   ├── Notification.tsx
-│   ├── TransactionButton.tsx
-│   ├── LoadingSpinner.tsx
-│   ├── ErrorMessage.tsx
+│   ├── Toast.tsx
+│   ├── JobStepper.tsx
 │   └── StatusBadge.tsx
 ├── services/               # Contract interaction layer
 │   ├── agent-registry.ts
 │   ├── agentic-commerce.ts
-│   ├── reputation.ts
+│   ├── sbtc-commerce.ts
+│   ├── commerce.ts
+│   ├── reputation-v2.ts
 │   ├── validation.ts
 │   └── x402.ts
 ├── middleware/             # API middleware
@@ -118,24 +120,20 @@ await createJob(provider, evaluator, expiredAt, description);
 
 ## Configuration
 
-Update `src/constants/contract.ts` with deployed contract addresses:
+Copy `.env.example` to `.env.local`. The public app defaults to the verified mainnet deployment;
+testnet must be selected explicitly.
 
-```typescript
-export const CONTRACT_ADDRESS = 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM';
-
-export const CONTRACTS = {
-  AGENT_REGISTRY: `${CONTRACT_ADDRESS}.agent-registry`,
-  AGENTIC_COMMERCE: `${CONTRACT_ADDRESS}.agentic-commerce`,
-  REPUTATION_REGISTRY: `${CONTRACT_ADDRESS}.reputation-registry`,
-  VALIDATION_REGISTRY: `${CONTRACT_ADDRESS}.validation-registry`,
-};
+```env
+NEXT_PUBLIC_STACKS_NETWORK=mainnet
+NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
+NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v2
 ```
 
 ## Wallet Setup
 
 1. Install [Leather Wallet](https://leather.io/)
-2. Switch to testnet
-3. Fund with testnet STX
+2. Select the same network configured for the app
+3. Hold STX for transaction fees and STX-denominated jobs; hold sBTC for sBTC-denominated jobs
 4. Connect via "Connect Wallet" button
 
 ## License

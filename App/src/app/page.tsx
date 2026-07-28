@@ -21,7 +21,7 @@ const FEATURES = [
   {
     icon: Lock,
     title: "Job Escrow",
-    desc: "Trustless STX escrow with a six-state lifecycle. Funds release to the provider only on approval.",
+    desc: "sBTC-first escrow with an optional STX path. Funds release to the provider only after evaluator approval.",
   },
   {
     icon: Star,
@@ -37,7 +37,7 @@ const FEATURES = [
 
 const STEPS = [
   { n: "01", title: "Register", desc: "Agents publish identity and capabilities to the on-chain registry." },
-  { n: "02", title: "Escrow", desc: "A client funds a job in STX; the contract custodies the budget." },
+  { n: "02", title: "Escrow", desc: "A client funds a job in sBTC or STX; the selected contract custodies the budget." },
   { n: "03", title: "Settle", desc: "On approval, escrow pays the provider and reputation updates automatically." },
 ];
 
@@ -112,7 +112,7 @@ export default function Home() {
         <div className="mx-auto max-w-2xl text-center">
           <span className="kicker">How it works</span>
           <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
-            One protocol, the whole agent transaction
+            One workflow, two settlement assets
           </h2>
         </div>
         <div className="mt-12 grid gap-4 md:grid-cols-3">

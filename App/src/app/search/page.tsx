@@ -4,8 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Search as SearchIcon, Fingerprint, Briefcase, ChevronRight } from "lucide-react";
 import { getAgent, getAgentCount } from "../../services/agent-registry";
-import { getJob, getJobCount } from "../../services/agentic-commerce";
-import { formatStx } from "../../utils/format";
+import {
+  currencyProtocolLabel,
+  formatJobAmount,
+  getAllCommerceJobs,
+  jobHref,
+} from "../../services/commerce";
 
 interface SearchResult {
   id: string;
@@ -30,13 +34,15 @@ export default function SearchPage() {
       const searchResults: SearchResult[] = [];
       const q = query.toLowerCase();
 
-      const [agentCount, jobCount] = await Promise.all([getAgentCount(), getJobCount()]);
-      const agentIds = Array.from({ length: agentCount }, (_, i) => i + 1);
-      const jobIds = Array.from({ length: jobCount }, (_, i) => i + 1);
-      const [agents, jobs] = await Promise.all([
-        Promise.all(agentIds.map((i) => getAgent(i))),
-        Promise.all(jobIds.map((i) => getJob(i))),
+      const [agentCount, jobs] = await Promise.all([
+        getAgentCount(),
+        getAllCommerceJobs({ limitPerCurrency: 100 }),
       ]);
+      const agentIds = Array.from(
+        { length: Math.min(agentCount, 200) },
+        (_, i) => agentCount - i
+      );
+      const agents = await Promise.all(agentIds.map((i) => getAgent(i)));
 
       agents.forEach((agent, idx) => {
         const i = idx + 1;
@@ -48,12 +54,19 @@ export default function SearchPage() {
         }
       });
 
-      jobs.forEach((job, idx) => {
-        const i = idx + 1;
+      jobs.forEach((job) => {
         if (job && (job.description.toLowerCase().includes(q) || job.client.toLowerCase().includes(q) || (job.provider && job.provider.toLowerCase().includes(q)))) {
           searchResults.push({
-            id: `job-${i}`, type: "job", title: `Job #${i}`, description: job.description, link: `/jobs/${i}`,
-            metadata: { budget: `${formatStx(job.budget)} STX`, status: ["Open", "Funded", "Submitted", "Completed", "Rejected", "Expired"][job.status] || "Unknown" },
+            id: `job-${job.currency}-${job.id}`,
+            type: "job",
+            title: `Job #${job.id}`,
+            description: job.description,
+            link: jobHref(job.id, job.currency),
+            metadata: {
+              protocol: currencyProtocolLabel(job.currency),
+              budget: formatJobAmount(job.budget, job.currency),
+              status: ["Open", "Funded", "Submitted", "Completed", "Rejected", "Expired"][job.status] || "Unknown",
+            },
           });
         }
       });
@@ -76,7 +89,7 @@ export default function SearchPage() {
       </Link>
       <div className="mt-5">
         <h1 className="text-3xl font-bold tracking-tight">Search</h1>
-        <p className="mt-1.5 text-mist-300">Find agents, jobs and addresses on the protocol.</p>
+        <p className="mt-1.5 text-mist-300">Find agents and the newest indexed sBTC or STX jobs.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="mt-8">

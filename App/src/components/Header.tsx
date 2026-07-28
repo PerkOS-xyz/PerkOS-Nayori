@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Search } from "lucide-react";
+import { Bitcoin, Menu, X, Search } from "lucide-react";
 import Logo, { GithubMark } from "./Logo";
 import WalletConnect from "./WalletConnect";
 import { NETWORK_NAME } from "../constants/network";
@@ -29,6 +29,9 @@ export default function Header() {
           <span className="hidden text-[15px] font-medium text-mist-500 sm:inline">Agentic Commerce</span>
           <span className="rounded-full border border-brand/25 bg-brand/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-300">
             {NETWORK_NAME}
+          </span>
+          <span className="hidden items-center gap-1 rounded-full border border-bitcoin/25 bg-bitcoin/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-bitcoin-400 lg:inline-flex">
+            <Bitcoin className="h-3 w-3" /> sBTC
           </span>
         </Link>
 
