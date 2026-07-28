@@ -20,5 +20,23 @@ epoch = "2.5"
 path = "contracts/validation-registry.clar"
 epoch = "2.5"
 
+# --- sBTC escrow (Milestone 1) ---
+[contracts.sip-010-trait]
+path = "contracts/sip-010-trait.clar"
+epoch = "2.5"
+
+# Test harness only. Never deployed to testnet or mainnet.
+[contracts.mock-sbtc-token]
+path = "contracts/mock-sbtc-token.clar"
+epoch = "2.5"
+
+[contracts.reputation-registry-v2]
+path = "contracts/reputation-registry-v2.clar"
+epoch = "2.5"
+
+[contracts.sbtc-commerce]
+path = "contracts/sbtc-commerce.clar"
+epoch = "2.5"
+
 [repl]
 costs_version = 2
