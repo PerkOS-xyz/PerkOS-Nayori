@@ -133,7 +133,7 @@ export default function Home() {
             Built with
           </span>
           <div className="flex flex-wrap items-center justify-center gap-2.5">
-            {["Stacks", "Clarity", "sBTC", "Next.js 14", "Stacks.js", "TypeScript"].map((t) => (
+            {["Stacks", "Clarity", "sBTC", "Next.js 15", "Stacks.js", "TypeScript"].map((t) => (
               <span
                 key={t}
                 className="rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5 text-sm text-mist-300"

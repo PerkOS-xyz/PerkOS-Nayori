@@ -2,7 +2,8 @@
 
 ## Overview
 
-The frontend is built with Next.js 14 (App Router) and integrates with Stacks contracts using `@stacks/connect-react` and `@stacks/transactions`.
+The frontend is built with Next.js 15 (App Router) and integrates with Stacks contracts using
+`@stacks/connect` and `@stacks/transactions`.
 
 ## Architecture
 

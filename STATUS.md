@@ -53,7 +53,7 @@
 ## Tech Stack
 
 - **Smart Contracts**: Clarity on Stacks
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
+- **Frontend**: Next.js 15, TypeScript, Tailwind CSS
 - **Wallet**: @stacks/connect-react (Hiro/Leather)
 - **Payments**: STX via x402-style protocol
 - **Testing**: Vitest, Clarinet

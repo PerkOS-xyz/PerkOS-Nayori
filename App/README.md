@@ -1,6 +1,6 @@
 # App - PerkOS Stacks Agentic Commerce Frontend
 
-Next.js 14 frontend for PerkOS Stacks Agentic Commerce.
+Next.js 15 frontend for PerkOS Stacks Agentic Commerce.
 
 ## Overview
 
@@ -33,7 +33,7 @@ safeguards for users who prefer STX-denominated work.
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Wallet**: @stacks/connect
