@@ -1,8 +1,15 @@
-import { getJob, getJobCount, getEscrowBalance, Job } from "./agentic-commerce";
+import {
+  getJob,
+  getJobCount,
+  getEscrowBalance,
+  hasRatedJob as hasRatedStxJob,
+  Job,
+} from "./agentic-commerce";
 import {
   getSbtcJob,
   getSbtcJobCount,
   getSbtcEscrowBalance,
+  hasRatedJob as hasRatedSbtcJob,
   SbtcJob,
 } from "./sbtc-commerce";
 import { formatSbtcCompact, formatStx } from "../utils/format";
@@ -11,6 +18,16 @@ import { STX_COMMERCE_IS_HARDENED } from "../constants/contract";
 
 export type Currency = "sbtc" | "stx";
 export type CommerceJob = (Job | SbtcJob) & { currency: Currency };
+export type RatingAvailability =
+  | "checking"
+  | "available"
+  | "rated"
+  | "unavailable";
+
+export const canOfferRating = (
+  hasPermission: boolean,
+  availability?: RatingAvailability
+) => hasPermission && availability === "available";
 
 export const currencyLabel = (currency: Currency) =>
   currency === "sbtc" ? "sBTC" : "STX";
@@ -49,6 +66,23 @@ export async function getCommerceEscrow(jobId: number, currency: Currency): Prom
   return currency === "sbtc"
     ? getSbtcEscrowBalance(jobId)
     : getEscrowBalance(jobId);
+}
+
+export async function getRatingAvailability(
+  jobId: number,
+  currency: Currency,
+  rater: string
+): Promise<Exclude<RatingAvailability, "checking">> {
+  try {
+    const rated =
+      currency === "sbtc"
+        ? await hasRatedSbtcJob(jobId, rater)
+        : await hasRatedStxJob(jobId, rater);
+    return rated ? "rated" : "available";
+  } catch (error) {
+    console.error(`Error checking ${currency} rating status:`, error);
+    return "unavailable";
+  }
 }
 
 export async function getCommerceJobs(

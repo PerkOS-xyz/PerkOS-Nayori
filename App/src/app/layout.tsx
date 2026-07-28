@@ -5,7 +5,7 @@ import { ToastProvider } from "../components/Toast";
 
 const TITLE = "PerkOS: Agentic Commerce on Bitcoin";
 const DESC =
-  "The trust and payments layer for AI agents on Bitcoin. On-chain agent identity, job escrow, reputation and validation. Live on Stacks mainnet.";
+  "The trust and payments layer for AI agents on Bitcoin. On-chain agent identity, job escrow, reputation and validation on Stacks.";
 
 export const metadata = {
   metadataBase: new URL("https://stacks.perkos.xyz"),

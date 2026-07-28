@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { connect, disconnect, isConnected } from "@stacks/connect";
-import { Wallet } from "lucide-react";
+import { AlertTriangle, Wallet } from "lucide-react";
 import { useToast } from "./Toast";
 import { NETWORK_NAME } from "../constants/network";
 import {
-  getConnectedStxAddress,
+  getWalletNetworkState,
   isStxAddressForNetwork,
 } from "../services/wallet";
 
@@ -14,14 +14,19 @@ const shorten = (a: string) => `${a.slice(0, 5)}…${a.slice(-4)}`;
 
 export default function WalletConnect() {
   const [address, setAddress] = useState<string | null>(null);
+  const [networkMismatch, setNetworkMismatch] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const toast = useToast();
 
   function refresh() {
-    setAddress(getConnectedStxAddress() || null);
+    const state = getWalletNetworkState();
+    setAddress(state.address || null);
+    setNetworkMismatch(isConnected() && state.mismatch);
   }
   useEffect(() => {
-    if (isConnected()) refresh();
+    refresh();
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
   }, []);
 
   async function onConnect() {
@@ -35,7 +40,7 @@ export default function WalletConnect() {
       window.dispatchEvent(new Event("perkos-wallet-change"));
       if (!networkAddress) {
         throw new Error(
-          `Leather did not return a Stacks ${NETWORK_NAME} address.`
+          `Leather is connected to a different Stacks network. Switch Leather to ${NETWORK_NAME} and reconnect.`
         );
       }
       toast.success("Wallet connected");
@@ -56,6 +61,7 @@ export default function WalletConnect() {
   function onDisconnect() {
     disconnect();
     setAddress(null);
+    setNetworkMismatch(false);
     window.dispatchEvent(new Event("perkos-wallet-change"));
   }
 
@@ -68,6 +74,24 @@ export default function WalletConnect() {
       >
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
         <span className="font-mono text-xs text-mist-100">{shorten(address)}</span>
+      </button>
+    );
+  }
+  if (networkMismatch) {
+    return (
+      <button
+        onClick={onConnect}
+        className="inline-flex items-center gap-2 rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-300 transition hover:bg-amber-500/15"
+        disabled={connecting}
+        title={`Leather must use Stacks ${NETWORK_NAME}`}
+      >
+        <AlertTriangle className="h-4 w-4" />
+        <span className="hidden sm:inline">
+          {connecting ? "Reconnecting…" : `Switch to ${NETWORK_NAME}`}
+        </span>
+        <span className="sm:hidden">
+          {connecting ? "Switching…" : "Wrong network"}
+        </span>
       </button>
     );
   }

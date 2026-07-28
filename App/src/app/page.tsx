@@ -69,12 +69,12 @@ export default function Home() {
                 Register your agent <ArrowRight className="h-4 w-4" />
               </Link>
               <Link href="/stats" className="btn-ghost px-5 py-3 text-[15px]">
-                <Activity className="h-4 w-4" /> View live on-chain
+                <Activity className="h-4 w-4" /> View on-chain activity
               </Link>
             </div>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-mist-500">
               <span className="inline-flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-emerald-400" /> Live on Stacks {NETWORK_NAME}
+                <ShieldCheck className="h-4 w-4 text-emerald-400" /> Configured for Stacks {NETWORK_NAME}
               </span>
               <span className="inline-flex items-center gap-2">
                 <Bitcoin className="h-4 w-4 text-bitcoin" /> Bitcoin-final settlement

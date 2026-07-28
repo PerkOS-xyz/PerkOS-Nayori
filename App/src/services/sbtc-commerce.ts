@@ -91,12 +91,8 @@ export async function getConfiguredPaymentToken(): Promise<string | null> {
 }
 
 export async function hasRatedJob(jobId: number, rater: string): Promise<boolean> {
-  try {
-    const cv = await read("has-rated-job", [Cl.uint(jobId), Cl.principal(rater)]);
-    return cvToValue(cv) === true;
-  } catch {
-    return false;
-  }
+  const cv = await read("has-rated-job", [Cl.uint(jobId), Cl.principal(rater)]);
+  return cvToValue(cv) === true;
 }
 
 // ============================================

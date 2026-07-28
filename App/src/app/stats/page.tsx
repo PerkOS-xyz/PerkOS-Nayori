@@ -72,7 +72,7 @@ export default function StatsPage() {
         <div>
           <span className="kicker">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            Live on Stacks {CHAIN_PARAM}
+            On-chain data · Stacks {CHAIN_PARAM}
           </span>
           <h1 className="mt-4 text-3xl font-bold tracking-tight">On-chain Activity</h1>
           <p className="mt-1.5 text-mist-300">
