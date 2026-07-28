@@ -105,6 +105,36 @@ and `is-registered-caller` returns true for `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK
 
 Deploy with [`scripts/deploy-sbtc-mainnet.mjs`](../scripts/deploy-sbtc-mainnet.mjs).
 
+### End-to-end sBTC job on mainnet — verified ✅
+
+A complete agent job was funded, escrowed, delivered, settled and rated in **sBTC on Stacks
+mainnet**, produced by [`scripts/e2e-sbtc-mainnet.mjs`](../scripts/e2e-sbtc-mainnet.mjs).
+All 15 assertions passed.
+
+- Job id `1` on `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce`, final status **COMPLETED (u3)**
+- Budget **10,000 sats** (0.0001 sBTC) of canonical sBTC
+- Provider `SP3DQCVZ26XCDGZFYB4TXJC6TMMZAVXZTER1DP8HV` received exactly 10,000 sats
+- Evaluator `SP1VY24ADP27HERH4XMQTK44XB9QX4ZASPMPJKPVF` settled the job
+- Reputation after settlement: `completed-jobs = 1`, `average-score-x100 = 500` (5.00)
+
+| Step | Transaction |
+|---|---|
+| create-job | [`1319fcf7…`](https://explorer.hiro.so/txid/1319fcf70575baa1f4beb273cd0ec7194df2668a6e5681ee61c2183b83d3a675?chain=mainnet) |
+| set-budget | [`8be6bb39…`](https://explorer.hiro.so/txid/8be6bb3915d72bb2d74132a36b1b7b608fdac9326bb07da1fef91637db1661d0?chain=mainnet) |
+| **fund-job** (10,000 sats escrowed) | [`af4129fe…`](https://explorer.hiro.so/txid/af4129fe46fc913fda7b9fa87543f05fc5f4430b9b5f26a46f9c3032ea0fcbd4?chain=mainnet) |
+| assign-provider | [`0993f5bd…`](https://explorer.hiro.so/txid/0993f5bd4bb1524db673d42960560cf558ec9bef18ccdf78ff562aa7a2598ee2?chain=mainnet) |
+| submit-work | [`ed2436fd…`](https://explorer.hiro.so/txid/ed2436fd7ed908b88ceafd3eefc79c875d4e45931382fa0eb94dffc7516e7720?chain=mainnet) |
+| reject attempt by client, **refused with `u309`** | [`366df31a…`](https://explorer.hiro.so/txid/366df31af4f9cedc043ef381dacce91b10d8d955e74cc4e927e6e9c88cc85f2d?chain=mainnet) |
+| **complete-job** (provider paid in sBTC) | [`f1a4fb78…`](https://explorer.hiro.so/txid/f1a4fb78182262fb68c706e66374827550701b6d5dbccdc607588b1f0c951539?chain=mainnet) |
+| rate-provider | [`05aadbdb…`](https://explorer.hiro.so/txid/05aadbdb1dccf98c353bd7974a562b1ecf477e99639449f8f43b3d62d0259000?chain=mainnet) |
+
+The reject attempt is deliberate evidence, not a failure: it demonstrates on mainnet that a client
+cannot reclaim escrow after receiving the deliverable. The escrow balance was verified unchanged
+immediately afterwards, and settlement then proceeded normally through the evaluator.
+
+The provider and evaluator in this run are wallets created for the demonstration, which exercises the
+full mechanism. Adoption by independent, non-team wallets is tracked separately.
+
 ### sBTC stack on testnet — deployed ✅
 
 Deployer `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`.
