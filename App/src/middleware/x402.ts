@@ -53,7 +53,7 @@ export async function x402Middleware(req: NextRequest): Promise<{
   }
 
   // Verify payment was made
-  const isValid = await verifyX402Payment(paymentRequest.jobId);
+  const isValid = await verifyX402Payment(paymentRequest.jobId, paymentRequest.currency);
 
   if (!isValid) {
     return {

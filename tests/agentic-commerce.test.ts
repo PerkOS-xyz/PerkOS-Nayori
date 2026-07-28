@@ -36,12 +36,12 @@ function createAndFund() {
 }
 
 /**
- * complete-job / reject-job call into reputation-registry, which only accepts
+ * complete-job / reject-job call into reputation-registry-v2, which only accepts
  * whitelisted protocol-callers. Register the commerce contract as one.
  */
 function whitelistCommerce() {
   return simnet.callPublicFn(
-    "reputation-registry",
+    "reputation-registry-v2",
     "add-protocol-caller",
     [Cl.contractPrincipal(deployer, "agentic-commerce")],
     deployer
@@ -117,7 +117,7 @@ describe("agentic-commerce – job lifecycle & escrow", () => {
 
     expect(
       simnet.callReadOnlyFn(
-        "reputation-registry",
+        "reputation-registry-v2",
         "get-reputation",
         [Cl.principal(provider)],
         deployer
@@ -126,7 +126,7 @@ describe("agentic-commerce – job lifecycle & escrow", () => {
       Cl.tuple({
         "total-score": Cl.uint(0),
         "rating-count": Cl.uint(0),
-        "average-score": Cl.uint(0),
+        "average-score-x100": Cl.uint(0),
         "completed-jobs": Cl.uint(1),
         "disputed-jobs": Cl.uint(0),
       })
@@ -252,12 +252,12 @@ describe("agentic-commerce – job lifecycle & escrow", () => {
       expect(statusOf()).toBe(5); // EXPIRED
     });
 
-    it("cannot expire a job before its expiry (ERR_JOB_EXPIRED u204)", () => {
+    it("cannot expire a job before its expiry (ERR_NOT_EXPIRED u216)", () => {
       // long-lived job (default createJob uses +1000 blocks)
       createJob();
       expect(
         simnet.callPublicFn(C, "expire-job", [Cl.uint(1)], deployer).result
-      ).toBeErr(Cl.uint(204));
+      ).toBeErr(Cl.uint(216));
     });
   });
 
@@ -287,15 +287,151 @@ describe("agentic-commerce – job lifecycle & escrow", () => {
       ).toBeErr(Cl.uint(208));
     });
 
-    it("reject-job by a stranger (neither client nor evaluator) returns ERR_NOT_AUTHORIZED (u201)", () => {
+    it("reject-job by a non-evaluator returns ERR_NOT_EVALUATOR (u209)", () => {
       whitelistCommerce();
       createAndFund();
       simnet.callPublicFn(C, "assign-provider", [Cl.uint(1), Cl.principal(provider)], client);
       simnet.callPublicFn(C, "submit-work", [Cl.uint(1), Cl.bufferFromAscii("work")], provider);
-      // provider is neither client nor evaluator -> not authorized to reject
       expect(
         simnet.callPublicFn(C, "reject-job", [Cl.uint(1)], provider).result
+      ).toBeErr(Cl.uint(209));
+    });
+  });
+
+  describe("v2 hardening", () => {
+    it("client cannot reject delivered work and reclaim escrow", () => {
+      whitelistCommerce();
+      createAndFund();
+      simnet.callPublicFn(C, "assign-provider", [Cl.uint(1), Cl.principal(provider)], client);
+      simnet.callPublicFn(C, "submit-work", [Cl.uint(1), Cl.bufferFromAscii("work")], provider);
+
+      expect(
+        simnet.callPublicFn(C, "reject-job", [Cl.uint(1)], client).result
+      ).toBeErr(Cl.uint(209));
+      expect(statusOf()).toBe(2);
+      expect(
+        simnet.callReadOnlyFn(C, "get-escrow-balance", [Cl.uint(1)], deployer).result
+      ).toBeOk(Cl.uint(BUDGET));
+    });
+
+    it("client, provider and evaluator must be distinct", () => {
+      expect(
+        simnet.callPublicFn(
+          C,
+          "create-job",
+          [
+            Cl.none(),
+            Cl.principal(client),
+            Cl.uint(simnet.blockHeight + 100),
+            Cl.stringAscii("self evaluated"),
+          ],
+          client
+        ).result
+      ).toBeErr(Cl.uint(213));
+
+      expect(
+        simnet.callPublicFn(
+          C,
+          "create-job",
+          [
+            Cl.some(Cl.principal(evaluator)),
+            Cl.principal(evaluator),
+            Cl.uint(simnet.blockHeight + 100),
+            Cl.stringAscii("same provider and evaluator"),
+          ],
+          client
+        ).result
+      ).toBeErr(Cl.uint(213));
+    });
+
+    it("submit-work and complete-job are refused after expiry", () => {
+      simnet.callPublicFn(
+        C,
+        "create-job",
+        [
+          Cl.none(),
+          Cl.principal(evaluator),
+          Cl.uint(simnet.blockHeight + 20),
+          Cl.stringAscii("short settlement window"),
+        ],
+        client
+      );
+      simnet.callPublicFn(C, "set-budget", [Cl.uint(1), Cl.uint(BUDGET)], client);
+      simnet.callPublicFn(C, "fund-job", [Cl.uint(1)], client);
+      simnet.callPublicFn(C, "assign-provider", [Cl.uint(1), Cl.principal(provider)], client);
+      simnet.mineEmptyBlocks(25);
+
+      expect(
+        simnet.callPublicFn(C, "submit-work", [Cl.uint(1), Cl.bufferFromAscii("late")], provider)
+          .result
+      ).toBeErr(Cl.uint(204));
+
+      simnet.callPublicFn(
+        C,
+        "create-job",
+        [
+          Cl.none(),
+          Cl.principal(evaluator),
+          Cl.uint(simnet.blockHeight + 20),
+          Cl.stringAscii("short evaluation window"),
+        ],
+        client
+      );
+      simnet.callPublicFn(C, "set-budget", [Cl.uint(2), Cl.uint(BUDGET)], client);
+      simnet.callPublicFn(C, "fund-job", [Cl.uint(2)], client);
+      simnet.callPublicFn(C, "assign-provider", [Cl.uint(2), Cl.principal(provider)], client);
+      simnet.callPublicFn(C, "submit-work", [Cl.uint(2), Cl.bufferFromAscii("on time")], provider);
+      simnet.mineEmptyBlocks(25);
+
+      expect(
+        simnet.callPublicFn(C, "complete-job", [Cl.uint(2)], evaluator).result
+      ).toBeErr(Cl.uint(204));
+    });
+
+    it("only job parties can rate a completed provider, once per rater", () => {
+      whitelistCommerce();
+      createAndFund();
+      simnet.callPublicFn(C, "assign-provider", [Cl.uint(1), Cl.principal(provider)], client);
+      simnet.callPublicFn(C, "submit-work", [Cl.uint(1), Cl.bufferFromAscii("work")], provider);
+      simnet.callPublicFn(C, "complete-job", [Cl.uint(1)], evaluator);
+
+      expect(
+        simnet.callPublicFn(
+          C,
+          "rate-provider",
+          [Cl.uint(1), Cl.uint(5), Cl.stringAscii("excellent")],
+          provider
+        ).result
       ).toBeErr(Cl.uint(201));
+
+      expect(
+        simnet.callPublicFn(
+          C,
+          "rate-provider",
+          [Cl.uint(1), Cl.uint(5), Cl.stringAscii("excellent")],
+          client
+        ).result
+      ).toBeOk(Cl.bool(true));
+
+      expect(
+        simnet.callPublicFn(
+          C,
+          "rate-provider",
+          [Cl.uint(1), Cl.uint(4), Cl.stringAscii("again")],
+          client
+        ).result
+      ).toBeErr(Cl.uint(214));
+    });
+
+    it("settlement succeeds even when reputation is not allow-listed", () => {
+      createAndFund();
+      simnet.callPublicFn(C, "assign-provider", [Cl.uint(1), Cl.principal(provider)], client);
+      simnet.callPublicFn(C, "submit-work", [Cl.uint(1), Cl.bufferFromAscii("work")], provider);
+
+      expect(
+        simnet.callPublicFn(C, "complete-job", [Cl.uint(1)], evaluator).result
+      ).toBeOk(Cl.bool(true));
+      expect(statusOf()).toBe(3);
     });
   });
 });

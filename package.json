@@ -2,12 +2,16 @@
   "name": "stacks-agentic-commerce-contracts",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "type": "module",
   "description": "Clarity contract tests for PerkOS Stacks Agentic Commerce",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:report": "vitest run -- --coverage --costs"
+    "test:report": "vitest run -- --coverage --costs",
+    "deploy:stx-v2": "node scripts/deploy-stx-v2.mjs"
   },
   "devDependencies": {
     "@stacks/clarinet-sdk": "^3.8.1",

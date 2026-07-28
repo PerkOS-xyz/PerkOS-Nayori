@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, RefreshCw, Fingerprint, Briefcase, CheckCircle2, Coins, Users, Activity as ActivityIcon } from "lucide-react";
+import { ArrowLeft, RefreshCw, Fingerprint, Briefcase, CheckCircle2, Activity as ActivityIcon } from "lucide-react";
 import { getAgentCount } from "../../services/agent-registry";
-import { getJob, getJobCount, getEscrowBalance, Job } from "../../services/agentic-commerce";
+import { getAllCommerceJobs, getCommerceJobCount } from "../../services/commerce";
 import { getOnchainStats, OnchainStats } from "../../services/onchain-stats";
-import { formatStx } from "../../utils/format";
+import { formatSbtcCompact, formatStx } from "../../utils/format";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorMessage from "../../components/ErrorMessage";
 
@@ -15,9 +15,14 @@ const STATUS_LABELS = ["Open", "Funded", "Submitted", "Completed", "Rejected", "
 interface Data {
   agents: number;
   jobs: number;
+  indexedJobs: number;
+  sbtcJobs: number;
+  stxJobs: number;
   byStatus: number[];
-  totalEscrow: number;
-  avgBudget: number;
+  sbtcEscrow: number;
+  stxEscrow: number;
+  sbtcAvgBudget: number;
+  stxAvgBudget: number;
   completionRate: number;
   chain: OnchainStats;
 }
@@ -35,29 +40,40 @@ export default function AnalyticsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [agents, jobCount, chain] = await Promise.all([getAgentCount(), getJobCount(), getOnchainStats()]);
-      const ids = Array.from({ length: jobCount }, (_, i) => i + 1);
-      const jobs = (await Promise.all(ids.map((i) => getJob(i)))).filter(Boolean) as Job[];
+      const [agents, sbtcCount, stxCount, jobs, chain] = await Promise.all([
+        getAgentCount(),
+        getCommerceJobCount("sbtc"),
+        getCommerceJobCount("stx"),
+        getAllCommerceJobs({ includeEscrow: true, limitPerCurrency: 100 }),
+        getOnchainStats(),
+      ]);
 
       const byStatus = [0, 0, 0, 0, 0, 0];
-      let budgetSum = 0, budgetCount = 0;
       for (const j of jobs) {
         if (j.status >= 0 && j.status < 6) byStatus[j.status]++;
-        if (j.budget > 0) { budgetSum += j.budget; budgetCount++; }
       }
-      const escrows = await Promise.all(
-        jobs.filter((j) => j.status === 1 || j.status === 2).map((j) => getEscrowBalance(j.id))
-      );
-      const totalEscrow = escrows.reduce((a, b) => a + (b || 0), 0);
+      const sbtc = jobs.filter((job) => job.currency === "sbtc");
+      const stx = jobs.filter((job) => job.currency === "stx");
+      const sbtcBudgeted = sbtc.filter((job) => job.budget > 0);
+      const stxBudgeted = stx.filter((job) => job.budget > 0);
       const completed = byStatus[3];
 
       setData({
         agents,
-        jobs: jobCount,
+        jobs: sbtcCount + stxCount,
+        indexedJobs: jobs.length,
+        sbtcJobs: sbtcCount,
+        stxJobs: stxCount,
         byStatus,
-        totalEscrow,
-        avgBudget: budgetCount ? budgetSum / budgetCount : 0,
-        completionRate: jobCount > 0 ? Math.round((completed / jobCount) * 100) : 0,
+        sbtcEscrow: sbtc.reduce((sum, job) => sum + (job.escrow || 0), 0),
+        stxEscrow: stx.reduce((sum, job) => sum + (job.escrow || 0), 0),
+        sbtcAvgBudget: sbtcBudgeted.length
+          ? sbtcBudgeted.reduce((sum, job) => sum + job.budget, 0) / sbtcBudgeted.length
+          : 0,
+        stxAvgBudget: stxBudgeted.length
+          ? stxBudgeted.reduce((sum, job) => sum + job.budget, 0) / stxBudgeted.length
+          : 0,
+        completionRate: jobs.length > 0 ? Math.round((completed / jobs.length) * 100) : 0,
         chain,
       });
     } catch (err) {
@@ -91,16 +107,27 @@ export default function AnalyticsPage() {
         <>
           <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
             <KPICard icon={Fingerprint} title="Agents" value={String(data.agents)} />
-            <KPICard icon={Briefcase} title="Jobs" value={String(data.jobs)} />
+            <KPICard icon={Briefcase} title={`Jobs (${data.sbtcJobs} sBTC · ${data.stxJobs} STX)`} value={String(data.jobs)} />
             <KPICard icon={CheckCircle2} title="Completed" value={String(data.byStatus[3])} />
-            <KPICard icon={ActivityIcon} title="Completion rate" value={`${data.completionRate}%`} />
+            <KPICard icon={ActivityIcon} title="Indexed completion rate" value={`${data.completionRate}%`} />
           </div>
 
+          {data.indexedJobs < data.jobs && (
+            <p className="mt-3 text-xs text-amber-300">
+              Status and budget analytics use the newest {data.indexedJobs} of {data.jobs} jobs; total job and transaction counts remain complete.
+            </p>
+          )}
+
           <div className="mt-4 grid gap-4 md:grid-cols-4">
-            <StatCard title="Total escrow" value={`${formatStx(data.totalEscrow)} STX`} description="Locked in contracts now" />
-            <StatCard title="Avg budget" value={`${formatStx(data.avgBudget)} STX`} description="Per funded job" />
+            <StatCard title="sBTC escrow" value={formatSbtcCompact(data.sbtcEscrow)} description="Bitcoin-denominated jobs" />
+            <StatCard title="STX escrow" value={`${formatStx(data.stxEscrow)} STX`} description="STX-denominated jobs" />
+            <StatCard title="Average sBTC budget" value={formatSbtcCompact(data.sbtcAvgBudget)} description="Per budgeted sBTC job" />
+            <StatCard title="Average STX budget" value={`${formatStx(data.stxAvgBudget)} STX`} description="Per budgeted STX job" />
+          </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
             <StatCard title="Distinct wallets" value={String(data.chain.distinctWallets)} description="Unique on-chain users" />
-            <StatCard title="On-chain txs" value={String(data.chain.totalTx)} description={`${formatStx(data.chain.feesSTX * 1e6)} STX in fees`} />
+            <StatCard title="On-chain txs" value={String(data.chain.totalTx)} description={`${data.chain.feesSTX.toFixed(6)} STX in indexed fees`} />
           </div>
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">

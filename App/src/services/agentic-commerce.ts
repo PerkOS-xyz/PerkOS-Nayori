@@ -1,6 +1,9 @@
 import { fetchCallReadOnlyFunction, cvToValue, Cl } from "@stacks/transactions";
 import { NETWORK } from "../constants/network";
-import { CONTRACT_ADDRESS } from "../constants/contract";
+import {
+  CONTRACT_ADDRESS,
+  STX_COMMERCE_CONTRACT_NAME,
+} from "../constants/contract";
 
 export interface Job {
   id: number;
@@ -19,7 +22,7 @@ export async function getJob(jobId: number): Promise<Job | null> {
   try {
     const cv = await fetchCallReadOnlyFunction({
       contractAddress: CONTRACT_ADDRESS,
-      contractName: "agentic-commerce",
+      contractName: STX_COMMERCE_CONTRACT_NAME,
       functionName: "get-job",
       functionArgs: [Cl.uint(jobId)],
       network: NETWORK,
@@ -51,7 +54,7 @@ export async function getJobCount(): Promise<number> {
   try {
     const cv = await fetchCallReadOnlyFunction({
       contractAddress: CONTRACT_ADDRESS,
-      contractName: "agentic-commerce",
+      contractName: STX_COMMERCE_CONTRACT_NAME,
       functionName: "get-job-count",
       functionArgs: [],
       network: NETWORK,
@@ -70,7 +73,7 @@ export async function getEscrowBalance(jobId: number): Promise<number> {
   try {
     const cv = await fetchCallReadOnlyFunction({
       contractAddress: CONTRACT_ADDRESS,
-      contractName: "agentic-commerce",
+      contractName: STX_COMMERCE_CONTRACT_NAME,
       functionName: "get-escrow-balance",
       functionArgs: [Cl.uint(jobId)],
       network: NETWORK,
