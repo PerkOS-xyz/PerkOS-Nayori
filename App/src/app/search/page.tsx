@@ -10,15 +10,10 @@ import {
   getAllCommerceJobs,
   jobHref,
 } from "../../services/commerce";
-
-interface SearchResult {
-  id: string;
-  type: "agent" | "job";
-  title: string;
-  description: string;
-  link: string;
-  metadata: Record<string, string>;
-}
+import {
+  SearchResult,
+  toAgentSearchResult,
+} from "../../services/search";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
@@ -44,13 +39,9 @@ export default function SearchPage() {
       );
       const agents = await Promise.all(agentIds.map((i) => getAgent(i)));
 
-      agents.forEach((agent, idx) => {
-        const i = idx + 1;
+      agents.forEach((agent) => {
         if (agent && (agent.name.toLowerCase().includes(q) || agent.description.toLowerCase().includes(q) || agent.wallet.toLowerCase().includes(q))) {
-          searchResults.push({
-            id: `agent-${i}`, type: "agent", title: agent.name, description: agent.description, link: `/agents/${i}`,
-            metadata: { wallet: agent.wallet, status: agent.active ? "Active" : "Inactive" },
-          });
+          searchResults.push(toAgentSearchResult(agent));
         }
       });
 
