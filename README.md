@@ -1,6 +1,7 @@
 # PerkOS Stacks Agentic Commerce
 
-Agent infrastructure on Stacks: Decentralized identity registry + job escrow with x402-style STX payments.
+Agent infrastructure on Stacks: decentralized identity, reputation and job escrow settled in
+STX or Bitcoin-denominated sBTC.
 
 ## Table of Contents
 
@@ -40,7 +41,7 @@ PerkOS Stacks Agentic Commerce provides a complete infrastructure layer for AI a
 | Feature | Description |
 |---------|-------------|
 | **Agent Registry** | On-chain identity with metadata, endpoints, and access control |
-| **Job Escrow** | STX-based escrow with milestone-based releases |
+| **Job Escrow** | STX and sBTC escrow with evaluator-approved releases |
 | **x402 Payments** | Payment-native requests for machine-to-machine commerce |
 | **Reputation** | Rating system (1-5) with average scores and job tracking |
 | **Validation** | Agent verification with proof hashes and capabilities |
@@ -487,7 +488,13 @@ Manages on-chain identity for AI agents.
 
 ### Agentic Commerce
 
-Job escrow with STX payments.
+The product exposes the same hardened lifecycle through two current contracts:
+
+- `agentic-commerce-v2` for STX-denominated escrow
+- `sbtc-commerce` for canonical sBTC-denominated escrow
+
+Both enforce distinct client/provider/evaluator roles, evaluator-only rejection after
+submission, expiry-safe settlement and job-linked ratings.
 
 ```clarity
 ;; Create job
@@ -498,20 +505,23 @@ Job escrow with STX payments.
   (description (string-ascii 512))
 ))
 
-;; Fund job (STX transfer to escrow)
+;; Fund STX job (STX transfer to escrow)
 (define-public (fund-job (job-id uint)))
 
-;; Submit work
+;; sBTC uses the same lifecycle with the canonical SIP-010 token supplied to
+;; fund-job, complete-job, reject-job and expire-job.
+
+;; Submit work before expiry
 (define-public (submit-work (job-id uint) (deliverable (buff 64))))
 
-;; Complete job (release escrow)
+;; Evaluator completes the job and releases escrow
 (define-public (complete-job (job-id uint)))
 
-;; Reject job (refund client)
+;; Evaluator rejects submitted work and refunds the client
 (define-public (reject-job (job-id uint)))
 ```
 
-### Reputation Registry
+### Reputation Registry v2
 
 Agent rating and reputation tracking.
 
@@ -576,7 +586,8 @@ npm test
 - [ ] Deactivate agent
 - [ ] Create a job
 - [ ] Set budget
-- [ ] Fund job with STX
+- [ ] Fund a job with STX
+- [ ] Fund a job with canonical sBTC
 - [ ] Assign provider
 - [ ] Submit work
 - [ ] Complete job (escrow releases)
@@ -591,29 +602,23 @@ npm test
 
 ## Deployment
 
-### Testnet Deployment
+The current contracts and frontend are live on Stacks mainnet.
 
-1. Configure wallet in `settings/Testnet.toml`
-2. Generate deployment plan:
-   ```bash
-   clarinet deployments generate --testnet --low-cost
-   ```
-3. Deploy contracts:
-   ```bash
-   clarinet deployments apply --testnet
-   ```
-4. Update frontend contract addresses in `App/src/constants/contract.ts`
+- App: [stacks.perkos.xyz](https://stacks.perkos.xyz)
+- Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
+- STX escrow: `agentic-commerce-v2`
+- sBTC escrow: `sbtc-commerce`
+- Reputation: `reputation-registry-v2`
+- Canonical sBTC: `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`
 
-See [docs/DEPLOY_TESTNET.md](docs/DEPLOY_TESTNET.md) for detailed instructions.
+Verify the complete deployment without a signer:
 
-### Contract Addresses (Testnet)
+```bash
+npm run verify:mainnet
+```
 
-| Contract | Address |
-|----------|---------|
-| agent-registry | *(deploy to get address)* |
-| agentic-commerce | *(deploy to get address)* |
-| reputation-registry | *(deploy to get address)* |
-| validation-registry | *(deploy to get address)* |
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for guarded deployment, verification and
+frontend configuration instructions.
 
 ---
 

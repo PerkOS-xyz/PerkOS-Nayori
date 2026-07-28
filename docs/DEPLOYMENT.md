@@ -1,47 +1,86 @@
-# PerkOS Stacks Agentic Commerce - Deploy Files
+# PerkOS deployment guide
 
-## Deploy to Testnet via Hiro Wallet
+## Production
 
-### Step 1: Deploy Agent Registry
+PerkOS is deployed on Stacks mainnet under:
 
-1. Go to https://wallet.hiro.so/
-2. Connect wallet (Leather, Hiro, etc.)
-3. Click "Deploy Contract"
-4. Copy/paste `contracts/agent-registry.clar`
-5. Select "Stacks Testnet"
-6. Click "Deploy"
+`SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 
-### Step 2: Deploy Agentic Commerce
+The production frontend is [stacks.perkos.xyz](https://stacks.perkos.xyz).
 
-1. Click "Deploy Contract"
-2. Copy/paste `contracts/agentic-commerce.clar`
-3. Select "Stacks Testnet"
-4. Click "Deploy"
+The current product stack contains:
 
-### Step 3: Update Frontend
+- `agent-registry`
+- `validation-registry`
+- `sip-010-trait`
+- `reputation-registry-v2`
+- `agentic-commerce-v2` for STX escrow
+- `sbtc-commerce` for sBTC escrow
 
-After deployment, update `app/src/constants/contract.ts` with the new addresses.
+Legacy STX contract names are intentionally excluded.
 
-## Frontend Test
+## Mainnet deployment
 
-After deployment, run:
+The deployment command is guarded, source-aware and resumable. It skips an existing
+contract only when its on-chain source exactly matches the reviewed local source. It
+aborts if a contract name already contains different code.
 
-```bash
-cd app
-npm run dev
+Keep the signer file outside version control:
+
+```env
+DEPLOYER_ADDRESS=SP...
+DEPLOYER_PRIVATE_KEY=...
 ```
 
-## x402 Payment Test
+Then run:
 
-Test payments via x402 API:
+```bash
+MAINNET_ENV_PATH=/absolute/path/to/.env.mainnet \
+CONFIRM_PERKOS_MAINNET_DEPLOY=yes \
+npm run deploy:mainnet
+```
 
-```typescript
-import { x402API } from '../utils/x402';
+The script:
 
-const result = await x402API.payment({
-  recipient: 'ST3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE',
-  amount: 1000,
-  jobId: 1,
-  token: 'stx',
-});
+1. validates that the private key derives the configured mainnet address;
+2. compares all six contract sources against mainnet;
+3. checks the available STX balance and maximum configured fees;
+4. deploys only missing current contracts, one confirmation at a time;
+5. configures canonical mainnet sBTC; and
+6. authorizes both escrow contracts on `reputation-registry-v2`.
+
+A secret-free receipt is written to `/tmp/perkos-mainnet-promotion.json`.
+
+## Independent verification
+
+No wallet or private key is needed:
+
+```bash
+npm run verify:mainnet
+```
+
+This compares all deployed source code, verifies exposed owners, confirms the canonical
+sBTC token and both reputation allowlist entries, and reads the current agent and job
+counts.
+
+## Frontend production variables
+
+Configure these values for the Vercel Production environment:
+
+```env
+NEXT_PUBLIC_STACKS_NETWORK=mainnet
+NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
+NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v2
+```
+
+Rebuild the production deployment after changing environment variables.
+
+## Testnet
+
+Use `App/testnet.env.example` for a branch-scoped Vercel Preview. Testnet validation
+must not replace the Production variables above. The existing testnet STX v2 lifecycle
+can be reproduced with:
+
+```bash
+npm run e2e:stx-v2:testnet
 ```

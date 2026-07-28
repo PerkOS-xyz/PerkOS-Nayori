@@ -1,85 +1,61 @@
-# PerkOS Stacks Agentic Commerce - Project Status
+# PerkOS Stacks Agentic Commerce — Project Status
 
-## Completed
+Last verified: 2026-07-28
 
-### Smart Contracts (4)
-- [x] Agent Registry (`agent-registry.clar`)
-- [x] Agentic Commerce (`agentic-commerce.clar`)
-- [x] Reputation Registry (`reputation-registry.clar`)
-- [x] Validation Registry (`validation-registry.clar`)
+## Current status
 
-### Frontend (8 Pages)
-- [x] Home page (hero, features)
-- [x] Dashboard (stats, activity)
-- [x] Agents (CRUD, profiles)
-- [x] Jobs (create, fund, complete)
-- [x] Analytics (KPIs, charts)
-- [x] Activity Feed (timeline)
-- [x] Search (full-text)
-- [x] Wallet Connect
+**Live on Stacks mainnet.**
 
-### Components
-- [x] WalletConnect
-- [x] AgentProfile
-- [x] X402PaymentButton
-- [x] Notification system
-- [x] TransactionButton
-- [x] LoadingSpinner
-- [x] ErrorMessage
-- [x] StatusBadge
+- Production app: [stacks.perkos.xyz](https://stacks.perkos.xyz)
+- Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
+- Settlement assets: STX and canonical mainnet sBTC
+- Contract sources: exact match with the reviewed repository sources
+- Contract tests: 77 passing
 
-### Features
-- [x] x402 payments integration
-- [x] Reputation ratings (1-5)
-- [x] Agent verification
-- [x] Activity feed with filters
-- [x] Analytics dashboard
-- [x] Search functionality
-- [x] Notifications with auto-dismiss
+## Mainnet contracts
 
-### Testing
-- [x] Unit tests for contracts
-- [x] Clarinet validation (0 errors)
-- [x] Frontend build successful
+| Component | Contract |
+| --- | --- |
+| Agent identity | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agent-registry` |
+| Validation | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.validation-registry` |
+| SIP-010 trait | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sip-010-trait` |
+| Reputation | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.reputation-registry-v2` |
+| STX escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v2` |
+| sBTC escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce` |
 
-### Documentation
-- [x] Main README with architecture diagrams
-- [x] Frontend README
-- [x] Contracts README
-- [x] Deployment guide
-- [x] Frontend integration guide
-- [x] x402 integration guide
+The production application uses `agentic-commerce-v2` for STX jobs. No legacy STX
+contract is part of the current product deployment.
 
-## Tech Stack
+## Verified wiring
 
-- **Smart Contracts**: Clarity on Stacks
-- **Frontend**: Next.js 15, TypeScript, Tailwind CSS
-- **Wallet**: @stacks/connect-react (Hiro/Leather)
-- **Payments**: STX via x402-style protocol
-- **Testing**: Vitest, Clarinet
+- `sbtc-commerce` accepts only canonical mainnet sBTC:
+  `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`.
+- `agentic-commerce-v2` and `sbtc-commerce` are authorized callers of
+  `reputation-registry-v2`.
+- The four stateful contracts that expose `get-owner` are owned by the mainnet deployer.
+- Production Vercel configuration explicitly selects mainnet, the deployer address and
+  `agentic-commerce-v2`.
+- Chrome smoke testing loaded the existing sBTC job and the empty STX job list from chain.
 
-## Architecture
+Run the public, signer-free verification at any time:
 
-Registry/Implementation pattern with 4 core contracts.
+```bash
+npm run verify:mainnet
+```
 
-See README.md for detailed architecture diagrams.
+## Product capabilities
 
-## Status
+- On-chain agent identity and discovery
+- STX and sBTC job escrow
+- Neutral evaluator approval and expiry-safe settlement
+- Job-linked, role-gated reputation
+- Capability validation and proof hashes
+- Currency-aware jobs, activity, analytics, dashboard and search
+- Leather wallet support with explicit network validation
 
-**Ready for Testnet Deployment**
+## Next product work
 
-All contracts validated, frontend complete, documentation comprehensive.
-
-## Pending
-
-1. Deploy contracts to Stacks Testnet
-2. Update frontend with deployed contract addresses
-3. End-to-end testing with real wallet
-4. Submit to Stacks Builder Rewards
-
-## Next Steps
-
-1. **Deploy**: Run `clarinet deployments apply --testnet`
-2. **Configure**: Update `App/src/constants/contract.ts`
-3. **Test**: Register agent → Create job → Fund → Complete
-4. **Submit**: Prepare Builder Rewards submission
+1. Run a small real STX mainnet lifecycle with separate client, provider and evaluator wallets.
+2. Add automated mainnet read-only verification to scheduled CI.
+3. Expand agent discovery and x402-compatible service negotiation.
+4. Add operational alerts for failed Chainhook delivery and unusual escrow activity.
