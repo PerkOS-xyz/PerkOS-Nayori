@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { executeX402Payment, createPaymentRequest } from '../services/x402';
-import { getLocalStorage } from "@stacks/connect";
 import { Currency, formatJobAmount } from "../services/commerce";
 import { txStatus } from "../services/tx";
+import { getConnectedStxAddress } from "../services/wallet";
 
 interface X402PaymentButtonProps {
   jobId: number;
@@ -31,7 +31,7 @@ export default function X402PaymentButton({
     setStatus('processing');
 
     try {
-      const sender = getLocalStorage()?.addresses?.stx?.[0]?.address;
+      const sender = getConnectedStxAddress() || undefined;
       const paymentRequest = createPaymentRequest(amount, destination, jobId, currency, sender);
       const result = await executeX402Payment(paymentRequest);
 
