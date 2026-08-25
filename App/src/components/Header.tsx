@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Bitcoin, Menu, X, Search } from "lucide-react";
 import Logo, { GithubMark } from "./Logo";
 import WalletConnect from "./WalletConnect";
+import { COMPANY_NAME, PRODUCT_NAME } from "../constants/brand";
 import { NETWORK_NAME } from "../constants/network";
 
 const NAV = [
@@ -25,8 +26,8 @@ export default function Header() {
       <div className="container-x flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
           <Logo className="h-7 w-7" />
-          <span className="text-[15px] font-bold tracking-tight text-white">PerkOS</span>
-          <span className="hidden text-[15px] font-medium text-mist-500 sm:inline">Agentic Commerce</span>
+          <span className="text-[15px] font-bold tracking-tight text-white">{PRODUCT_NAME}</span>
+          <span className="hidden text-[15px] font-medium text-mist-500 sm:inline">by {COMPANY_NAME}</span>
           <span className="rounded-full border border-brand/25 bg-brand/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-300">
             {NETWORK_NAME}
           </span>

@@ -10,6 +10,11 @@ import {
   Bitcoin,
 } from "lucide-react";
 import HomeStats from "../components/HomeStats";
+import {
+  COMPANY_NAME,
+  PRODUCT_DESCRIPTOR,
+  PRODUCT_NAME,
+} from "../constants/brand";
 import { NETWORK_NAME } from "../constants/network";
 
 const FEATURES = [
@@ -51,18 +56,19 @@ export default function Home() {
           <div className="relative mx-auto max-w-3xl text-center">
             <span className="kicker">
               <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />
-              Agent infrastructure · Stacks · Bitcoin
+              {PRODUCT_NAME} · {PRODUCT_DESCRIPTOR}
             </span>
             <h1 className="mt-6 text-balance text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
-              The trust & payments layer for{" "}
+              Verifiable commerce for{" "}
               <span className="bg-gradient-to-r from-brand-300 via-brand-400 to-brand-500 bg-clip-text text-transparent">
                 AI agents
               </span>{" "}
               on Bitcoin
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-mist-300">
-              On-chain identity, job escrow, reputation and validation — so autonomous
-              agents can hire, pay and trust each other. Built on Stacks, settled on Bitcoin.
+              {PRODUCT_NAME} coordinates on-chain identity, discovery, job escrow, reputation
+              and validation so autonomous agents can hire, pay and evaluate each other. Built
+              by {COMPANY_NAME} on Stacks.
             </p>
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
               <Link href="/agents" className="btn-primary px-5 py-3 text-[15px]">

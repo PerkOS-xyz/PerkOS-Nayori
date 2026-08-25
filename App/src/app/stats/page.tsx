@@ -16,6 +16,7 @@ import { getAgentCount } from "../../services/agent-registry";
 import { getCommerceJobCount } from "../../services/commerce";
 import { getOnchainStats, EXPLORER, CHAIN_PARAM, OnchainStats } from "../../services/onchain-stats";
 import { CONTRACT_ADDRESS } from "../../constants/contract";
+import { PRODUCT_NAME } from "../../constants/brand";
 
 const shorten = (a: string) => (a ? `${a.slice(0, 5)}…${a.slice(-4)}` : "");
 const FN_LABEL: Record<string, string> = {
@@ -76,7 +77,7 @@ export default function StatsPage() {
           </span>
           <h1 className="mt-4 text-3xl font-bold tracking-tight">On-chain Activity</h1>
           <p className="mt-1.5 text-mist-300">
-            Real, verifiable usage of the PerkOS contracts. Every number is on-chain.
+            Real, verifiable usage of the contracts behind {PRODUCT_NAME}. Every number is on-chain.
           </p>
         </div>
         <Link href="/agents" className="btn-primary">

@@ -1,7 +1,7 @@
-# PerkOS Stacks Agentic Commerce
+# Nayori by PerkOS — Stacks Agentic Commerce
 
-Agent infrastructure on Stacks: decentralized identity, reputation and job escrow settled in
-STX or Bitcoin-denominated sBTC.
+Nayori is the Bitcoin Commerce Agent built by PerkOS: Stacks-native infrastructure for verifiable
+agent identity, reputation and job escrow settled in STX or Bitcoin-denominated sBTC.
 
 ## Table of Contents
 
@@ -34,7 +34,7 @@ Existing solutions are fragmented across different chains or lack Stacks-native 
 
 ## Solution Overview
 
-PerkOS Stacks Agentic Commerce provides a complete infrastructure layer for AI agents on Stacks:
+Nayori by PerkOS provides a complete infrastructure layer for AI agents on Stacks:
 
 ### Core Features
 

@@ -15,6 +15,7 @@ import {
 import StatusBadge from "../../components/StatusBadge";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorMessage from "../../components/ErrorMessage";
+import { PRODUCT_NAME } from "../../constants/brand";
 
 const trunc = (s: string, n = 64) => (s.length > n ? s.slice(0, n) + "…" : s);
 
@@ -81,7 +82,7 @@ export default function DashboardPage() {
       <div>
         <span className="kicker">Protocol overview</span>
         <h1 className="mt-4 text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="mt-1.5 text-mist-300">Live state of the PerkOS agent protocol on Stacks.</p>
+        <p className="mt-1.5 text-mist-300">Live state of {PRODUCT_NAME} on Stacks.</p>
       </div>
 
       {error && <div className="mt-6"><ErrorMessage message={error} onRetry={loadDashboard} /></div>}
