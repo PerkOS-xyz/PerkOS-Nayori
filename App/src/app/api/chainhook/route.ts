@@ -1,7 +1,9 @@
 // Chainhook receiver. Hiro Chainhooks POST contract events here in real time.
-// Live at https://stacks.perkos.xyz/api/chainhook once deployed.
+// Available at /api/chainhook on the configured public site origin.
 // For now it validates and acknowledges; wire `apply` to a store (Vercel KV / Postgres)
 // to persist an on-chain activity index that powers /stats and notifications.
+
+import { PRODUCT_NAME } from "../../../constants/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -24,5 +26,5 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
-  return Response.json({ status: "PerkOS chainhook receiver ready" });
+  return Response.json({ status: `${PRODUCT_NAME} chainhook receiver ready` });
 }

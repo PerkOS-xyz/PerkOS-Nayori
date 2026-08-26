@@ -1,12 +1,12 @@
-# App - PerkOS Stacks Agentic Commerce Frontend
+# Nayori by PerkOS — Stacks Agentic Commerce Frontend
 
-Next.js 15 frontend for PerkOS Stacks Agentic Commerce.
+Next.js 15 frontend for Nayori, the Bitcoin Commerce Agent built by PerkOS.
 
 ## Overview
 
-React application for the PerkOS contracts on Stacks. Users can settle jobs in sBTC or STX. sBTC is
-the recommended Bitcoin-denominated path; the STX contract provides the same hardened lifecycle
-safeguards for users who prefer STX-denominated work.
+Nayori coordinates access to the PerkOS contracts on Stacks. Users can settle jobs in sBTC or STX.
+sBTC is the recommended Bitcoin-denominated path; the STX contract provides the same hardened
+lifecycle safeguards for users who prefer STX-denominated work.
 
 ## Features
 
@@ -127,7 +127,11 @@ testnet must be selected explicitly.
 NEXT_PUBLIC_STACKS_NETWORK=mainnet
 NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
 NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v2
+NEXT_PUBLIC_SITE_URL=https://stacks.perkos.xyz
 ```
+
+`NEXT_PUBLIC_SITE_URL` controls canonical and social metadata. Change it only after the target
+domain, DNS and deployment are live; previews should use their own public origin.
 
 For a Vercel testnet release candidate, use the public values in
 `testnet.env.example` for the **Preview** environment only. Keep Production unchanged until the

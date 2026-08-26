@@ -53,6 +53,7 @@ import {
   AGENTIC_COMMERCE_CONTRACT,
 } from "../../constants/contract";
 import { NETWORK_NAME } from "../../constants/network";
+import { BRANDED_RATING_MEMO } from "../../constants/brand";
 import { getConnectedStxAddress } from "../../services/wallet";
 
 const AGENTIC_COMMERCE =
@@ -401,11 +402,11 @@ export default function JobsPage() {
     return run(
       () =>
         isSbtc
-          ? rateSbtcProvider(jobId, ratingScore, "Rated via PerkOS")
+          ? rateSbtcProvider(jobId, ratingScore, BRANDED_RATING_MEMO)
           : stxCall("rate-provider", [
               Cl.uint(jobId),
               Cl.uint(ratingScore),
-              Cl.stringAscii("Rated via PerkOS"),
+              Cl.stringAscii(BRANDED_RATING_MEMO),
             ]),
       `rating-${jobId}`,
       "Rate provider",
