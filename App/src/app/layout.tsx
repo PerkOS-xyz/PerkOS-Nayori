@@ -5,13 +5,30 @@ import Logo from "../components/Logo";
 import { ToastProvider } from "../components/Toast";
 import {
   COMPANY_NAME,
-  CURRENT_APP_ORIGIN,
   PRODUCT_DESCRIPTION,
   PRODUCT_FULL_NAME,
+  PRODUCT_NAME,
   PRODUCT_TITLE,
 } from "../constants/brand";
+import { SITE_ORIGIN } from "../constants/site";
 
-const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL?.trim() || CURRENT_APP_ORIGIN;
+const siteOrigin = SITE_ORIGIN;
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: PRODUCT_FULL_NAME,
+  alternateName: PRODUCT_NAME,
+  applicationCategory: "FinanceApplication",
+  operatingSystem: "Web",
+  url: siteOrigin,
+  description: PRODUCT_DESCRIPTION,
+  provider: {
+    "@type": "Organization",
+    name: COMPANY_NAME,
+    url: "https://perkos.xyz",
+  },
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin),
@@ -44,6 +61,24 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link
+          rel="alternate"
+          type="text/markdown"
+          href="/llms.txt"
+          title={`${PRODUCT_NAME} for language models`}
+        />
+        <link
+          rel="alternate"
+          type="application/json"
+          href="/.well-known/agent.json"
+          title={`${PRODUCT_NAME} agent discovery manifest`}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+      </head>
       <body className="min-h-screen antialiased">
         <ToastProvider>
           <Header />

@@ -63,6 +63,30 @@ Open [http://localhost:3000](http://localhost:3000).
 npm run build
 ```
 
+## Container deployment
+
+The production build supports Next.js standalone output and runs as a non-root container. Public
+configuration is compiled into the browser bundle, so provide the target origin and reviewed
+mainnet contract values as build arguments:
+
+```bash
+docker build \
+  --build-arg NEXT_PUBLIC_STACKS_NETWORK=mainnet \
+  --build-arg NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH \
+  --build-arg NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v2 \
+  --build-arg NEXT_PUBLIC_SITE_URL=https://preview.nayori.ai \
+  -t nayori-web .
+
+docker run --rm -p 3000:3000 nayori-web
+```
+
+The container exposes `GET /api/health` and includes a Docker healthcheck. Runtime secrets such as
+`CHAINHOOK_SECRET` must be injected by the deployment environment and must never be included as
+build arguments or image layers.
+
+Agent-readable discovery is available at `/.well-known/agent.json` and `/llms.txt`. Requests to
+the homepage with `Accept: text/markdown` receive the same curated Markdown representation.
+
 ## Project Structure
 
 ```
@@ -127,16 +151,16 @@ testnet must be selected explicitly.
 NEXT_PUBLIC_STACKS_NETWORK=mainnet
 NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
 NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v2
-NEXT_PUBLIC_SITE_URL=https://stacks.perkos.xyz
+NEXT_PUBLIC_SITE_URL=https://nayori.ai
 ```
 
 `NEXT_PUBLIC_SITE_URL` controls canonical and social metadata. Change it only after the target
 domain, DNS and deployment are live; previews should use their own public origin.
 
-For a Vercel testnet release candidate, use the public values in
-`testnet.env.example` for the **Preview** environment only. Keep Production unchanged until the
-mainnet release is explicitly approved. Branch-scoped Preview variables are preferred so unrelated
-preview deployments retain their own configuration.
+For a testnet release candidate, use the public values in `testnet.env.example` only in that
+preview environment. Keep production unchanged until the release is explicitly approved.
+Branch-scoped preview variables are preferred so unrelated deployments retain their own
+configuration.
 
 An invalid `NEXT_PUBLIC_STACKS_NETWORK` now fails the build instead of silently falling back to
 mainnet.
