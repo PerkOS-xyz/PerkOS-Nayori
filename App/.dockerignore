@@ -1,0 +1,11 @@
+.git
+.gitignore
+.next
+.vercel
+node_modules
+npm-debug.log*
+*.log
+.env
+.env.*
+!.env.example
+coverage

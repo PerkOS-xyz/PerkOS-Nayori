@@ -604,7 +604,8 @@ npm test
 
 The current contracts and frontend are live on Stacks mainnet.
 
-- App: [stacks.perkos.xyz](https://stacks.perkos.xyz)
+- App: [nayori.ai](https://nayori.ai)
+- PerkOS compatibility URL: [stacks.perkos.xyz](https://stacks.perkos.xyz)
 - Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 - STX escrow: `agentic-commerce-v2`
 - sBTC escrow: `sbtc-commerce`

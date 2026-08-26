@@ -6,7 +6,8 @@ PerkOS is deployed on Stacks mainnet under:
 
 `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 
-The production frontend is [stacks.perkos.xyz](https://stacks.perkos.xyz).
+The production frontend is [nayori.ai](https://nayori.ai). The historical PerkOS URL remains a
+compatibility entry point.
 
 The current product stack contains:
 
@@ -65,15 +66,21 @@ counts.
 
 ## Frontend production variables
 
-Configure these values for the Vercel Production environment:
+Configure these values in the target production build environment:
 
 ```env
 NEXT_PUBLIC_STACKS_NETWORK=mainnet
 NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
 NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v2
+NEXT_PUBLIC_SITE_URL=https://nayori.ai
 ```
 
 Rebuild the production deployment after changing environment variables.
+
+The app supports a non-root standalone container through `App/Dockerfile`. During the staged VPS
+migration, build `preview.nayori.ai` with its own `NEXT_PUBLIC_SITE_URL`, validate `/api/health`,
+wallet connection and all public routes, and retain the existing Vercel deployment as rollback
+until the production cutover is stable.
 
 ## Testnet
 

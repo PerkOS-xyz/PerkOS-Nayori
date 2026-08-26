@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Emit a self-contained Node.js server for container and VPS deployments.
+  output: "standalone",
   // Lint is decoupled from the production build; run `npm run lint` separately.
   eslint: { ignoreDuringBuilds: true },
   // This repository intentionally has separate lockfiles for contracts and the app.

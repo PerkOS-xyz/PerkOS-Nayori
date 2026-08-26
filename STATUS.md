@@ -1,12 +1,13 @@
 # PerkOS Stacks Agentic Commerce — Project Status
 
-Last verified: 2026-07-28
+Last verified: 2026-08-25
 
 ## Current status
 
 **Live on Stacks mainnet.**
 
-- Production app: [stacks.perkos.xyz](https://stacks.perkos.xyz)
+- Production app: [nayori.ai](https://nayori.ai)
+- PerkOS compatibility URL: [stacks.perkos.xyz](https://stacks.perkos.xyz)
 - Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 - Settlement assets: STX and canonical mainnet sBTC
 - Contract sources: exact match with the reviewed repository sources
@@ -33,8 +34,9 @@ contract is part of the current product deployment.
 - `agentic-commerce-v2` and `sbtc-commerce` are authorized callers of
   `reputation-registry-v2`.
 - The four stateful contracts that expose `get-owner` are owned by the mainnet deployer.
-- Production Vercel configuration explicitly selects mainnet, the deployer address and
-  `agentic-commerce-v2`.
+- Production hosting configuration explicitly selects mainnet, the deployer address and
+  `agentic-commerce-v2`; the existing Vercel deployment remains available during the staged VPS
+  migration.
 - Chrome smoke testing loaded the existing sBTC job and the empty STX job list from chain.
 
 Run the public, signer-free verification at any time:
@@ -53,9 +55,20 @@ npm run verify:mainnet
 - Currency-aware jobs, activity, analytics, dashboard and search
 - Leather wallet support with explicit network validation
 
+## Milestone status
+
+- Milestone 1 is approved and complete. The current STX and sBTC contracts remain unchanged.
+- Milestone 2 is in progress in the independent `PerkOS-Nayori-Agent-SDK` repository. The public
+  `@perkos/agent-sdk@0.1.0` package, signer adapters, testnet lifecycle, x402 v2 foundation and
+  request-bound STX/sBTC/USDCx verification profile are available.
+- Remaining Milestone 2 acceptance work includes the external security review, recorded SDK demo
+  and the required mainnet/non-team adoption evidence.
+
 ## Next product work
 
-1. Run a small real STX mainnet lifecycle with separate client, provider and evaluator wallets.
-2. Add automated mainnet read-only verification to scheduled CI.
-3. Expand agent discovery and x402-compatible service negotiation.
+1. Validate the self-hosted web image at `preview.nayori.ai`, then migrate Nayori hostnames in
+   controlled stages while retaining Vercel as rollback.
+2. Deploy the durable x402 facilitator, settlement reconciler and replay protection behind
+   `api.nayori.ai` without changing the approved escrow contracts.
+3. Complete the external review, recorded SDK demo and mainnet adoption requirements for M2.
 4. Add operational alerts for failed Chainhook delivery and unusual escrow activity.
