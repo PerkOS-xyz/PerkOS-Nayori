@@ -85,7 +85,11 @@ The container exposes `GET /api/health` and includes a Docker healthcheck. Runti
 build arguments or image layers.
 
 Agent-readable discovery is available at `/.well-known/agent.json` and `/llms.txt`. Requests to
-the homepage with `Accept: text/markdown` receive the same curated Markdown representation.
+the homepage with `Accept: text/markdown` receive the same curated Markdown representation. Both
+surfaces link to the public [Nayori quote API](https://api.nayori.ai), its
+[`/supported`](https://api.nayori.ai/supported) capability response, OpenAPI schema and JWKS. The
+API currently issues authenticated, request-bound quotes on Stacks testnet only; it does not
+verify or settle payments, broadcast transactions, sponsor fees or deliver paid resources.
 
 ## Project Structure
 

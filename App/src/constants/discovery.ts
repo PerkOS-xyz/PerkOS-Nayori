@@ -7,6 +7,8 @@ import {
 import { SITE_ORIGIN } from "./site";
 
 export const STACKS_MAINNET_ID = "stacks:1";
+export const STACKS_TESTNET_ID = "stacks:2147483648";
+export const NAYORI_API_ORIGIN = "https://api.nayori.ai";
 export const MAINNET_DEPLOYER =
   "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH";
 
@@ -30,6 +32,13 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       health: `${origin}/api/health`,
       source: "https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce",
       sdk: "https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK",
+      quoteApi: {
+        origin: NAYORI_API_ORIGIN,
+        manifest: `${NAYORI_API_ORIGIN}/.well-known/agent.json`,
+        supported: `${NAYORI_API_ORIGIN}/supported`,
+        openapi: `${NAYORI_API_ORIGIN}/openapi.json`,
+        jwks: `${NAYORI_API_ORIGIN}/.well-known/jwks.json`,
+      },
     },
     capabilities: [
       {
@@ -49,6 +58,15 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
         description:
           "Build and verify request-bound Stacks payments through the public SDK.",
         assets: ["STX", "sBTC", "USDCx"],
+        quoteService: {
+          status: "quote-only",
+          network: STACKS_TESTNET_ID,
+          authorization: "merchant-bearer",
+          quoteIssuance: true,
+          paymentVerification: false,
+          settlement: false,
+          sponsorship: false,
+        },
       },
     ],
     authorization: {
@@ -65,7 +83,11 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
     },
     availability: {
       webApplication: true,
-      publicFacilitatorApi: false,
+      publicFacilitatorApi: true,
+      quoteIssuance: true,
+      paymentVerification: false,
+      settlement: false,
+      sponsorship: false,
       a2aProtocolEndpoint: false,
     },
   } as const;
@@ -91,6 +113,10 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 
 - [Application and contracts](https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce): Public source, Clarity contracts and deployment evidence.
 - [Nayori Agent SDK](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK): TypeScript SDK published as \`@perkos/agent-sdk\`.
+- [Nayori quote API](${NAYORI_API_ORIGIN}): Authenticated request-bound quote issuance on Stacks testnet.
+- [API capabilities](${NAYORI_API_ORIGIN}/supported): Exact network, mechanism, assets and availability flags.
+- [API OpenAPI schema](${NAYORI_API_ORIGIN}/openapi.json): Machine-readable HTTP contract.
+- [API JWKS](${NAYORI_API_ORIGIN}/.well-known/jwks.json): Public keys for verifying signed quotes.
 
 ## Mainnet contracts
 
@@ -103,7 +129,8 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 
 - Escrowed jobs: STX and sBTC.
 - Request-bound direct x402 profile in the SDK: STX, sBTC and USDCx.
-- The public Nayori facilitator API is not live yet. Do not infer API availability from SDK verification support.
+- The public Nayori API issues short-lived, request-bound quotes on Stacks testnet (\`${STACKS_TESTNET_ID}\`) for authenticated merchants.
+- The API does not verify payments, broadcast transactions, settle payments, sponsor fees or deliver paid resources. A signed quote is not proof of payment or settlement.
 
 ## Safety
 

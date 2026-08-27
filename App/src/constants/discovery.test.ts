@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildDiscoveryManifest, buildLlmsText } from "./discovery";
+import {
+  buildDiscoveryManifest,
+  buildLlmsText,
+  NAYORI_API_ORIGIN,
+} from "./discovery";
 import { resolveSiteOrigin } from "./site";
 
 describe("public site origin", () => {
@@ -29,15 +33,33 @@ describe("agent discovery", () => {
     expect(manifest.network).toBe("stacks:1");
     expect(manifest.authorization.custody).toContain("does not request");
     expect(manifest.contracts.stxEscrow).toContain("agentic-commerce-v2");
-    expect(manifest.availability.publicFacilitatorApi).toBe(false);
+    expect(manifest.discovery.quoteApi.origin).toBe(NAYORI_API_ORIGIN);
+    expect(manifest.discovery.quoteApi.openapi).toBe(
+      `${NAYORI_API_ORIGIN}/openapi.json`
+    );
+    expect(manifest.availability.publicFacilitatorApi).toBe(true);
+    expect(manifest.availability.quoteIssuance).toBe(true);
+    expect(manifest.availability.paymentVerification).toBe(false);
+    expect(manifest.availability.settlement).toBe(false);
+    expect(manifest.availability.sponsorship).toBe(false);
     expect(manifest.availability.a2aProtocolEndpoint).toBe(false);
+    expect(manifest.capabilities[3].quoteService).toMatchObject({
+      status: "quote-only",
+      network: "stacks:2147483648",
+      quoteIssuance: true,
+      paymentVerification: false,
+      settlement: false,
+      sponsorship: false,
+    });
   });
 
-  it("does not imply that the facilitator is already live", () => {
+  it("publishes the quote API without implying payment settlement", () => {
     const text = buildLlmsText(origin);
 
     expect(text).toContain(`${origin}/.well-known/agent.json`);
-    expect(text).toContain("public Nayori facilitator API is not live yet");
+    expect(text).toContain(`${NAYORI_API_ORIGIN}/supported`);
+    expect(text).toContain("issues short-lived, request-bound quotes");
+    expect(text).toContain("A signed quote is not proof of payment or settlement");
     expect(text).toContain("requires authorization from a Stacks wallet");
   });
 });
