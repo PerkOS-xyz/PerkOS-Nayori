@@ -77,10 +77,26 @@ NEXT_PUBLIC_SITE_URL=https://nayori.ai
 
 Rebuild the production deployment after changing environment variables.
 
-The app supports a non-root standalone container through `App/Dockerfile`. During the staged VPS
-migration, build `preview.nayori.ai` with its own `NEXT_PUBLIC_SITE_URL`, validate `/api/health`,
-wallet connection and all public routes, and retain the existing Vercel deployment as rollback
-until the production cutover is stable.
+The app supports a non-root standalone container through `App/Dockerfile`. Build images only on
+the Nayori deployment VPS. A candidate for `preview.nayori.ai` must use its own
+`NEXT_PUBLIC_SITE_URL`; validate `/api/health`, wallet connection and all public routes before
+production promotion. Retain the previous production image and Compose file as rollback.
+
+### Agent-readiness smoke checks
+
+Before promotion, verify GET and HEAD behavior, media types and CORS for:
+
+- `/.well-known/api-catalog` (`application/linkset+json`);
+- `/.well-known/ard.json` and `/.well-known/ai-catalog.json`;
+- `/.well-known/agent-skills/index.json` and every indexed `SKILL.md`;
+- `/robots.txt`, including `Content-Signal` and `Agentmap`; and
+- `/` with both HTML and `Accept: text/markdown`, including discovery `Link` headers.
+
+Recompute each skill SHA-256 over the exact response bytes and compare it with the index digest.
+Use a browser with WebMCP instrumentation to confirm the two public tools exist at load time and
+remain read-only. Finally, rerun [isitagentready.com](https://isitagentready.com/nayori.ai) against
+the preview. Do not add OAuth, MCP or DNS-AID metadata unless the corresponding live service or
+DNS control is present and independently testable.
 
 ## Nayori quote API
 

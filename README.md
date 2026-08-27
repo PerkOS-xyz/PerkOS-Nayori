@@ -8,6 +8,7 @@ agent identity, reputation and job escrow settled in STX or Bitcoin-denominated 
 - [Problem Statement](#problem-statement)
 - [Solution Overview](#solution-overview)
 - [Architecture](#architecture)
+- [Agent Discovery](#agent-discovery)
 - [User Workflows](#user-workflows)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -145,6 +146,31 @@ sequenceDiagram
         AC->>RR: record-completion(provider)
     end
 ```
+
+---
+
+## Agent Discovery
+
+Nayori publishes a machine-readable map of capabilities that exist today:
+
+- [`/.well-known/agent.json`](https://nayori.ai/.well-known/agent.json) is the canonical product,
+  network, contract and authorization manifest.
+- [`/.well-known/api-catalog`](https://nayori.ai/.well-known/api-catalog) is an RFC 9727 linkset
+  for the independently deployed quote API.
+- [`/.well-known/ard.json`](https://nayori.ai/.well-known/ard.json) and the compatibility
+  [`ai-catalog.json`](https://nayori.ai/.well-known/ai-catalog.json) describe searchable agentic
+  resources.
+- [`/.well-known/agent-skills/index.json`](https://nayori.ai/.well-known/agent-skills/index.json)
+  lists three Agent Skills v0.2.0 artifacts with SHA-256 integrity digests.
+- Supporting browsers receive two read-only WebMCP tools for capability and skill discovery. They
+  cannot sign a transaction, access wallet credentials or change state.
+
+Homepage responses also advertise discovery through HTTP `Link` relations. `robots.txt` permits
+search and real-time AI input while withholding permission for AI training. OAuth metadata, an
+MCP Server Card and DNS-AID are intentionally not published until Nayori operates the services
+and infrastructure those signals would describe.
+
+Every write still requires the connected Stacks wallet to review and sign the transaction.
 
 ---
 

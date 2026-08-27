@@ -3,6 +3,7 @@ import "./globals.css";
 import Header from "../components/Header";
 import Logo from "../components/Logo";
 import { ToastProvider } from "../components/Toast";
+import WebMcpProvider from "../components/WebMcpProvider";
 import {
   COMPANY_NAME,
   PRODUCT_DESCRIPTION,
@@ -11,6 +12,7 @@ import {
   PRODUCT_TITLE,
 } from "../constants/brand";
 import { SITE_ORIGIN } from "../constants/site";
+import { webMcpBootstrapScript } from "../constants/webmcp";
 
 const siteOrigin = SITE_ORIGIN;
 
@@ -74,12 +76,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="/.well-known/agent.json"
           title={`${PRODUCT_NAME} agent discovery manifest`}
         />
+        <link
+          rel="ard"
+          type="application/json"
+          href="/.well-known/ard.json"
+          title={`${PRODUCT_NAME} agentic resource catalog`}
+        />
+        <link
+          rel="ai-catalog"
+          type="application/json"
+          href="/.well-known/ai-catalog.json"
+          title={`${PRODUCT_NAME} agentic resource catalog (legacy relation)`}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
       <body className="min-h-screen antialiased">
+        <script
+          id="webmcp-bootstrap"
+          dangerouslySetInnerHTML={{ __html: webMcpBootstrapScript() }}
+        />
+        <WebMcpProvider />
         <ToastProvider>
           <Header />
           <main>{children}</main>

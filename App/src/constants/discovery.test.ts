@@ -37,6 +37,13 @@ describe("agent discovery", () => {
     expect(manifest.discovery.quoteApi.openapi).toBe(
       `${NAYORI_API_ORIGIN}/openapi.json`
     );
+    expect(manifest.discovery.apiCatalog).toBe(
+      `${origin}/.well-known/api-catalog`
+    );
+    expect(manifest.discovery.ard).toBe(`${origin}/.well-known/ard.json`);
+    expect(manifest.discovery.agentSkills).toBe(
+      `${origin}/.well-known/agent-skills/index.json`
+    );
     expect(manifest.availability.publicFacilitatorApi).toBe(true);
     expect(manifest.availability.quoteIssuance).toBe(true);
     expect(manifest.availability.paymentVerification).toBe(false);
@@ -58,6 +65,10 @@ describe("agent discovery", () => {
 
     expect(text).toContain(`${origin}/.well-known/agent.json`);
     expect(text).toContain(`${NAYORI_API_ORIGIN}/supported`);
+    expect(text).toContain(`${origin}/.well-known/api-catalog`);
+    expect(text).toContain(`${origin}/.well-known/ard.json`);
+    expect(text).toContain(`${origin}/.well-known/agent-skills/index.json`);
+    expect(text).toContain("two read-only WebMCP tools");
     expect(text).toContain("issues short-lived, request-bound quotes");
     expect(text).toContain("A signed quote is not proof of payment or settlement");
     expect(text).toContain("requires authorization from a Stacks wallet");
