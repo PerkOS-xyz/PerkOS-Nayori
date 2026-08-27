@@ -44,18 +44,28 @@ describe("agent discovery", () => {
     expect(manifest.discovery.agentSkills).toBe(
       `${origin}/.well-known/agent-skills/index.json`
     );
+    expect(manifest.discovery.evidenceJson).toBe(`${origin}/api/evidence.json`);
+    expect(manifest.discovery.quoteApi.oauthAuthorizationServer).toBe(
+      `${NAYORI_API_ORIGIN}/.well-known/oauth-authorization-server`
+    );
+    expect(manifest.discovery.quoteApi.mcp).toBe(`${NAYORI_API_ORIGIN}/mcp`);
     expect(manifest.availability.publicFacilitatorApi).toBe(true);
     expect(manifest.availability.quoteIssuance).toBe(true);
-    expect(manifest.availability.paymentVerification).toBe(false);
-    expect(manifest.availability.settlement).toBe(false);
+    expect(manifest.availability.paymentVerification).toBe(true);
+    expect(manifest.availability.settlement).toBe(true);
+    expect(manifest.availability.oauth).toBe(true);
+    expect(manifest.availability.mcp).toBe(true);
     expect(manifest.availability.sponsorship).toBe(false);
     expect(manifest.availability.a2aProtocolEndpoint).toBe(false);
     expect(manifest.capabilities[3].quoteService).toMatchObject({
-      status: "quote-only",
+      status: "invite-only-testnet-settlement",
       network: "stacks:2147483648",
       quoteIssuance: true,
-      paymentVerification: false,
-      settlement: false,
+      paymentVerification: true,
+      settlement: true,
+      confirmation: true,
+      deliveryLedger: true,
+      mcp: true,
       sponsorship: false,
     });
   });
@@ -68,9 +78,11 @@ describe("agent discovery", () => {
     expect(text).toContain(`${origin}/.well-known/api-catalog`);
     expect(text).toContain(`${origin}/.well-known/ard.json`);
     expect(text).toContain(`${origin}/.well-known/agent-skills/index.json`);
-    expect(text).toContain("two read-only WebMCP tools");
-    expect(text).toContain("issues short-lived, request-bound quotes");
-    expect(text).toContain("A signed quote is not proof of payment or settlement");
+    expect(text).toContain("three read-only WebMCP tools");
+    expect(text).toContain("invite-only partner pilot");
+    expect(text).toContain("Only the confirmed settlement state and signed receipt");
+    expect(text).toContain(`${origin}/api/evidence.json`);
+    expect(text).toContain(`${NAYORI_API_ORIGIN}/auth.md`);
     expect(text).toContain("requires authorization from a Stacks wallet");
   });
 });

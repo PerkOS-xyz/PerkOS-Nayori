@@ -88,12 +88,15 @@ build arguments or image layers.
 Agent-readable discovery is available through `/.well-known/agent.json`, `/llms.txt`, the RFC 9727
 `/.well-known/api-catalog`, ARD manifests and the Agent Skills v0.2.0 index. Requests to the
 homepage with `Accept: text/markdown` receive the same curated Markdown representation. Homepage
-responses expose discovery `Link` relations, and supporting browsers register two read-only
+responses expose discovery `Link` relations, and supporting browsers register three read-only
 WebMCP tools before hydration and again through the client lifecycle. These surfaces link to the
-public [Nayori quote API](https://api.nayori.ai), its
+public [Nayori partner API](https://api.nayori.ai), its
 [`/supported`](https://api.nayori.ai/supported) capability response, OpenAPI schema and JWKS. The
-API currently issues authenticated, request-bound quotes on Stacks testnet only; it does not
-verify or settle payments, broadcast transactions, sponsor fees or deliver paid resources.
+API runs an invite-only testnet pilot with wallet-linked OAuth, MCP, request-bound quotes,
+verification, one broadcast attempt, confirmation reconciliation and an idempotent delivery
+ledger. Mainnet facilitator settlement and sponsorship remain disabled. The web app also exposes
+the canonical OAuth/MCP documents, `x402.json` and a versioned public evidence manifest; it does
+not proxy credentials or state-changing requests.
 
 The browser tools expose only public discovery documents. They do not access wallet state or
 credentials, and every state-changing Stacks action remains behind explicit wallet authorization.
@@ -108,6 +111,7 @@ src/
 │   ├── dashboard/
 │   ├── analytics/
 │   ├── activity/
+│   ├── evidence/
 │   ├── search/
 │   └── page.tsx
 ├── components/             # Reusable UI components

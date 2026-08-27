@@ -77,6 +77,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           title={`${PRODUCT_NAME} agent discovery manifest`}
         />
         <link
+          rel="authorization-server"
+          type="application/json"
+          href="/.well-known/oauth-authorization-server"
+        />
+        <link
+          rel="mcp"
+          type="application/json"
+          href="/.well-known/mcp/server-card.json"
+        />
+        <link
           rel="ard"
           type="application/json"
           href="/.well-known/ard.json"

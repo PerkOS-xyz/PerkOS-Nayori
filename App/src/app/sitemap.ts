@@ -10,6 +10,7 @@ const routes = [
   "/activity",
   "/search",
   "/stats",
+  "/evidence",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

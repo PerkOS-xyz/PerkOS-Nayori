@@ -35,12 +35,19 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       agentSkills: `${origin}/.well-known/agent-skills/index.json`,
       source: "https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce",
       sdk: "https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK",
+      evidence: `${origin}/evidence`,
+      evidenceJson: `${origin}/api/evidence.json`,
       quoteApi: {
         origin: NAYORI_API_ORIGIN,
         manifest: `${NAYORI_API_ORIGIN}/.well-known/agent.json`,
         supported: `${NAYORI_API_ORIGIN}/supported`,
         openapi: `${NAYORI_API_ORIGIN}/openapi.json`,
         jwks: `${NAYORI_API_ORIGIN}/.well-known/jwks.json`,
+        oauthAuthorizationServer: `${NAYORI_API_ORIGIN}/.well-known/oauth-authorization-server`,
+        oauthProtectedResource: `${NAYORI_API_ORIGIN}/.well-known/oauth-protected-resource`,
+        authGuide: `${NAYORI_API_ORIGIN}/auth.md`,
+        mcpServerCard: `${NAYORI_API_ORIGIN}/.well-known/mcp/server-card.json`,
+        mcp: `${NAYORI_API_ORIGIN}/mcp`,
       },
     },
     capabilities: [
@@ -62,12 +69,15 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
           "Build and verify request-bound Stacks payments through the public SDK.",
         assets: ["STX", "sBTC", "USDCx"],
         quoteService: {
-          status: "quote-only",
+          status: "invite-only-testnet-settlement",
           network: STACKS_TESTNET_ID,
-          authorization: "merchant-bearer",
+          authorization: "wallet-linked-oauth-or-merchant-key",
           quoteIssuance: true,
-          paymentVerification: false,
-          settlement: false,
+          paymentVerification: true,
+          settlement: true,
+          confirmation: true,
+          deliveryLedger: true,
+          mcp: true,
           sponsorship: false,
         },
       },
@@ -88,8 +98,13 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       webApplication: true,
       publicFacilitatorApi: true,
       quoteIssuance: true,
-      paymentVerification: false,
-      settlement: false,
+      paymentVerification: true,
+      settlement: true,
+      confirmation: true,
+      deliveryLedger: true,
+      partnerRegistration: true,
+      oauth: true,
+      mcp: true,
       sponsorship: false,
       a2aProtocolEndpoint: false,
     },
@@ -109,6 +124,8 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 - [Agents](${origin}/agents): On-chain agent directory and registration.
 - [Jobs](${origin}/jobs): STX and sBTC job escrow lifecycle.
 - [Analytics](${origin}/analytics): Currency-separated protocol activity.
+- [Public evidence](${origin}/evidence): Explorer-verifiable M1 baseline and explicitly attested M2 adoption.
+- [Evidence JSON](${origin}/api/evidence.json): Versioned machine-readable evidence manifest.
 - [Machine manifest](${origin}/.well-known/agent.json): Structured capabilities and canonical contracts.
 - [API Catalog](${origin}/.well-known/api-catalog): RFC 9727 links to the public quote API description, documentation and status.
 - [ARD catalog](${origin}/.well-known/ard.json): Search-oriented descriptions of Nayori's agentic resources.
@@ -119,14 +136,18 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 
 - [Application and contracts](https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce): Public source, Clarity contracts and deployment evidence.
 - [Nayori Agent SDK](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK): TypeScript SDK published as \`@perkos/agent-sdk\`.
-- [Nayori quote API](${NAYORI_API_ORIGIN}): Authenticated request-bound quote issuance on Stacks testnet.
+- [Nayori x402 API](${NAYORI_API_ORIGIN}): Invite-only quotes, verification, settlement confirmation and delivery ledger on Stacks testnet.
 - [API capabilities](${NAYORI_API_ORIGIN}/supported): Exact network, mechanism, assets and availability flags.
 - [API OpenAPI schema](${NAYORI_API_ORIGIN}/openapi.json): Machine-readable HTTP contract.
 - [API JWKS](${NAYORI_API_ORIGIN}/.well-known/jwks.json): Public keys for verifying signed quotes.
+- [OAuth discovery](${NAYORI_API_ORIGIN}/.well-known/oauth-authorization-server): Client-credentials metadata for invited partners.
+- [Protected-resource metadata](${NAYORI_API_ORIGIN}/.well-known/oauth-protected-resource): Supported scopes and canonical authorization server.
+- [Authentication guide](${NAYORI_API_ORIGIN}/auth.md): Wallet-linked enrollment and payment-signing boundary.
+- [MCP server card](${NAYORI_API_ORIGIN}/.well-known/mcp/server-card.json): Experimental authenticated Streamable HTTP tools.
 
 ## Browser agent tools
 
-Supporting browsers can discover two read-only WebMCP tools on the application page: one returns the machine manifest and one locates canonical public resources. These tools never sign a transaction, access wallet credentials or perform a state-changing action.
+Supporting browsers can discover three read-only WebMCP tools on the application page: capabilities, Agent Skills and the versioned public evidence manifest. These tools never sign a transaction, access wallet credentials or perform a state-changing action.
 
 ## Mainnet contracts
 
@@ -139,8 +160,10 @@ Supporting browsers can discover two read-only WebMCP tools on the application p
 
 - Escrowed jobs: STX and sBTC.
 - Request-bound direct x402 profile in the SDK: STX, sBTC and USDCx.
-- The public Nayori API issues short-lived, request-bound quotes on Stacks testnet (\`${STACKS_TESTNET_ID}\`) for authenticated merchants.
-- The API does not verify payments, broadcast transactions, settle payments, sponsor fees or deliver paid resources. A signed quote is not proof of payment or settlement.
+- The public Nayori API runs an invite-only partner pilot on Stacks testnet (\`${STACKS_TESTNET_ID}\`) for STX, sBTC and USDCx.
+- OAuth authorizes API and MCP access. It never signs a payment; each payment transaction remains separately wallet-approved.
+- A signed quote, successful verification or broadcast response is not proof of settlement. Only the confirmed settlement state and signed receipt cross that boundary.
+- Mainnet facilitator settlement and sponsorship remain disabled while the external security-review gate is open.
 
 ## Safety
 
