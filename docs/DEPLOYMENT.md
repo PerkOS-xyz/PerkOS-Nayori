@@ -82,6 +82,25 @@ migration, build `preview.nayori.ai` with its own `NEXT_PUBLIC_SITE_URL`, valida
 wallet connection and all public routes, and retain the existing Vercel deployment as rollback
 until the production cutover is stable.
 
+## Nayori quote API
+
+The public API is available at [api.nayori.ai](https://api.nayori.ai) as a separate, testnet-only
+service. Its current production contract is intentionally narrow:
+
+- authenticated merchants can issue short-lived, request-bound quotes;
+- supported assets are STX, sBTC and USDCx on `stacks:2147483648`;
+- machine discovery is available through
+  [the agent manifest](https://api.nayori.ai/.well-known/agent.json),
+  [`/supported`](https://api.nayori.ai/supported),
+  [OpenAPI](https://api.nayori.ai/openapi.json) and
+  [JWKS](https://api.nayori.ai/.well-known/jwks.json); and
+- verification, transaction broadcasting, settlement, fee sponsorship and resource delivery are
+  disabled.
+
+Do not treat a signed quote as proof of payment or settlement. The API is deployed independently
+from this public web repository, and no private platform configuration or credentials belong in
+this repository.
+
 ## Testnet
 
 Use `App/testnet.env.example` for a branch-scoped Vercel Preview. Testnet validation

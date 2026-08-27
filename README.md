@@ -605,6 +605,8 @@ npm test
 The current contracts and frontend are live on Stacks mainnet.
 
 - App: [nayori.ai](https://nayori.ai)
+- Quote API: [api.nayori.ai](https://api.nayori.ai) — authenticated quote issuance on Stacks
+  testnet; verification, settlement and sponsorship are not enabled
 - PerkOS compatibility URL: [stacks.perkos.xyz](https://stacks.perkos.xyz)
 - Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 - STX escrow: `agentic-commerce-v2`
