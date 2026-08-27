@@ -69,9 +69,10 @@ npm run verify:mainnet
   request-bound STX/sBTC/USDCx verification profile are available.
 - The public quote-only API is live on testnet with machine-readable capabilities, OpenAPI and
   JWKS discovery. Its signed quotes are not proof of payment or settlement.
-- The pre-release agent-readiness baseline was 27/100. This repository now covers the discovery,
-  catalog, skills, content-signal and read-only browser-tool gaps; the external evaluator must be
-  rerun on the deployed preview before recording a new score.
+- The production agent-readiness baseline is 27/100. The exact PR #72 preview scored 67/100,
+  Level 4 (Agent-Integrated): Link headers, Content Signals, API Catalog, Agent Skills, WebMCP and
+  ARD all passed. The remaining scored gaps are DNS-AID and the live identity-service layer:
+  OAuth/OIDC discovery, OAuth Protected Resource, auth.md and an MCP Server Card.
 - Remaining Milestone 2 acceptance work includes the external security review, recorded SDK demo
   and the required mainnet/non-team adoption evidence.
 
