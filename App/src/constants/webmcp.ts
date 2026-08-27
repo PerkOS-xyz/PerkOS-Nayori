@@ -13,6 +13,13 @@ export const nayoriWebMcpToolSpecs = [
       "Return Nayori's integrity-addressed Agent Skills index. This tool is read-only and helps an agent choose safe product or integration instructions.",
     path: "/.well-known/agent-skills/index.json",
   },
+  {
+    name: "nayori_get_public_evidence",
+    title: "Get Nayori public evidence",
+    description:
+      "Return Nayori's versioned, read-only mainnet evidence and explicitly attested Milestone 2 adoption counters.",
+    path: "/api/evidence.json",
+  },
 ] as const;
 
 export const webMcpInputSchema = {

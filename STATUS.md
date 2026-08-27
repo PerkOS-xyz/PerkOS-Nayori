@@ -7,7 +7,8 @@ Last verified: 2026-08-27
 **Live on Stacks mainnet.**
 
 - Production app: [nayori.ai](https://nayori.ai)
-- Quote API: [api.nayori.ai](https://api.nayori.ai) (testnet, quote-only)
+- Partner API: [api.nayori.ai](https://api.nayori.ai) (invite-only testnet settlement)
+- Public evidence: [nayori.ai/evidence](https://nayori.ai/evidence)
 - PerkOS compatibility URL: [stacks.perkos.xyz](https://stacks.perkos.xyz)
 - Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 - Settlement assets: STX and canonical mainnet sBTC
@@ -37,12 +38,15 @@ contract is part of the current product deployment.
 - The four stateful contracts that expose `get-owner` are owned by the mainnet deployer.
 - Production hosting configuration explicitly selects mainnet, the deployer address and
   `agentic-commerce-v2`; the existing Vercel deployment remains available as a rollback path.
-- The public API advertises Stacks testnet quote issuance for STX, sBTC and USDCx. Payment
-  verification, transaction broadcasting, settlement and fee sponsorship remain disabled.
+- The public API supports wallet-linked OAuth, short-lived scoped access tokens, MCP, quotes,
+  payment verification, one testnet broadcast, confirmation reconciliation and a delivery ledger
+  for STX, sBTC and USDCx. Mainnet facilitator settlement and fee sponsorship remain disabled.
 - Chrome smoke testing loaded the existing sBTC job and the empty STX job list from chain.
 - The web release publishes an RFC 9727 API Catalog, ARD manifests, Agent Skills v0.2.0,
-  content-usage signals, discovery `Link` headers and two read-only WebMCP tools. The tools do not
+  content-usage signals, discovery `Link` headers and three read-only WebMCP tools. The tools do not
   access wallets or expose state-changing actions.
+- The public evidence manifest records the approved 10,000-sat M1 lifecycle while keeping all
+  team-operated wallets out of M2 external-adoption counters.
 
 Run the public, signer-free verification at any time:
 
@@ -65,22 +69,21 @@ npm run verify:mainnet
 
 - Milestone 1 is approved and complete. The current STX and sBTC contracts remain unchanged.
 - Milestone 2 is in progress in the independent `PerkOS-Nayori-Agent-SDK` repository. The public
-  `@perkos/agent-sdk@0.2.0` package, signer adapters, testnet lifecycle, x402 v2 foundation and
+  `@perkos/agent-sdk@0.3.2` package, signer adapters, testnet lifecycle, x402 v2 foundation and
   request-bound STX/sBTC/USDCx verification profile are available.
-- The public quote-only API is live on testnet with machine-readable capabilities, OpenAPI and
-  JWKS discovery. Its signed quotes are not proof of payment or settlement.
-- The production agent-readiness baseline is 27/100. The exact PR #72 preview scored 67/100,
-  Level 4 (Agent-Integrated): Link headers, Content Signals, API Catalog, Agent Skills, WebMCP and
+- The invite-only API adds wallet-linked OAuth and authenticated MCP to the testnet confirmation
+  and delivery-ledger path. OAuth authorizes API access but cannot sign a payment.
+- The current production agent-readiness score is 67/100, Level 4 (Agent-Integrated), up from the
+  original 27/100 baseline: Link headers, Content Signals, API Catalog, Agent Skills, WebMCP and
   ARD all passed. The remaining scored gaps are DNS-AID and the live identity-service layer:
-  OAuth/OIDC discovery, OAuth Protected Resource, auth.md and an MCP Server Card.
+  OAuth/OIDC discovery, OAuth Protected Resource, auth.md and an MCP Server Card. This release
+  implements those four service-backed gaps; DNS-AID remains the DNS-layer action before rescoring.
 - Remaining Milestone 2 acceptance work includes the external security review, recorded SDK demo
   and the required mainnet/non-team adoption evidence.
 
 ## Next product work
 
-1. Add payment verification, replay protection and settlement to the quote-only testnet API in
-   reviewable stages without changing the approved escrow contracts.
-2. Complete the external review, recorded SDK demo and mainnet adoption requirements for M2.
+1. Complete the external review, recorded SDK demo and mainnet/non-team adoption requirements for M2.
+2. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.
 3. Add operational alerts for failed Chainhook delivery and unusual escrow activity.
-4. Add OAuth/OIDC, protected-resource metadata, MCP and DNS-AID only with corresponding live,
-   verifiable services; these are not score-only metadata tasks.
+4. Publish DNS-AID after the production OAuth/MCP endpoints pass smoke tests, then rescore Nayori.

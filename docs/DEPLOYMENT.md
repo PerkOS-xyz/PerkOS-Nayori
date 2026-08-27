@@ -89,31 +89,42 @@ Before promotion, verify GET and HEAD behavior, media types and CORS for:
 - `/.well-known/api-catalog` (`application/linkset+json`);
 - `/.well-known/ard.json` and `/.well-known/ai-catalog.json`;
 - `/.well-known/agent-skills/index.json` and every indexed `SKILL.md`;
+- `/.well-known/oauth-authorization-server`, `/.well-known/oauth-protected-resource` and `/auth.md`;
+- `/.well-known/mcp/server-card.json` and `/x402.json`;
+- `/evidence`, `/api/evidence.json` and `/api/evidence.csv`;
 - `/robots.txt`, including `Content-Signal` and `Agentmap`; and
 - `/` with both HTML and `Accept: text/markdown`, including discovery `Link` headers.
 
 Recompute each skill SHA-256 over the exact response bytes and compare it with the index digest.
-Use a browser with WebMCP instrumentation to confirm the two public tools exist at load time and
+Use a browser with WebMCP instrumentation to confirm the three public tools exist at load time and
 remain read-only. Finally, rerun [isitagentready.com](https://isitagentready.com/nayori.ai) against
-the preview. Do not add OAuth, MCP or DNS-AID metadata unless the corresponding live service or
-DNS control is present and independently testable.
+the preview. OAuth/MCP proxy routes must return the canonical documents from the live Platform;
+promote Platform before web. Publish DNS-AID only after those production endpoints are independently
+testable.
 
-## Nayori quote API
+## Nayori partner API
 
 The public API is available at [api.nayori.ai](https://api.nayori.ai) as a separate, testnet-only
-service. Its current production contract is intentionally narrow:
+service. Its invite-only production contract is intentionally narrow:
 
-- authenticated merchants can issue short-lived, request-bound quotes;
+- invited partners bind an OAuth client to a Stacks wallet through an exact Leather-signed challenge;
+- API keys remain backward compatible, while OAuth uses short-lived scoped client-credentials tokens;
+- authenticated partners can issue quotes, verify payments, request one testnet broadcast, read
+  confirmation state and use the idempotent delivery ledger;
+- the experimental MCP endpoint exposes only implemented discovery, quote and settlement-read tools;
 - supported assets are STX, sBTC and USDCx on `stacks:2147483648`;
 - machine discovery is available through
   [the agent manifest](https://api.nayori.ai/.well-known/agent.json),
   [`/supported`](https://api.nayori.ai/supported),
   [OpenAPI](https://api.nayori.ai/openapi.json) and
-  [JWKS](https://api.nayori.ai/.well-known/jwks.json); and
-- verification, transaction broadcasting, settlement, fee sponsorship and resource delivery are
-  disabled.
+  [JWKS](https://api.nayori.ai/.well-known/jwks.json),
+  [OAuth metadata](https://api.nayori.ai/.well-known/oauth-authorization-server),
+  [auth.md](https://api.nayori.ai/auth.md) and the
+  [MCP Server Card](https://api.nayori.ai/.well-known/mcp/server-card.json); and
+- mainnet settlement, fee sponsorship and arbitrary resource proxying are disabled.
 
-Do not treat a signed quote as proof of payment or settlement. The API is deployed independently
+Do not treat a signed quote, verification, broadcast or pending response as proof of confirmed
+settlement. OAuth cannot sign a payment; the payer separately authorizes every transaction. The API is deployed independently
 from this public web repository, and no private platform configuration or credentials belong in
 this repository.
 

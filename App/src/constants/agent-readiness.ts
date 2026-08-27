@@ -69,26 +69,27 @@ Do not request, collect, transmit, or store a seed phrase or private key. Do not
   {
     name: "nayori-x402-quotes",
     description:
-      "Discover Nayori's authenticated, request-bound x402 quote API for STX, sBTC, and USDCx on Stacks testnet.",
+      "Use Nayori's invite-only x402 API and MCP tools for wallet-approved STX, sBTC, and USDCx payments on Stacks testnet.",
     content: `---
 name: nayori-x402-quotes
-description: Discover Nayori's authenticated, request-bound x402 quote API for STX, sBTC, and USDCx on Stacks testnet.
+description: Use Nayori's invite-only x402 API and MCP tools for wallet-approved STX, sBTC, and USDCx payments on Stacks testnet.
 ---
 
 # Nayori x402 Quotes
 
-Use this skill when a merchant integration needs a short-lived, request-bound payment quote.
+Use this skill when an invited partner needs a short-lived quote, payment verification, settlement status, or Nayori MCP tool.
 
 ## Procedure
 
 1. Read [the supported-capabilities response](${NAYORI_API_ORIGIN}/supported) for the current network, assets, mechanisms, and availability flags.
 2. Read [the OpenAPI document](${NAYORI_API_ORIGIN}/openapi.json) for the exact HTTP contract.
-3. Authenticate merchant quote requests with the documented bearer credential.
-4. Bind each quote to the intended request and verify its signature with [the public JWKS](${NAYORI_API_ORIGIN}/.well-known/jwks.json).
+3. Read [OAuth metadata](${NAYORI_API_ORIGIN}/.well-known/oauth-authorization-server) and [auth.md](${NAYORI_API_ORIGIN}/auth.md) for wallet-linked partner enrollment.
+4. Authenticate API and MCP requests with the minimum documented scope.
+5. Bind each quote to the intended request and verify its signature with [the public JWKS](${NAYORI_API_ORIGIN}/.well-known/jwks.json).
 
 ## Safety boundary
 
-The public API currently issues quotes on Stacks testnet for STX, sBTC, and USDCx. It does not verify payment, broadcast transactions, settle funds, sponsor fees, or deliver a paid resource. A signed quote is not proof of payment or settlement.
+The API pilot is limited to Stacks testnet settlement. OAuth cannot sign a payment: the payer separately reviews and signs the exact STX, sBTC, or USDCx transaction. A signed quote, verification, broadcast, or pending state is not confirmed settlement.
 `,
   },
 ] as const;
@@ -113,6 +114,10 @@ export function buildApiCatalog() {
         "service-doc": [
           {
             href: `${NAYORI_API_ORIGIN}/llms.txt`,
+            type: "text/markdown",
+          },
+          {
+            href: `${NAYORI_API_ORIGIN}/auth.md`,
             type: "text/markdown",
           },
         ],
@@ -181,6 +186,20 @@ export function buildArdManifest(origin = SITE_ORIGIN) {
           "How should an agent safely use Nayori's commerce resources?",
         ],
       },
+      {
+        "@context": "https://agenticresourcediscovery.org/context/v1",
+        identifier: "urn:air:nayori.ai:evidence:mainnet",
+        displayName: "Nayori public grant evidence",
+        type: "application/json",
+        url: `${origin}/api/evidence.json`,
+        description:
+          "Explorer-verifiable M1 baseline and explicitly attested M2 adoption counters.",
+        capabilities: ["grant-evidence", "mainnet-transactions", "adoption-metrics"],
+        representativeQueries: [
+          "Show confirmed Nayori mainnet transaction evidence",
+          "Which Milestone 2 adoption requirements are explicitly verified?",
+        ],
+      },
     ],
   } as const;
 }
@@ -194,6 +213,9 @@ export function buildDiscoveryLinkHeader(origin = SITE_ORIGIN): string {
     `<${origin}${ARD_PATH}>; rel="ard"; type="application/json"`,
     `<${origin}${LEGACY_ARD_PATH}>; rel="ai-catalog"; type="application/json"`,
     `<${origin}${AGENT_SKILLS_PATH}>; rel="agent-skills"; type="application/json"`,
+    `<${NAYORI_API_ORIGIN}/.well-known/oauth-authorization-server>; rel="authorization-server"; type="application/json"`,
+    `<${NAYORI_API_ORIGIN}/.well-known/mcp/server-card.json>; rel="mcp"; type="application/json"`,
+    `<${origin}/api/evidence.json>; rel="item"; type="application/json"`,
   ].join(", ");
 }
 

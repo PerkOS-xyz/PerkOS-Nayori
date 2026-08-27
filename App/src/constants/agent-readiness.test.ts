@@ -90,5 +90,8 @@ describe("agent readiness discovery", () => {
     expect(link).toContain('rel="ard"');
     expect(link).toContain('rel="ai-catalog"');
     expect(link).toContain('rel="agent-skills"');
+    expect(link).toContain('rel="authorization-server"');
+    expect(link).toContain('rel="mcp"');
+    expect(link).toContain(`${origin}/api/evidence.json`);
   });
 });

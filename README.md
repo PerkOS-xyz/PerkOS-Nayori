@@ -162,13 +162,16 @@ Nayori publishes a machine-readable map of capabilities that exist today:
   resources.
 - [`/.well-known/agent-skills/index.json`](https://nayori.ai/.well-known/agent-skills/index.json)
   lists three Agent Skills v0.2.0 artifacts with SHA-256 integrity digests.
-- Supporting browsers receive two read-only WebMCP tools for capability and skill discovery. They
+- Supporting browsers receive three read-only WebMCP tools for capabilities, skills and public
+  evidence. They
   cannot sign a transaction, access wallet credentials or change state.
 
 Homepage responses also advertise discovery through HTTP `Link` relations. `robots.txt` permits
-search and real-time AI input while withholding permission for AI training. OAuth metadata, an
-MCP Server Card and DNS-AID are intentionally not published until Nayori operates the services
-and infrastructure those signals would describe.
+search and real-time AI input while withholding permission for AI training. The site publishes
+OAuth authorization-server and protected-resource metadata, `auth.md`, an experimental MCP Server
+Card and `x402.json` by exposing the canonical live documents from `api.nayori.ai`. The
+[`/evidence`](https://nayori.ai/evidence) page and JSON/CSV exports separate approved M1 baseline
+transactions from explicitly attested M2 adoption.
 
 Every write still requires the connected Stacks wallet to review and sign the transaction.
 

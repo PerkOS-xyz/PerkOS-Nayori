@@ -12,6 +12,7 @@ describe("Nayori WebMCP tools", () => {
     expect(nayoriWebMcpTools.map((tool) => tool.name)).toEqual([
       "nayori_get_capabilities",
       "nayori_list_agent_skills",
+      "nayori_get_public_evidence",
     ]);
 
     for (const tool of nayoriWebMcpTools) {

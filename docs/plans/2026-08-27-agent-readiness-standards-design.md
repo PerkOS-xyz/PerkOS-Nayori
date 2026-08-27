@@ -2,6 +2,10 @@
 
 Date: 2026-08-27
 
+Historical increment: this design records the truthful PR #72 boundary. It is superseded for
+OAuth, MCP, evidence and DNS work by
+[`2026-08-27-public-evidence-and-agent-discovery-design.md`](2026-08-27-public-evidence-and-agent-discovery-design.md).
+
 ## Goal and boundary
 
 Raise Nayori's machine discoverability with standards that describe capabilities that exist today.

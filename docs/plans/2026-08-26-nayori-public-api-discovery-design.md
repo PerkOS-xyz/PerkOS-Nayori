@@ -1,5 +1,9 @@
 # Nayori public API discovery design
 
+Historical increment: the quote-only boundary in this design is superseded by
+[`2026-08-27-public-evidence-and-agent-discovery-design.md`](2026-08-27-public-evidence-and-agent-discovery-design.md)
+and the live invite-only OAuth/MCP testnet pilot.
+
 Date: 2026-08-26
 
 ## Goal
