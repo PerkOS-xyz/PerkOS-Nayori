@@ -1,6 +1,6 @@
 # PerkOS Stacks Agentic Commerce — Project Status
 
-Last verified: 2026-08-26
+Last verified: 2026-08-27
 
 ## Current status
 
@@ -40,6 +40,9 @@ contract is part of the current product deployment.
 - The public API advertises Stacks testnet quote issuance for STX, sBTC and USDCx. Payment
   verification, transaction broadcasting, settlement and fee sponsorship remain disabled.
 - Chrome smoke testing loaded the existing sBTC job and the empty STX job list from chain.
+- The web release publishes an RFC 9727 API Catalog, ARD manifests, Agent Skills v0.2.0,
+  content-usage signals, discovery `Link` headers and two read-only WebMCP tools. The tools do not
+  access wallets or expose state-changing actions.
 
 Run the public, signer-free verification at any time:
 
@@ -56,6 +59,7 @@ npm run verify:mainnet
 - Capability validation and proof hashes
 - Currency-aware jobs, activity, analytics, dashboard and search
 - Leather wallet support with explicit network validation
+- Standards-based discovery for HTTP clients and browser agents
 
 ## Milestone status
 
@@ -65,6 +69,10 @@ npm run verify:mainnet
   request-bound STX/sBTC/USDCx verification profile are available.
 - The public quote-only API is live on testnet with machine-readable capabilities, OpenAPI and
   JWKS discovery. Its signed quotes are not proof of payment or settlement.
+- The production agent-readiness baseline is 27/100. The exact PR #72 preview scored 67/100,
+  Level 4 (Agent-Integrated): Link headers, Content Signals, API Catalog, Agent Skills, WebMCP and
+  ARD all passed. The remaining scored gaps are DNS-AID and the live identity-service layer:
+  OAuth/OIDC discovery, OAuth Protected Resource, auth.md and an MCP Server Card.
 - Remaining Milestone 2 acceptance work includes the external security review, recorded SDK demo
   and the required mainnet/non-team adoption evidence.
 
@@ -74,3 +82,5 @@ npm run verify:mainnet
    reviewable stages without changing the approved escrow contracts.
 2. Complete the external review, recorded SDK demo and mainnet adoption requirements for M2.
 3. Add operational alerts for failed Chainhook delivery and unusual escrow activity.
+4. Add OAuth/OIDC, protected-resource metadata, MCP and DNS-AID only with corresponding live,
+   verifiable services; these are not score-only metadata tasks.

@@ -30,6 +30,9 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       llms: `${origin}/llms.txt`,
       sitemap: `${origin}/sitemap.xml`,
       health: `${origin}/api/health`,
+      apiCatalog: `${origin}/.well-known/api-catalog`,
+      ard: `${origin}/.well-known/ard.json`,
+      agentSkills: `${origin}/.well-known/agent-skills/index.json`,
       source: "https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce",
       sdk: "https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK",
       quoteApi: {
@@ -107,6 +110,9 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 - [Jobs](${origin}/jobs): STX and sBTC job escrow lifecycle.
 - [Analytics](${origin}/analytics): Currency-separated protocol activity.
 - [Machine manifest](${origin}/.well-known/agent.json): Structured capabilities and canonical contracts.
+- [API Catalog](${origin}/.well-known/api-catalog): RFC 9727 links to the public quote API description, documentation and status.
+- [ARD catalog](${origin}/.well-known/ard.json): Search-oriented descriptions of Nayori's agentic resources.
+- [Agent Skills](${origin}/.well-known/agent-skills/index.json): Integrity-addressed instructions for agents.
 - [Sitemap](${origin}/sitemap.xml): Public routes.
 
 ## Developer resources
@@ -117,6 +123,10 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 - [API capabilities](${NAYORI_API_ORIGIN}/supported): Exact network, mechanism, assets and availability flags.
 - [API OpenAPI schema](${NAYORI_API_ORIGIN}/openapi.json): Machine-readable HTTP contract.
 - [API JWKS](${NAYORI_API_ORIGIN}/.well-known/jwks.json): Public keys for verifying signed quotes.
+
+## Browser agent tools
+
+Supporting browsers can discover two read-only WebMCP tools on the application page: one returns the machine manifest and one locates canonical public resources. These tools never sign a transaction, access wallet credentials or perform a state-changing action.
 
 ## Mainnet contracts
 

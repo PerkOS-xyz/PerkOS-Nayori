@@ -63,11 +63,12 @@ Open [http://localhost:3000](http://localhost:3000).
 npm run build
 ```
 
-## Container deployment
+## Container deployment (VPS only)
 
 The production build supports Next.js standalone output and runs as a non-root container. Public
 configuration is compiled into the browser bundle, so provide the target origin and reviewed
-mainnet contract values as build arguments:
+mainnet contract values as build arguments. Nayori images are built on the deployment VPS, never
+on a developer workstation:
 
 ```bash
 docker build \
@@ -84,12 +85,18 @@ The container exposes `GET /api/health` and includes a Docker healthcheck. Runti
 `CHAINHOOK_SECRET` must be injected by the deployment environment and must never be included as
 build arguments or image layers.
 
-Agent-readable discovery is available at `/.well-known/agent.json` and `/llms.txt`. Requests to
-the homepage with `Accept: text/markdown` receive the same curated Markdown representation. Both
-surfaces link to the public [Nayori quote API](https://api.nayori.ai), its
+Agent-readable discovery is available through `/.well-known/agent.json`, `/llms.txt`, the RFC 9727
+`/.well-known/api-catalog`, ARD manifests and the Agent Skills v0.2.0 index. Requests to the
+homepage with `Accept: text/markdown` receive the same curated Markdown representation. Homepage
+responses expose discovery `Link` relations, and supporting browsers register two read-only
+WebMCP tools before hydration and again through the client lifecycle. These surfaces link to the
+public [Nayori quote API](https://api.nayori.ai), its
 [`/supported`](https://api.nayori.ai/supported) capability response, OpenAPI schema and JWKS. The
 API currently issues authenticated, request-bound quotes on Stacks testnet only; it does not
 verify or settle payments, broadcast transactions, sponsor fees or deliver paid resources.
+
+The browser tools expose only public discovery documents. They do not access wallet state or
+credentials, and every state-changing Stacks action remains behind explicit wallet authorization.
 
 ## Project Structure
 
