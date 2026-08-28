@@ -170,8 +170,9 @@ Nayori publishes a machine-readable map of capabilities that exist today:
   settlement headers and `Payment-Receipt`. The alternate credential header keeps OAuth Bearer
   authorization separate from wallet payment authorization.
 - [`/openapi.json`](https://nayori.ai/openapi.json) is a credential-free, read-only same-origin
-  alias of the authoritative API schema. It makes the live MPP `x-payment-info` discoverable
-  without duplicating or statically copying the Platform document.
+  view of the authoritative API schema. Its single MPP offer uses the spec-equivalent shorthand
+  for registries that do not yet accept the preferred `offers[]` form; the document is still
+  generated from Platform at request time rather than statically copied.
 - Supporting browsers receive three read-only WebMCP tools for capabilities, skills and public
   evidence. They
   cannot sign a transaction, access wallet credentials or change state.
