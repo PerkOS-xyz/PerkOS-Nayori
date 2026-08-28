@@ -98,16 +98,17 @@ Before promotion, verify GET and HEAD behavior, media types and CORS for:
 Recompute each skill SHA-256 over the exact response bytes and compare it with the index digest.
 Use a browser with WebMCP instrumentation to confirm the three public tools exist at load time and
 remain read-only. Finally, rerun [isitagentready.com](https://isitagentready.com/nayori.ai) against
-the preview. OAuth/MCP proxy routes must return the canonical documents from the live Platform;
-promote Platform before web. Publish DNS-AID only after those production endpoints are independently
-testable.
+the preview. The OAuth service and Platform must pass their live metadata/JWKS and
+token-verification probes before the web points discovery to `oauth.nayori.ai`. Publish DNS-AID
+only after those production endpoints are independently testable.
 
 ## Nayori partner API
 
 The public API is available at [api.nayori.ai](https://api.nayori.ai) as a separate, testnet-only
 service. Its invite-only production contract is intentionally narrow:
 
-- invited partners bind an OAuth client to a Stacks wallet through an exact Leather-signed challenge;
+- the separate `oauth.nayori.ai` service binds invited OAuth clients to Stacks wallets through an
+  exact Leather-signed challenge;
 - API keys remain backward compatible, while OAuth uses short-lived scoped client-credentials tokens;
 - authenticated partners can issue quotes, verify payments, request one testnet broadcast, read
   confirmation state and use the idempotent delivery ledger;
@@ -118,8 +119,8 @@ service. Its invite-only production contract is intentionally narrow:
   [`/supported`](https://api.nayori.ai/supported),
   [OpenAPI](https://api.nayori.ai/openapi.json) and
   [JWKS](https://api.nayori.ai/.well-known/jwks.json),
-  [OAuth metadata](https://api.nayori.ai/.well-known/oauth-authorization-server),
-  [auth.md](https://api.nayori.ai/auth.md) and the
+  [OAuth metadata](https://oauth.nayori.ai/.well-known/oauth-authorization-server),
+  [Auth.md](https://nayori.ai/auth.md) and the
   [MCP Server Card](https://api.nayori.ai/.well-known/mcp/server-card.json); and
 - mainnet settlement, fee sponsorship and arbitrary resource proxying are disabled.
 

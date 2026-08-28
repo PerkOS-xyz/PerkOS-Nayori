@@ -9,6 +9,7 @@ import { SITE_ORIGIN } from "./site";
 export const STACKS_MAINNET_ID = "stacks:1";
 export const STACKS_TESTNET_ID = "stacks:2147483648";
 export const NAYORI_API_ORIGIN = "https://api.nayori.ai";
+export const NAYORI_OAUTH_ORIGIN = "https://oauth.nayori.ai";
 export const MAINNET_DEPLOYER =
   "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH";
 
@@ -43,9 +44,9 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
         supported: `${NAYORI_API_ORIGIN}/supported`,
         openapi: `${NAYORI_API_ORIGIN}/openapi.json`,
         jwks: `${NAYORI_API_ORIGIN}/.well-known/jwks.json`,
-        oauthAuthorizationServer: `${NAYORI_API_ORIGIN}/.well-known/oauth-authorization-server`,
-        oauthProtectedResource: `${NAYORI_API_ORIGIN}/.well-known/oauth-protected-resource`,
-        authGuide: `${NAYORI_API_ORIGIN}/auth.md`,
+        oauthAuthorizationServer: `${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server`,
+        oauthProtectedResource: `${origin}/.well-known/oauth-protected-resource`,
+        authGuide: `${origin}/auth.md`,
         mcpServerCard: `${NAYORI_API_ORIGIN}/.well-known/mcp/server-card.json`,
         mcp: `${NAYORI_API_ORIGIN}/mcp`,
       },
@@ -140,9 +141,9 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 - [API capabilities](${NAYORI_API_ORIGIN}/supported): Exact network, mechanism, assets and availability flags.
 - [API OpenAPI schema](${NAYORI_API_ORIGIN}/openapi.json): Machine-readable HTTP contract.
 - [API JWKS](${NAYORI_API_ORIGIN}/.well-known/jwks.json): Public keys for verifying signed quotes.
-- [OAuth discovery](${NAYORI_API_ORIGIN}/.well-known/oauth-authorization-server): Client-credentials metadata for invited partners.
-- [Protected-resource metadata](${NAYORI_API_ORIGIN}/.well-known/oauth-protected-resource): Supported scopes and canonical authorization server.
-- [Authentication guide](${NAYORI_API_ORIGIN}/auth.md): Wallet-linked enrollment and payment-signing boundary.
+- [OAuth discovery](${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server): Client-credentials metadata for invited partners.
+- [Protected-resource metadata](${origin}/.well-known/oauth-protected-resource): Supported scopes and canonical authorization server.
+- [Authentication guide](${origin}/auth.md): Wallet-linked enrollment and payment-signing boundary.
 - [MCP server card](${NAYORI_API_ORIGIN}/.well-known/mcp/server-card.json): Experimental authenticated Streamable HTTP tools.
 
 ## Browser agent tools

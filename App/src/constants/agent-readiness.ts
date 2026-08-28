@@ -1,5 +1,5 @@
 import { PRODUCT_DESCRIPTION, PRODUCT_FULL_NAME } from "./brand";
-import { NAYORI_API_ORIGIN } from "./discovery";
+import { NAYORI_API_ORIGIN, NAYORI_OAUTH_ORIGIN } from "./discovery";
 import { SITE_ORIGIN } from "./site";
 
 export const AGENT_SKILLS_SCHEMA =
@@ -83,7 +83,7 @@ Use this skill when an invited partner needs a short-lived quote, payment verifi
 
 1. Read [the supported-capabilities response](${NAYORI_API_ORIGIN}/supported) for the current network, assets, mechanisms, and availability flags.
 2. Read [the OpenAPI document](${NAYORI_API_ORIGIN}/openapi.json) for the exact HTTP contract.
-3. Read [OAuth metadata](${NAYORI_API_ORIGIN}/.well-known/oauth-authorization-server) and [auth.md](${NAYORI_API_ORIGIN}/auth.md) for wallet-linked partner enrollment.
+3. Read [OAuth metadata](${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server), [protected-resource metadata](${SITE_ORIGIN}/.well-known/oauth-protected-resource), and [Auth.md](${SITE_ORIGIN}/auth.md) for wallet-linked partner enrollment.
 4. Authenticate API and MCP requests with the minimum documented scope.
 5. Bind each quote to the intended request and verify its signature with [the public JWKS](${NAYORI_API_ORIGIN}/.well-known/jwks.json).
 
@@ -117,7 +117,7 @@ export function buildApiCatalog() {
             type: "text/markdown",
           },
           {
-            href: `${NAYORI_API_ORIGIN}/auth.md`,
+            href: `${SITE_ORIGIN}/auth.md`,
             type: "text/markdown",
           },
         ],
@@ -213,7 +213,8 @@ export function buildDiscoveryLinkHeader(origin = SITE_ORIGIN): string {
     `<${origin}${ARD_PATH}>; rel="ard"; type="application/json"`,
     `<${origin}${LEGACY_ARD_PATH}>; rel="ai-catalog"; type="application/json"`,
     `<${origin}${AGENT_SKILLS_PATH}>; rel="agent-skills"; type="application/json"`,
-    `<${NAYORI_API_ORIGIN}/.well-known/oauth-authorization-server>; rel="authorization-server"; type="application/json"`,
+    `<${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server>; rel="authorization-server"; type="application/json"`,
+    `<${origin}/.well-known/oauth-protected-resource>; rel="oauth-protected-resource"; type="application/json"`,
     `<${NAYORI_API_ORIGIN}/.well-known/mcp/server-card.json>; rel="mcp"; type="application/json"`,
     `<${origin}/api/evidence.json>; rel="item"; type="application/json"`,
   ].join(", ");

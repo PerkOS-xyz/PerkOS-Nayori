@@ -168,8 +168,9 @@ Nayori publishes a machine-readable map of capabilities that exist today:
 
 Homepage responses also advertise discovery through HTTP `Link` relations. `robots.txt` permits
 search and real-time AI input while withholding permission for AI training. The site publishes
-OAuth authorization-server and protected-resource metadata, `auth.md`, an experimental MCP Server
-Card and `x402.json` by exposing the canonical live documents from `api.nayori.ai`. The
+canonical OAuth protected-resource metadata and `Auth.md`, redirects authorization-server
+discovery to the independent `oauth.nayori.ai` issuer, and exposes an experimental MCP Server Card
+for the live `api.nayori.ai` endpoint. `x402.json` remains backed by the live API. The
 [`/evidence`](https://nayori.ai/evidence) page and JSON/CSV exports separate approved M1 baseline
 transactions from explicitly attested M2 adoption.
 

@@ -1,11 +1,6 @@
 import { NAYORI_API_ORIGIN } from "../constants/discovery";
 
 const PUBLIC_PATHS = new Set([
-  "/.well-known/oauth-authorization-server",
-  "/.well-known/oauth-protected-resource",
-  "/.well-known/mcp/server-card.json",
-  "/.well-known/mcp.json",
-  "/auth.md",
   "/x402.json",
 ]);
 

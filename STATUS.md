@@ -38,7 +38,8 @@ contract is part of the current product deployment.
 - The four stateful contracts that expose `get-owner` are owned by the mainnet deployer.
 - Production hosting configuration explicitly selects mainnet, the deployer address and
   `agentic-commerce-v2`; the existing Vercel deployment remains available as a rollback path.
-- The public API supports wallet-linked OAuth, short-lived scoped access tokens, MCP, quotes,
+- The public API validates wallet-linked OAuth tokens issued independently by `oauth.nayori.ai`,
+  plus short-lived scopes, MCP, quotes,
   payment verification, one testnet broadcast, confirmation reconciliation and a delivery ledger
   for STX, sBTC and USDCx. Mainnet facilitator settlement and fee sponsorship remain disabled.
 - Chrome smoke testing loaded the existing sBTC job and the empty STX job list from chain.
@@ -73,11 +74,10 @@ npm run verify:mainnet
   request-bound STX/sBTC/USDCx verification profile are available.
 - The invite-only API adds wallet-linked OAuth and authenticated MCP to the testnet confirmation
   and delivery-ledger path. OAuth authorizes API access but cannot sign a payment.
-- The current production agent-readiness score is 67/100, Level 4 (Agent-Integrated), up from the
-  original 27/100 baseline: Link headers, Content Signals, API Catalog, Agent Skills, WebMCP and
-  ARD all passed. The remaining scored gaps are DNS-AID and the live identity-service layer:
-  OAuth/OIDC discovery, OAuth Protected Resource, auth.md and an MCP Server Card. This release
-  implements those four service-backed gaps; DNS-AID remains the DNS-layer action before rescoring.
+- The current production agent-readiness score is 73/100, Level 5 (Agent-Native), up from the
+  original 27/100 baseline. The latest evaluator reported four concrete gaps: DNS-AID, an OAuth
+  protected-resource identity mismatch, the `Auth.md` H1 and missing MCP `serverInfo`. This release
+  corrects the three HTTP-layer gaps; DNS-AID remains the DNS-layer action before rescoring.
 - Remaining Milestone 2 acceptance work includes the external security review, recorded SDK demo
   and the required mainnet/non-team adoption evidence.
 

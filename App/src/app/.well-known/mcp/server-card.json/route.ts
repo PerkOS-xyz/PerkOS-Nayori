@@ -1,6 +1,13 @@
-import { proxyNayoriApiDiscovery } from "../../../../utils/nayori-api-proxy";
+import { PUBLIC_DISCOVERY_HEADERS } from "../../../../constants/agent-readiness";
+import { buildMcpServerCard } from "../../../../constants/oauth-discovery";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 export async function GET() {
-  return proxyNayoriApiDiscovery("/.well-known/mcp/server-card.json");
+  return Response.json(buildMcpServerCard(), { headers: PUBLIC_DISCOVERY_HEADERS });
+}
+
+export async function HEAD() {
+  return new Response(null, {
+    headers: { ...PUBLIC_DISCOVERY_HEADERS, "Content-Type": "application/json" },
+  });
 }
