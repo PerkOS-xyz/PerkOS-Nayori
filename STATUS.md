@@ -55,6 +55,9 @@ contract is part of the current product deployment.
   `X-NAYORI-SIGNED-QUOTE`, `Accept` and a request ID. It never forwards cookies or ordinary
   `Authorization`; the API returns `Payment-Receipt` only after confirmed USDCx settlement and
   idempotent delivery.
+- The apex `/openapi.json` view normalizes the one live USDCx offer to Payment Discovery's
+  equivalent single-offer shorthand. The canonical API schema retains the preferred `offers[]`
+  form, and the runtime 402 challenge remains authoritative.
 - Chrome smoke testing loaded the existing sBTC job and the empty STX job list from chain.
 - The web release publishes an RFC 9727 API Catalog, ARD manifests, Agent Skills v0.2.0,
   content-usage signals, discovery `Link` headers and three read-only WebMCP tools. The tools do not

@@ -5,6 +5,57 @@ const PUBLIC_PATHS = new Set([
   "/x402.json",
 ]);
 
+const NAYORI_PUBLIC_MPP_PATH = "/mpp/v1";
+// Mirrors the fixed testnet merchant route; the runtime 402 remains authoritative.
+const NAYORI_PUBLIC_MPP_AMOUNT = "10000";
+
+type JsonObject = Record<string, unknown>;
+
+function asJsonObject(value: unknown): JsonObject | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as JsonObject
+    : null;
+}
+
+function buildApexOpenApiDocument(source: unknown): unknown {
+  const document = asJsonObject(source);
+  const paths = asJsonObject(document?.paths);
+  const mppPath = asJsonObject(paths?.[NAYORI_PUBLIC_MPP_PATH]);
+  const operation = asJsonObject(mppPath?.get);
+  const paymentInfo = asJsonObject(operation?.["x-payment-info"]);
+  const offers = paymentInfo?.offers;
+  const offer = Array.isArray(offers) && offers.length === 1
+    ? asJsonObject(offers[0])
+    : null;
+
+  if (!document || !paths || !mppPath || !operation || !offer) return source;
+  if (offer.method !== "usdc" || offer.intent !== "charge") return source;
+
+  // Payment Discovery requires clients to accept both forms. The apex uses the
+  // single-offer shorthand for registries that do not yet parse `offers[]`.
+  const apexPaymentInfo: JsonObject = {
+    intent: offer.intent,
+    method: offer.method,
+    amount: typeof offer.amount === "string" ? offer.amount : NAYORI_PUBLIC_MPP_AMOUNT,
+  };
+  if (typeof offer.currency === "string") apexPaymentInfo.currency = offer.currency;
+  if (typeof offer.description === "string") apexPaymentInfo.description = offer.description;
+
+  return {
+    ...document,
+    paths: {
+      ...paths,
+      [NAYORI_PUBLIC_MPP_PATH]: {
+        ...mppPath,
+        get: {
+          ...operation,
+          "x-payment-info": apexPaymentInfo,
+        },
+      },
+    },
+  };
+}
+
 const PAYMENT_REQUEST_HEADERS = [
   "accept",
   "payment-signature",
@@ -77,12 +128,18 @@ export async function proxyNayoriApiDiscovery(path: string): Promise<Response> {
         { status: 503, headers: { "Cache-Control": "no-store" } },
       );
     }
-    return new Response(await upstream.arrayBuffer(), {
+    const isApexOpenApi = path === "/openapi.json";
+    const body = isApexOpenApi
+      ? JSON.stringify(buildApexOpenApiDocument(await upstream.json()))
+      : await upstream.arrayBuffer();
+    return new Response(body, {
       status: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
-        "Content-Location": upstreamUrl,
+        ...(isApexOpenApi
+          ? { Link: `<${upstreamUrl}>; rel="canonical"; type="application/openapi+json"` }
+          : { "Content-Location": upstreamUrl }),
         "Content-Type": upstream.headers.get("content-type") ??
           (path.endsWith(".md") ? "text/markdown; charset=utf-8" : "application/json"),
       },
