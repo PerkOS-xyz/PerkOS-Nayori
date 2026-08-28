@@ -96,6 +96,8 @@ Before promotion, verify GET and HEAD behavior, media types and CORS for:
 - `/api/mpp/v1`, expecting 402 plus `WWW-Authenticate: Payment`, a challenge selecting
   `Payment-Authorization`, and an OPTIONS response that permits the selected credential header and
   `X-NAYORI-SIGNED-QUOTE`;
+- `/openapi.json`, expecting the authoritative Platform OpenAPI document, `Content-Location` at
+  `api.nayori.ai/openapi.json` and an MPP `x-payment-info` offer on `GET /mpp/v1`;
 - `/evidence`, `/api/evidence.json` and `/api/evidence.csv`;
 - `/robots.txt`, including `Content-Signal` and `Agentmap`; and
 - `/` with both HTML and `Accept: text/markdown`, including discovery `Link` headers.
@@ -182,6 +184,11 @@ Promotion order remains facilitator, API resource server, then web. Validate tha
 
 MPP sponsorship and every facilitator mainnet settlement remain disabled until the external M2
 review gate closes.
+
+The credential-free `nayori.ai/openapi.json` route is a narrow read-only alias to
+`api.nayori.ai/openapi.json`. It forwards no browser headers or credentials and fails closed with
+503 when the authoritative schema is unavailable. Do not replace it with a copied static schema;
+runtime discovery must stay aligned with the Platform flags that actually expose MPP.
 
 ## Testnet
 
