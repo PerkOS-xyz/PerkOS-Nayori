@@ -3,6 +3,7 @@ import {
   buildDiscoveryManifest,
   buildLlmsText,
   NAYORI_API_ORIGIN,
+  NAYORI_OAUTH_ORIGIN,
 } from "./discovery";
 import { resolveSiteOrigin } from "./site";
 
@@ -46,8 +47,12 @@ describe("agent discovery", () => {
     );
     expect(manifest.discovery.evidenceJson).toBe(`${origin}/api/evidence.json`);
     expect(manifest.discovery.quoteApi.oauthAuthorizationServer).toBe(
-      `${NAYORI_API_ORIGIN}/.well-known/oauth-authorization-server`
+      `${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server`
     );
+    expect(manifest.discovery.quoteApi.oauthProtectedResource).toBe(
+      `${origin}/.well-known/oauth-protected-resource`
+    );
+    expect(manifest.discovery.quoteApi.authGuide).toBe(`${origin}/auth.md`);
     expect(manifest.discovery.quoteApi.mcp).toBe(`${NAYORI_API_ORIGIN}/mcp`);
     expect(manifest.availability.publicFacilitatorApi).toBe(true);
     expect(manifest.availability.quoteIssuance).toBe(true);
@@ -82,7 +87,8 @@ describe("agent discovery", () => {
     expect(text).toContain("invite-only partner pilot");
     expect(text).toContain("Only the confirmed settlement state and signed receipt");
     expect(text).toContain(`${origin}/api/evidence.json`);
-    expect(text).toContain(`${NAYORI_API_ORIGIN}/auth.md`);
+    expect(text).toContain(`${origin}/auth.md`);
+    expect(text).toContain(`${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server`);
     expect(text).toContain("requires authorization from a Stacks wallet");
   });
 });

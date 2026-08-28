@@ -95,8 +95,9 @@ public [Nayori partner API](https://api.nayori.ai), its
 API runs an invite-only testnet pilot with wallet-linked OAuth, MCP, request-bound quotes,
 verification, one broadcast attempt, confirmation reconciliation and an idempotent delivery
 ledger. Mainnet facilitator settlement and sponsorship remain disabled. The web app also exposes
-the canonical OAuth/MCP documents, `x402.json` and a versioned public evidence manifest; it does
-not proxy credentials or state-changing requests.
+the canonical protected-resource identity and `Auth.md`, redirects issuer discovery to the
+separate `oauth.nayori.ai` service, and publishes the MCP Server Card, `x402.json` and a versioned
+public evidence manifest. It does not proxy credentials or state-changing requests.
 
 The browser tools expose only public discovery documents. They do not access wallet state or
 credentials, and every state-changing Stacks action remains behind explicit wallet authorization.
