@@ -14,6 +14,7 @@ describe("canonical OAuth and MCP discovery", () => {
       resource: origin,
       authorization_servers: [NAYORI_OAUTH_ORIGIN],
       resource_documentation: `${origin}/auth.md`,
+      scopes_supported: expect.arrayContaining(["agent:self"]),
     });
   });
 
@@ -21,6 +22,9 @@ describe("canonical OAuth and MCP discovery", () => {
     const markdown = buildAuthMarkdown(origin);
     expect(markdown).toMatch(/^# Auth\.md — Nayori agent authentication/);
     expect(markdown).toContain(`${NAYORI_OAUTH_ORIGIN}/oauth/token`);
+    expect(markdown).toContain(`${NAYORI_OAUTH_ORIGIN}/agent/identity`);
+    expect(markdown).toContain("SIP-018");
+    expect(markdown).toContain("agent:self");
     expect(markdown).toContain("cannot sign, sponsor or approve");
   });
 
