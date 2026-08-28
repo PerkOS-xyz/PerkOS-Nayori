@@ -61,7 +61,7 @@ export default function Header() {
             <Search className="h-4 w-4" />
           </Link>
           <a
-            href="https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce"
+            href="https://github.com/PerkOS-xyz/PerkOS-Nayori"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="GitHub"
