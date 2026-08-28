@@ -99,7 +99,8 @@ Before promotion, verify GET and HEAD behavior, media types and CORS for:
 - `/openapi.json`, expecting a canonical `Link` to `api.nayori.ai/openapi.json` and a direct
   single-offer MPP `x-payment-info` on `GET /mpp/v1` with `method=usdc`, `intent=charge` and
   `amount=10000`;
-- `/evidence`, `/api/evidence.json` and `/api/evidence.csv`;
+- `/evidence`, confirming a live or explicitly unavailable mainnet data status, plus
+  `/api/evidence.json` and the stable M1 `/api/evidence.csv` export;
 - `/robots.txt`, including `Content-Signal` and `Agentmap`; and
 - `/` with both HTML and `Accept: text/markdown`, including discovery `Link` headers.
 

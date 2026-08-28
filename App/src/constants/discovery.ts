@@ -165,8 +165,8 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 - [Agents](${origin}/agents): On-chain agent directory and registration.
 - [Jobs](${origin}/jobs): STX and sBTC job escrow lifecycle.
 - [Analytics](${origin}/analytics): Currency-separated protocol activity.
-- [Public evidence](${origin}/evidence): Explorer-verifiable M1 baseline and explicitly attested M2 adoption.
-- [Evidence JSON](${origin}/api/evidence.json): Versioned machine-readable evidence manifest.
+- [Transparency dashboard](${origin}/evidence): Live mainnet contract totals, explorer-verifiable M1 evidence and explicitly attested M2 adoption.
+- [Evidence JSON](${origin}/api/evidence.json): Versioned machine-readable transparency snapshot.
 - [Public x402 resource](${origin}/api/v1): A real x402 v2 payment challenge for a settlement-backed Nayori capability report on Stacks testnet.
 - [Public MPP resource](${origin}/api/mpp/v1): MPP PaymentAuth usdc/charge/stacks challenge for the same report, paid in USDCx on Stacks testnet.
 - [Machine manifest](${origin}/.well-known/agent.json): Structured capabilities and canonical contracts.

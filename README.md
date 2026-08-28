@@ -183,8 +183,10 @@ canonical OAuth protected-resource metadata and `Auth.md`, redirects authorizati
 discovery to the independent `oauth.nayori.ai` issuer, and exposes an experimental MCP Server Card
 for the live `api.nayori.ai` endpoint. `x402.json` remains backed by the live API, while the paid
 resource is backed by the separately isolated `facilitator.nayori.ai` runtime. The
-[`/evidence`](https://nayori.ai/evidence) page and JSON/CSV exports separate approved M1 baseline
-transactions from explicitly attested M2 adoption.
+[`/evidence`](https://nayori.ai/evidence) transparency dashboard reads the canonical contracts,
+links recent transactions to the explorer and separates raw mainnet totals, approved M1 baseline
+transactions and explicitly attested M2 adoption. Its versioned JSON snapshot is agent-readable;
+the stable CSV export preserves the approved M1 transaction list.
 
 Every write still requires the connected Stacks wallet to review and sign the transaction.
 

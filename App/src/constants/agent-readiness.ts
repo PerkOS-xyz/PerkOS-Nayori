@@ -270,7 +270,7 @@ export function buildArdManifest(origin = SITE_ORIGIN) {
         type: "application/json",
         url: `${origin}/api/evidence.json`,
         description:
-          "Explorer-verifiable M1 baseline and explicitly attested M2 adoption counters.",
+          "Live mainnet contract totals, explorer-verifiable M1 evidence and explicitly attested M2 adoption counters.",
         capabilities: ["grant-evidence", "mainnet-transactions", "adoption-metrics"],
         representativeQueries: [
           "Show confirmed Nayori mainnet transaction evidence",

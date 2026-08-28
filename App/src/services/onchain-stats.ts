@@ -13,9 +13,7 @@ export const CHAIN_PARAM = NETWORK_NAME === "mainnet" ? "mainnet" : "testnet";
 const CONTRACTS = [
   "agent-registry",
   STX_COMMERCE_CONTRACT_NAME,
-  "reputation-registry",
   "validation-registry",
-  // sBTC escrow stack (Milestone 1)
   "sbtc-commerce",
   "reputation-registry-v2",
 ] as const;
@@ -27,12 +25,15 @@ export interface RecentTx {
   sender: string;
   status: string;
   time?: string;
+  blockHeight?: number;
 }
 
 export interface OnchainStats {
   network: string;
   deployer: string;
   totalTx: number;
+  contractCalls: number;
+  successfulContractCalls: number;
   distinctWallets: number;
   feesSTX: number;
   indexedTransactions: number;
@@ -44,7 +45,7 @@ export interface OnchainStats {
 const PAGE_SIZE = 50;
 const MAX_INDEXED_PER_CONTRACT = 1000;
 
-async function getContractTransactions(contract: string, allPages: boolean) {
+async function getContractTransactions(contract: string, allPages: boolean, strict = false) {
   const collected: any[] = [];
   let total = 0;
   let offset = 0;
@@ -53,7 +54,10 @@ async function getContractTransactions(contract: string, allPages: boolean) {
       `${API}/extended/v1/address/${CONTRACT_ADDRESS}.${contract}/transactions?limit=${PAGE_SIZE}&offset=${offset}`,
       { cache: "no-store" }
     );
-    if (!r.ok) return { total: 0, results: [], truncated: false };
+    if (!r.ok) {
+      if (strict) throw new Error(`Hiro returned ${r.status} for ${contract}.`);
+      return { total: 0, results: [], truncated: false };
+    }
     const data = await r.json();
     const page: any[] = data.results ?? [];
     total = typeof data.total === "number" ? data.total : page.length;
@@ -64,8 +68,12 @@ async function getContractTransactions(contract: string, allPages: boolean) {
   return { total, results: collected, truncated: total > collected.length };
 }
 
-export async function getOnchainStats(): Promise<OnchainStats> {
+export async function getOnchainStats(
+  options: { strict?: boolean; recentLimit?: number } = {}
+): Promise<OnchainStats> {
   let totalTx = 0;
+  let contractCalls = 0;
+  let successfulContractCalls = 0;
   let feesMicro = 0;
   const wallets = new Set<string>();
   const perContract: { name: string; total: number }[] = [];
@@ -76,37 +84,39 @@ export async function getOnchainStats(): Promise<OnchainStats> {
   const contractResults = await Promise.all(
     CONTRACTS.map(async (contract) => ({
       contract,
-      data: await getContractTransactions(contract, true).catch(() => ({
-        total: 0,
-        results: [] as any[],
-        truncated: false,
-      })),
+      data: await getContractTransactions(contract, true, options.strict).catch((error) => {
+        if (options.strict) throw error;
+        return {
+          total: 0,
+          results: [] as any[],
+          truncated: false,
+        };
+      }),
     }))
   );
 
   for (const { contract: c, data } of contractResults) {
-    try {
-      perContract.push({ name: c, total: data.total });
-      totalTx += data.total;
-      indexedTransactions += data.results.length;
-      truncated ||= data.truncated;
+    perContract.push({ name: c, total: data.total });
+    totalTx += data.total;
+    indexedTransactions += data.results.length;
+    truncated ||= data.truncated;
 
-      for (const tx of data.results) {
-        if (tx.sender_address) wallets.add(tx.sender_address);
-        feesMicro += Number(tx.fee_rate ?? 0);
-        if (tx.tx_type === "contract_call") {
-          recent.push({
-            txId: tx.tx_id,
-            contract: c,
-            fn: tx.contract_call?.function_name ?? "",
-            sender: tx.sender_address,
-            status: tx.tx_status,
-            time: tx.block_time_iso,
-          });
-        }
+    for (const tx of data.results) {
+      if (tx.sender_address) wallets.add(tx.sender_address);
+      feesMicro += Number(tx.fee_rate ?? 0);
+      if (tx.tx_type === "contract_call") {
+        contractCalls += 1;
+        if (tx.tx_status === "success") successfulContractCalls += 1;
+        recent.push({
+          txId: tx.tx_id,
+          contract: c,
+          fn: tx.contract_call?.function_name ?? "",
+          sender: tx.sender_address,
+          status: tx.tx_status,
+          time: tx.block_time_iso,
+          blockHeight: Number(tx.block_height ?? 0) || undefined,
+        });
       }
-    } catch {
-      perContract.push({ name: c, total: 0 });
     }
   }
 
@@ -116,12 +126,14 @@ export async function getOnchainStats(): Promise<OnchainStats> {
     network: CHAIN_PARAM,
     deployer: CONTRACT_ADDRESS,
     totalTx,
+    contractCalls,
+    successfulContractCalls,
     distinctWallets: wallets.size,
     feesSTX: feesMicro / 1e6,
     indexedTransactions,
     truncated,
     perContract,
-    recent: recent.slice(0, 12),
+    recent: recent.slice(0, options.recentLimit ?? 12),
   };
 }
 
@@ -161,6 +173,7 @@ export async function getRecentActivity(limit = 40): Promise<RecentTx[]> {
             sender: tx.sender_address,
             status: tx.tx_status,
             time: tx.block_time_iso,
+            blockHeight: Number(tx.block_height ?? 0) || undefined,
           });
         }
       }

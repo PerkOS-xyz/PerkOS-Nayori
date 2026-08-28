@@ -1,7 +1,7 @@
 import { MAINNET_DEPLOYER } from "./discovery";
 
-export const EVIDENCE_VERSION = 1;
-export const EVIDENCE_UPDATED_AT = "2026-08-27T00:00:00.000Z";
+export const EVIDENCE_VERSION = 2;
+export const EVIDENCE_UPDATED_AT = "2026-08-28T00:00:00.000Z";
 
 export const milestone2Targets = {
   registeredAgentsMainnet: 10,
@@ -29,6 +29,27 @@ export const evidenceWallets = [
     roles: ["provider"],
   },
 ] as const;
+
+export type EvidenceWalletClassification =
+  | "team"
+  | "external-attested"
+  | "unattested";
+
+export const m2Baseline = {
+  registeredAgentsMainnet: 1,
+  completedSbtcJobsMainnet: 1,
+} as const;
+
+export const externalSdkAdoptions = [] as const;
+
+export function classifyEvidenceWallet(address?: string): EvidenceWalletClassification {
+  if (!address) return "unattested";
+  const normalized = address.toUpperCase();
+  return (
+    evidenceWallets.find((wallet) => wallet.address.toUpperCase() === normalized)
+      ?.classification ?? "unattested"
+  );
+}
 
 export const m1SbtcLifecycle = [
   {
@@ -120,6 +141,7 @@ export const evidenceManifest = {
   },
   milestone2: {
     status: "in-progress",
+    baseline: m2Baseline,
     targets: milestone2Targets,
     verified: {
       registeredAgentsMainnet: 0,
@@ -133,6 +155,7 @@ export const evidenceManifest = {
       npm: "https://www.npmjs.com/package/@perkos/agent-sdk",
       repository: "https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK",
     },
+    externalSdkAdoptions,
   },
 } as const;
 
