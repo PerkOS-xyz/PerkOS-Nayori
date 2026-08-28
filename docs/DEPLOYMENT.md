@@ -91,6 +91,8 @@ Before promotion, verify GET and HEAD behavior, media types and CORS for:
 - `/.well-known/agent-skills/index.json` and every indexed `SKILL.md`;
 - `/.well-known/oauth-authorization-server`, `/.well-known/oauth-protected-resource` and `/auth.md`;
 - `/.well-known/mcp/server-card.json` and `/x402.json`;
+- `/api/v1`, expecting 402 plus `PAYMENT-REQUIRED` without a payment, and an OPTIONS response that
+  permits `PAYMENT-SIGNATURE` and `X-NAYORI-SIGNED-QUOTE`;
 - `/evidence`, `/api/evidence.json` and `/api/evidence.csv`;
 - `/robots.txt`, including `Content-Signal` and `Agentmap`; and
 - `/` with both HTML and `Accept: text/markdown`, including discovery `Link` headers.
@@ -128,6 +130,29 @@ Do not treat a signed quote, verification, broadcast or pending response as proo
 settlement. OAuth cannot sign a payment; the payer separately authorizes every transaction. The API is deployed independently
 from this public web repository, and no private platform configuration or credentials belong in
 this repository.
+
+### Same-origin x402 resource
+
+The web route `nayori.ai/api/v1` is intentionally a narrow GET/OPTIONS proxy to
+`api.nayori.ai/v1`. It forwards only `Accept`, `PAYMENT-SIGNATURE`, `X-NAYORI-SIGNED-QUOTE` and a
+safe request ID. It never forwards cookies, browser authorization, origin headers or a request
+body. It preserves 402, 202 and 200 status codes plus the x402, polling and release headers.
+
+The API runtime holds one merchant key and calls `facilitator.nayori.ai` over HTTPS. The
+facilitator runtime owns quote signing, transaction verification, testnet broadcast,
+reconciliation, signed receipts and the delivery ledger in its own database. Both runtimes may be
+built from `PerkOS-Nayori-Platform`, but must use separate environment files, processes, host
+routes and database credentials. Do not expose the merchant key in the web deployment.
+
+Promotion order is facilitator, API resource server, then web. Before rescoring, verify:
+
+1. facilitator health, readiness and discovery on the new DNS host;
+2. an unauthenticated apex GET returns a valid x402 v2 402 challenge;
+3. a wallet-approved submission returns 202 and a canonical same-origin polling location;
+4. no resource body is delivered before canonical confirmation; and
+5. the confirmed response contains `PAYMENT-RESPONSE` and remains idempotent on retry.
+
+Mainnet settlement stays disabled until the external review gate is closed.
 
 ## Testnet
 

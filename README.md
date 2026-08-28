@@ -162,6 +162,9 @@ Nayori publishes a machine-readable map of capabilities that exist today:
   resources.
 - [`/.well-known/agent-skills/index.json`](https://nayori.ai/.well-known/agent-skills/index.json)
   lists three Agent Skills v0.2.0 artifacts with SHA-256 integrity digests.
+- [`/api/v1`](https://nayori.ai/api/v1) is the same-origin x402 v2 paid resource. It preserves
+  `PAYMENT-REQUIRED`, `PAYMENT-SIGNATURE`, asynchronous settlement headers and
+  `PAYMENT-RESPONSE` while forwarding no cookies or authorization credentials.
 - Supporting browsers receive three read-only WebMCP tools for capabilities, skills and public
   evidence. They
   cannot sign a transaction, access wallet credentials or change state.
@@ -170,7 +173,8 @@ Homepage responses also advertise discovery through HTTP `Link` relations. `robo
 search and real-time AI input while withholding permission for AI training. The site publishes
 canonical OAuth protected-resource metadata and `Auth.md`, redirects authorization-server
 discovery to the independent `oauth.nayori.ai` issuer, and exposes an experimental MCP Server Card
-for the live `api.nayori.ai` endpoint. `x402.json` remains backed by the live API. The
+for the live `api.nayori.ai` endpoint. `x402.json` remains backed by the live API, while the paid
+resource is backed by the separately isolated `facilitator.nayori.ai` runtime. The
 [`/evidence`](https://nayori.ai/evidence) page and JSON/CSV exports separate approved M1 baseline
 transactions from explicitly attested M2 adoption.
 

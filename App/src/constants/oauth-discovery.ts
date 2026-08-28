@@ -98,7 +98,7 @@ export function buildMcpServerCard(resource = SITE_ORIGIN) {
   return {
     schemaVersion: "1.0",
     name: "Nayori x402 MCP Server",
-    serverInfo: { name: "nayori-x402", version: "0.5.0" },
+    serverInfo: { name: "nayori-x402", version: "0.6.0" },
     description:
       "Experimental authenticated MCP access to Nayori x402 discovery, quotes and settlement status.",
     status: "experimental",

@@ -1,6 +1,6 @@
 # PerkOS Stacks Agentic Commerce — Project Status
 
-Last verified: 2026-08-27
+Last verified: 2026-08-28
 
 ## Current status
 
@@ -8,6 +8,8 @@ Last verified: 2026-08-27
 
 - Production app: [nayori.ai](https://nayori.ai)
 - Partner API: [api.nayori.ai](https://api.nayori.ai) (invite-only testnet settlement)
+- Public x402 resource release candidate: [nayori.ai/api/v1](https://nayori.ai/api/v1)
+- Isolated facilitator target: [facilitator.nayori.ai](https://facilitator.nayori.ai)
 - Public evidence: [nayori.ai/evidence](https://nayori.ai/evidence)
 - PerkOS compatibility URL: [stacks.perkos.xyz](https://stacks.perkos.xyz)
 - Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
@@ -42,6 +44,10 @@ contract is part of the current product deployment.
   plus short-lived scopes, MCP, quotes,
   payment verification, one testnet broadcast, confirmation reconciliation and a delivery ledger
   for STX, sBTC and USDCx. Mainnet facilitator settlement and fee sponsorship remain disabled.
+- The web exposes a credential-stripping same-origin `/api/v1` route. It forwards only x402
+  protocol headers to `api.nayori.ai/v1`; the API uses a merchant credential over HTTPS to the
+  isolated facilitator. A payment returns 202 until confirmation and the fixed capability report
+  is delivered only with `PAYMENT-RESPONSE` after the signed receipt exists.
 - Chrome smoke testing loaded the existing sBTC job and the empty STX job list from chain.
 - The web release publishes an RFC 9727 API Catalog, ARD manifests, Agent Skills v0.2.0,
   content-usage signals, discovery `Link` headers and three read-only WebMCP tools. The tools do not
@@ -74,6 +80,8 @@ npm run verify:mainnet
   request-bound STX/sBTC/USDCx verification profile are available.
 - The invite-only API adds wallet-linked OAuth and authenticated MCP to the testnet confirmation
   and delivery-ledger path. OAuth authorizes API access but cannot sign a payment.
+- This release candidate adds a real same-origin x402 resource for testnet STX first; the same
+  SDK/facilitator profile supports sBTC and USDCx routes without changing M1 contracts.
 - The current production agent-readiness score is 73/100, Level 5 (Agent-Native), up from the
   original 27/100 baseline. The latest evaluator reported four concrete gaps: DNS-AID, an OAuth
   protected-resource identity mismatch, the `Auth.md` H1 and missing MCP `serverInfo`. This release
@@ -86,4 +94,5 @@ npm run verify:mainnet
 1. Complete the external review, recorded SDK demo and mainnet/non-team adoption requirements for M2.
 2. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.
 3. Add operational alerts for failed Chainhook delivery and unusual escrow activity.
-4. Publish DNS-AID after the production OAuth/MCP endpoints pass smoke tests, then rescore Nayori.
+4. Deploy and probe `facilitator.nayori.ai`, `api.nayori.ai/v1` and `nayori.ai/api/v1`, then
+   rescore Nayori and record the x402 evaluator result.
