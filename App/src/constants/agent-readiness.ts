@@ -69,27 +69,27 @@ Do not request, collect, transmit, or store a seed phrase or private key. Do not
   {
     name: "nayori-x402-quotes",
     description:
-      "Use Nayori's invite-only x402 API and MCP tools for wallet-approved STX, sBTC, and USDCx payments on Stacks testnet.",
+      "Purchase Nayori's public x402 resource or use invited API and MCP tools with wallet-approved Stacks testnet payments.",
     content: `---
 name: nayori-x402-quotes
-description: Use Nayori's invite-only x402 API and MCP tools for wallet-approved STX, sBTC, and USDCx payments on Stacks testnet.
+description: Purchase Nayori's public x402 resource or use invited API and MCP tools with wallet-approved Stacks testnet payments.
 ---
 
-# Nayori x402 Quotes
+# Nayori x402 Payments
 
-Use this skill when an invited partner needs a short-lived quote, payment verification, settlement status, or Nayori MCP tool.
+Use this skill when an agent needs the public paid report, or an invited partner needs a quote, settlement status, or Nayori MCP tool.
 
 ## Procedure
 
-1. Read [the supported-capabilities response](${NAYORI_API_ORIGIN}/supported) for the current network, assets, mechanisms, and availability flags.
-2. Read [the OpenAPI document](${NAYORI_API_ORIGIN}/openapi.json) for the exact HTTP contract.
-3. Read [OAuth metadata](${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server), [protected-resource metadata](${SITE_ORIGIN}/.well-known/oauth-protected-resource), and [Auth.md](${SITE_ORIGIN}/auth.md) for wallet-linked partner enrollment.
-4. Authenticate API and MCP requests with the minimum documented scope.
-5. Bind each quote to the intended request and verify its signature with [the public JWKS](${NAYORI_API_ORIGIN}/.well-known/jwks.json).
+1. Send GET to [the public paid resource](${SITE_ORIGIN}/api/v1) and decode its PAYMENT-REQUIRED x402 v2 header.
+2. Read [the supported-capabilities response](${NAYORI_API_ORIGIN}/supported) and [OpenAPI document](${NAYORI_API_ORIGIN}/openapi.json) before constructing the Stacks testnet payment.
+3. Use the public SDK and a wallet or approved custody signer to review and create PAYMENT-SIGNATURE. Copy the challenge's signed quote into the advertised X-NAYORI-SIGNED-QUOTE extension header.
+4. Resend GET to the same resource with both headers. A 202 response is pending, not paid; follow its Location after Retry-After until a 200 response includes PAYMENT-RESPONSE.
+5. For invited API or MCP access, read [OAuth metadata](${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server), [protected-resource metadata](${SITE_ORIGIN}/.well-known/oauth-protected-resource), and [Auth.md](${SITE_ORIGIN}/auth.md), then use the minimum documented scope.
 
 ## Safety boundary
 
-The API pilot is limited to Stacks testnet settlement. OAuth cannot sign a payment: the payer separately reviews and signs the exact STX, sBTC, or USDCx transaction. A signed quote, verification, broadcast, or pending state is not confirmed settlement.
+Public direct payment and the API pilot are limited to Stacks testnet settlement. OAuth cannot sign a payment: the payer separately reviews and signs the exact STX, sBTC, or USDCx transaction. A signed quote, verification, broadcast, or pending state is not confirmed settlement.
 `,
   },
 ] as const;
@@ -100,11 +100,11 @@ export function getAgentSkill(name: string) {
   return agentSkills.find((skill) => skill.name === name);
 }
 
-export function buildApiCatalog() {
+export function buildApiCatalog(origin = SITE_ORIGIN) {
   return {
     linkset: [
       {
-        anchor: NAYORI_API_ORIGIN,
+        anchor: `${origin}/api/v1`,
         "service-desc": [
           {
             href: `${NAYORI_API_ORIGIN}/openapi.json`,
@@ -174,6 +174,21 @@ export function buildArdManifest(origin = SITE_ORIGIN) {
       },
       {
         "@context": "https://agenticresourcediscovery.org/context/v1",
+        identifier: "urn:air:nayori.ai:resource:x402-capability-report",
+        displayName: "Nayori paid commerce capability report",
+        type: "application/json",
+        url: `${origin}/api/v1`,
+        description:
+          "A real x402 v2 Stacks testnet resource delivered only after canonical settlement confirmation.",
+        capabilities: ["x402-payments", "stacks-testnet", "wallet-approved"],
+        representativeQueries: [
+          "Purchase Nayori's machine-readable commerce capability report",
+          "Which x402 headers does Nayori require for a Stacks payment?",
+          "How do I poll a Nayori payment until it is confirmed?",
+        ],
+      },
+      {
+        "@context": "https://agenticresourcediscovery.org/context/v1",
         identifier: "urn:air:nayori.ai:skills:index",
         displayName: "Nayori Agent Skills index",
         type: "application/json",
@@ -208,6 +223,7 @@ export function buildDiscoveryLinkHeader(origin = SITE_ORIGIN): string {
   return [
     `<${origin}/.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"`,
     `<${NAYORI_API_ORIGIN}/openapi.json>; rel="service-desc"; type="application/json"`,
+    `<${origin}/api/v1>; rel="payment"; type="application/json"`,
     `<${origin}/llms.txt>; rel="service-doc"; type="text/markdown"`,
     `<${origin}/llms.txt>; rel="llms-txt"; type="text/markdown"`,
     `<${origin}${ARD_PATH}>; rel="ard"; type="application/json"`,

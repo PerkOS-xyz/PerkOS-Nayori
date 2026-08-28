@@ -3,6 +3,7 @@ import {
   buildDiscoveryManifest,
   buildLlmsText,
   NAYORI_API_ORIGIN,
+  NAYORI_FACILITATOR_ORIGIN,
   NAYORI_OAUTH_ORIGIN,
 } from "./discovery";
 import { resolveSiteOrigin } from "./site";
@@ -46,6 +47,8 @@ describe("agent discovery", () => {
       `${origin}/.well-known/agent-skills/index.json`
     );
     expect(manifest.discovery.evidenceJson).toBe(`${origin}/api/evidence.json`);
+    expect(manifest.discovery.paidResource).toBe(`${origin}/api/v1`);
+    expect(manifest.discovery.facilitator.origin).toBe(NAYORI_FACILITATOR_ORIGIN);
     expect(manifest.discovery.quoteApi.oauthAuthorizationServer).toBe(
       `${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server`
     );
@@ -55,6 +58,7 @@ describe("agent discovery", () => {
     expect(manifest.discovery.quoteApi.authGuide).toBe(`${origin}/auth.md`);
     expect(manifest.discovery.quoteApi.mcp).toBe(`${NAYORI_API_ORIGIN}/mcp`);
     expect(manifest.availability.publicFacilitatorApi).toBe(true);
+    expect(manifest.availability.publicPaidResource).toBe(true);
     expect(manifest.availability.quoteIssuance).toBe(true);
     expect(manifest.availability.paymentVerification).toBe(true);
     expect(manifest.availability.settlement).toBe(true);
@@ -63,7 +67,7 @@ describe("agent discovery", () => {
     expect(manifest.availability.sponsorship).toBe(false);
     expect(manifest.availability.a2aProtocolEndpoint).toBe(false);
     expect(manifest.capabilities[3].quoteService).toMatchObject({
-      status: "invite-only-testnet-settlement",
+      status: "public-resource-and-invite-only-api-testnet-settlement",
       network: "stacks:2147483648",
       quoteIssuance: true,
       paymentVerification: true,
@@ -79,12 +83,14 @@ describe("agent discovery", () => {
     const text = buildLlmsText(origin);
 
     expect(text).toContain(`${origin}/.well-known/agent.json`);
+    expect(text).toContain(`${origin}/api/v1`);
     expect(text).toContain(`${NAYORI_API_ORIGIN}/supported`);
     expect(text).toContain(`${origin}/.well-known/api-catalog`);
     expect(text).toContain(`${origin}/.well-known/ard.json`);
     expect(text).toContain(`${origin}/.well-known/agent-skills/index.json`);
     expect(text).toContain("three read-only WebMCP tools");
     expect(text).toContain("invite-only partner pilot");
+    expect(text).toContain("PAYMENT-REQUIRED");
     expect(text).toContain("Only the confirmed settlement state and signed receipt");
     expect(text).toContain(`${origin}/api/evidence.json`);
     expect(text).toContain(`${origin}/auth.md`);

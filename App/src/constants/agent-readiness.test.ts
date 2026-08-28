@@ -16,10 +16,10 @@ const origin = "https://preview.nayori.ai";
 
 describe("agent readiness discovery", () => {
   it("publishes an RFC 9727 JSON linkset for the live quote API", () => {
-    const catalog = buildApiCatalog();
+    const catalog = buildApiCatalog(origin);
     const entry = catalog.linkset[0];
 
-    expect(entry.anchor).toBe(NAYORI_API_ORIGIN);
+    expect(entry.anchor).toBe(`${origin}/api/v1`);
     expect(entry["service-desc"][0]).toEqual({
       href: `${NAYORI_API_ORIGIN}/openapi.json`,
       type: "application/openapi+json",
@@ -87,6 +87,8 @@ describe("agent readiness discovery", () => {
     expect(link).toContain('rel="api-catalog"');
     expect(link).toContain('rel="service-desc"');
     expect(link).toContain('rel="service-doc"');
+    expect(link).toContain('rel="payment"');
+    expect(link).toContain(`${origin}/api/v1`);
     expect(link).toContain('rel="ard"');
     expect(link).toContain('rel="ai-catalog"');
     expect(link).toContain('rel="agent-skills"');

@@ -30,7 +30,7 @@ describe("canonical OAuth and MCP discovery", () => {
 
   it("publishes MCP server identity and canonical OAuth metadata", () => {
     expect(buildMcpServerCard(origin)).toMatchObject({
-      serverInfo: { name: "nayori-x402", version: "0.5.0" },
+      serverInfo: { name: "nayori-x402", version: "0.6.0" },
       server: { url: "https://api.nayori.ai/mcp" },
       authentication: {
         protectedResourceMetadata: `${origin}/.well-known/oauth-protected-resource`,

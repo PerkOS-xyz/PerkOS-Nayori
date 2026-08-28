@@ -9,6 +9,7 @@ import { SITE_ORIGIN } from "./site";
 export const STACKS_MAINNET_ID = "stacks:1";
 export const STACKS_TESTNET_ID = "stacks:2147483648";
 export const NAYORI_API_ORIGIN = "https://api.nayori.ai";
+export const NAYORI_FACILITATOR_ORIGIN = "https://facilitator.nayori.ai";
 export const NAYORI_OAUTH_ORIGIN = "https://oauth.nayori.ai";
 export const MAINNET_DEPLOYER =
   "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH";
@@ -38,6 +39,12 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       sdk: "https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK",
       evidence: `${origin}/evidence`,
       evidenceJson: `${origin}/api/evidence.json`,
+      paidResource: `${origin}/api/v1`,
+      facilitator: {
+        origin: NAYORI_FACILITATOR_ORIGIN,
+        supported: `${NAYORI_FACILITATOR_ORIGIN}/supported`,
+        manifest: `${NAYORI_FACILITATOR_ORIGIN}/.well-known/agent.json`,
+      },
       quoteApi: {
         origin: NAYORI_API_ORIGIN,
         manifest: `${NAYORI_API_ORIGIN}/.well-known/agent.json`,
@@ -67,10 +74,19 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       {
         id: "x402-stacks",
         description:
-          "Build and verify request-bound Stacks payments through the public SDK.",
+          "Purchase a public Nayori resource and build request-bound Stacks payments through the public SDK.",
         assets: ["STX", "sBTC", "USDCx"],
+        publicResource: {
+          url: `${origin}/api/v1`,
+          network: STACKS_TESTNET_ID,
+          x402Version: 2,
+          scheme: "exact",
+          assetTransferMethod: "stacks-signed-tx-v1",
+          settlement: "asynchronous-confirmation",
+          walletApproval: "required",
+        },
         quoteService: {
-          status: "invite-only-testnet-settlement",
+          status: "public-resource-and-invite-only-api-testnet-settlement",
           network: STACKS_TESTNET_ID,
           authorization: "wallet-linked-oauth-or-merchant-key",
           quoteIssuance: true,
@@ -98,6 +114,7 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
     availability: {
       webApplication: true,
       publicFacilitatorApi: true,
+      publicPaidResource: true,
       quoteIssuance: true,
       paymentVerification: true,
       settlement: true,
@@ -129,6 +146,7 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 - [Analytics](${origin}/analytics): Currency-separated protocol activity.
 - [Public evidence](${origin}/evidence): Explorer-verifiable M1 baseline and explicitly attested M2 adoption.
 - [Evidence JSON](${origin}/api/evidence.json): Versioned machine-readable evidence manifest.
+- [Public x402 resource](${origin}/api/v1): A real x402 v2 payment challenge for a settlement-backed Nayori capability report on Stacks testnet.
 - [Machine manifest](${origin}/.well-known/agent.json): Structured capabilities and canonical contracts.
 - [API Catalog](${origin}/.well-known/api-catalog): RFC 9727 links to the public quote API description, documentation and status.
 - [ARD catalog](${origin}/.well-known/ard.json): Search-oriented descriptions of Nayori's agentic resources.
@@ -139,7 +157,8 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 
 - [Application and contracts](https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce): Public source, Clarity contracts and deployment evidence.
 - [Nayori Agent SDK](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK): TypeScript SDK published as \`@perkos/agent-sdk\`.
-- [Nayori x402 API](${NAYORI_API_ORIGIN}): Invite-only quotes, verification, settlement confirmation and delivery ledger on Stacks testnet.
+- [Nayori x402 API](${NAYORI_API_ORIGIN}): Public paid-resource server plus invite-only merchant and MCP operations on Stacks testnet.
+- [Nayori facilitator](${NAYORI_FACILITATOR_ORIGIN}/supported): Isolated quote, verification, settlement-confirmation and delivery-ledger runtime.
 - [API capabilities](${NAYORI_API_ORIGIN}/supported): Exact network, mechanism, assets and availability flags.
 - [API OpenAPI schema](${NAYORI_API_ORIGIN}/openapi.json): Machine-readable HTTP contract.
 - [API JWKS](${NAYORI_API_ORIGIN}/.well-known/jwks.json): Public keys for verifying signed quotes.
@@ -163,6 +182,7 @@ Supporting browsers can discover three read-only WebMCP tools on the application
 
 - Escrowed jobs: STX and sBTC.
 - Request-bound direct x402 profile in the SDK: STX, sBTC and USDCx.
+- The real same-origin paid resource is ${origin}/api/v1. It returns PAYMENT-REQUIRED, accepts a wallet-created PAYMENT-SIGNATURE and the advertised X-NAYORI-SIGNED-QUOTE, then returns 202 until canonical confirmation and PAYMENT-RESPONSE with the delivered report.
 - The public Nayori API runs an invite-only partner pilot on Stacks testnet (\`${STACKS_TESTNET_ID}\`) for STX, sBTC and USDCx.
 - OAuth authorizes API and MCP access. It never signs a payment; each payment transaction remains separately wallet-approved.
 - A signed quote, successful verification or broadcast response is not proof of settlement. Only the confirmed settlement state and signed receipt cross that boundary.
