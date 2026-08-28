@@ -93,6 +93,9 @@ Before promotion, verify GET and HEAD behavior, media types and CORS for:
 - `/.well-known/mcp/server-card.json` and `/x402.json`;
 - `/api/v1`, expecting 402 plus `PAYMENT-REQUIRED` without a payment, and an OPTIONS response that
   permits `PAYMENT-SIGNATURE` and `X-NAYORI-SIGNED-QUOTE`;
+- `/api/mpp/v1`, expecting 402 plus `WWW-Authenticate: Payment`, a challenge selecting
+  `Payment-Authorization`, and an OPTIONS response that permits the selected credential header and
+  `X-NAYORI-SIGNED-QUOTE`;
 - `/evidence`, `/api/evidence.json` and `/api/evidence.csv`;
 - `/robots.txt`, including `Content-Signal` and `Agentmap`; and
 - `/` with both HTML and `Accept: text/markdown`, including discovery `Link` headers.
@@ -153,6 +156,32 @@ Promotion order is facilitator, API resource server, then web. Before rescoring,
 5. the confirmed response contains `PAYMENT-RESPONSE` and remains idempotent on retry.
 
 Mainnet settlement stays disabled until the external review gate is closed.
+
+### Same-origin MPP PaymentAuth resource
+
+The web route `nayori.ai/api/mpp/v1` is an independent GET/OPTIONS proxy to
+`api.nayori.ai/mpp/v1`. It forwards only `Accept`, `Payment-Authorization`,
+`X-NAYORI-SIGNED-QUOTE` and a safe request ID. It never forwards cookies, ordinary
+`Authorization`, `Origin`, x402's `PAYMENT-SIGNATURE` or a request body. It preserves 402, 202 and
+200 status codes plus `WWW-Authenticate`, polling, `Payment-Receipt` and release headers.
+
+Enable `MPP_RESOURCE_ENABLED=true` only on the API resource-server runtime after provisioning the
+`MPP_RESOURCE_ROUTE_ID` merchant route as USDCx on Stacks testnet. Keep the flag false on the
+facilitator runtime. The resource server fails closed if that route returns any asset other than
+USDCx. Both runtime roles pin the public `@perkos/agent-sdk@0.5.0` verifier.
+
+Promotion order remains facilitator, API resource server, then web. Validate that:
+
+1. the challenge declares `method=usdc`, `intent=charge`, `type=stacks`, the official testnet
+   USDCx identity, exact amount and recipient;
+2. OAuth Bearer and `Payment-Authorization` remain independent header domains;
+3. a wallet-approved credential returns 202 and a canonical same-origin polling location;
+4. malformed or expired credentials receive a fresh 402 Payment challenge;
+5. no report or `Payment-Receipt` exists before canonical confirmation; and
+6. confirmed retries return the same report without a second charge.
+
+MPP sponsorship and every facilitator mainnet settlement remain disabled until the external M2
+review gate closes.
 
 ## Testnet
 

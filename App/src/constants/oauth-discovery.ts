@@ -36,7 +36,7 @@ private key.
 - Authorization server: ${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server
 - Token endpoint: ${NAYORI_OAUTH_ORIGIN}/oauth/token
 - OAuth JWKS: ${NAYORI_OAUTH_ORIGIN}/oauth/jwks.json
-- API, MCP and x402 resource server: ${NAYORI_API_ORIGIN}
+- API, MCP, x402 and MPP PaymentAuth resource server: ${NAYORI_API_ORIGIN}
 
 ## Pick a method
 
@@ -97,10 +97,10 @@ ${OAUTH_SCOPES.join(", ")}.
 export function buildMcpServerCard(resource = SITE_ORIGIN) {
   return {
     schemaVersion: "1.0",
-    name: "Nayori x402 MCP Server",
-    serverInfo: { name: "nayori-x402", version: "0.6.0" },
+    name: "Nayori Commerce MCP Server",
+    serverInfo: { name: "nayori-x402", version: "0.7.0" },
     description:
-      "Experimental authenticated MCP access to Nayori x402 discovery, quotes and settlement status.",
+      "Experimental authenticated MCP access to Nayori commerce discovery, quotes and settlement status.",
     status: "experimental",
     server: {
       url: `${NAYORI_API_ORIGIN}/mcp`,
