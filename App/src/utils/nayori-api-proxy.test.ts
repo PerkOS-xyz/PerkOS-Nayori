@@ -8,28 +8,49 @@ import {
 afterEach(() => vi.restoreAllMocks());
 
 describe("Nayori API discovery proxy", () => {
-  it("publishes canonical upstream metadata without forwarding credentials", async () => {
+  it.each([
+    ["/x402.json", { issuer: "https://api.nayori.ai" }],
+    [
+      "/openapi.json",
+      {
+        openapi: "3.1.0",
+        paths: {
+          "/mpp/v1": {
+            get: {
+              "x-payment-info": {
+                offers: [{ method: "usdc", intent: "charge" }],
+              },
+            },
+          },
+        },
+      },
+    ],
+  ])("publishes canonical upstream metadata for %s", async (path, document) => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ issuer: "https://api.nayori.ai" }), {
+      new Response(JSON.stringify(document), {
         headers: { "content-type": "application/json" },
       }),
     );
-    const response = await proxyNayoriApiDiscovery("/x402.json");
+    const response = await proxyNayoriApiDiscovery(path);
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-location")).toBe(
-      "https://api.nayori.ai/x402.json",
+      `https://api.nayori.ai${path}`,
     );
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.nayori.ai/x402.json",
-      expect.objectContaining({ cache: "no-store" }),
+      `https://api.nayori.ai${path}`,
+      expect.objectContaining({
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+      }),
     );
-    expect(await response.json()).toEqual({ issuer: "https://api.nayori.ai" });
+    expect(await response.json()).toEqual(document);
   });
 
   it("fails closed for unavailable and unapproved resources", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline"));
     expect((await proxyNayoriApiDiscovery("/x402.json")).status).toBe(503);
+    expect((await proxyNayoriApiDiscovery("/openapi.json")).status).toBe(503);
     expect((await proxyNayoriApiDiscovery("/oauth/token")).status).toBe(404);
   });
 });

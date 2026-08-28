@@ -1,6 +1,7 @@
 import { NAYORI_API_ORIGIN } from "../constants/discovery";
 
 const PUBLIC_PATHS = new Set([
+  "/openapi.json",
   "/x402.json",
 ]);
 

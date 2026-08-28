@@ -9,8 +9,9 @@ Last verified: 2026-08-28
 - Production app: [nayori.ai](https://nayori.ai)
 - Partner API: [api.nayori.ai](https://api.nayori.ai) (invite-only testnet settlement)
 - Public x402 resource and confirmed testnet proof: [nayori.ai/api/v1](https://nayori.ai/api/v1)
-- Public MPP PaymentAuth USDCx release candidate:
+- Public MPP PaymentAuth USDCx resource:
   [nayori.ai/api/mpp/v1](https://nayori.ai/api/mpp/v1)
+- Same-origin OpenAPI discovery: [nayori.ai/openapi.json](https://nayori.ai/openapi.json)
 - Live isolated facilitator: [facilitator.nayori.ai](https://facilitator.nayori.ai)
 - Public evidence: [nayori.ai/evidence](https://nayori.ai/evidence)
 - PerkOS compatibility URL: [stacks.perkos.xyz](https://stacks.perkos.xyz)
@@ -86,8 +87,9 @@ npm run verify:mainnet
   PaymentAuth USDCx profile are available.
 - The invite-only API adds wallet-linked OAuth and authenticated MCP to the testnet confirmation
   and delivery-ledger path. OAuth authorizes API access but cannot sign a payment.
-- The live x402 route supports the confirmed STX testnet proof. This release candidate adds a
-  distinct MPP `usdc/charge/stacks` route for USDCx without changing M1 contracts.
+- The live x402 route supports the confirmed STX testnet proof. The distinct live MPP
+  `usdc/charge/stacks` route accepts USDCx without changing M1 contracts; its controlled Leather
+  economic proof remains pending testnet USDCx funding.
 - The current production agent-readiness score is **100/100, Level 5 (Agent-Native)**. DNSSEC,
   DNS-AID, external OAuth, MCP, agent discovery and x402 are live; MPP is an interoperability and
   revenue expansion rather than a score workaround.
@@ -99,5 +101,4 @@ npm run verify:mainnet
 1. Complete the external review, recorded SDK demo and mainnet/non-team adoption requirements for M2.
 2. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.
 3. Add operational alerts for failed Chainhook delivery and unusual escrow activity.
-4. Promote Platform, API and web in that order; probe `/mpp/v1` and `/api/mpp/v1`, then complete a
-   controlled Leather USDCx testnet lifecycle before inviting external developers.
+4. Complete a controlled Leather USDCx testnet lifecycle before inviting external developers.
