@@ -104,6 +104,8 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       confirmation: true,
       deliveryLedger: true,
       partnerRegistration: true,
+      anonymousAgentRegistration: true,
+      walletClaim: true,
       oauth: true,
       mcp: true,
       sponsorship: false,
