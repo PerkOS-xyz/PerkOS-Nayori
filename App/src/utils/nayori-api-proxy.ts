@@ -22,9 +22,37 @@ const PAYMENT_RESPONSE_HEADERS = [
   "x-service-release",
 ] as const;
 
+const MPP_REQUEST_HEADERS = [
+  "accept",
+  "payment-authorization",
+  "x-nayori-signed-quote",
+  "x-request-id",
+] as const;
+
+const MPP_RESPONSE_HEADERS = [
+  "content-type",
+  "location",
+  "payment-receipt",
+  "retry-after",
+  "www-authenticate",
+  "x-nayori-settlement-id",
+  "x-request-id",
+  "x-service-release",
+] as const;
+
 export const NAYORI_PAYMENT_EXPOSE_HEADERS = [
   "PAYMENT-REQUIRED",
   "PAYMENT-RESPONSE",
+  "X-NAYORI-SETTLEMENT-ID",
+  "Location",
+  "Retry-After",
+  "X-Request-Id",
+  "X-Service-Release",
+].join(", ");
+
+export const NAYORI_MPP_EXPOSE_HEADERS = [
+  "WWW-Authenticate",
+  "Payment-Receipt",
   "X-NAYORI-SETTLEMENT-ID",
   "Location",
   "Retry-After",
@@ -66,11 +94,20 @@ export async function proxyNayoriApiDiscovery(path: string): Promise<Response> {
   }
 }
 
-export async function proxyNayoriPaidResource(request: Request): Promise<Response> {
+async function proxyNayoriPaidResourceWithProfile(
+  request: Request,
+  profile: {
+    readonly upstreamPath: string;
+    readonly requestHeaders: readonly string[];
+    readonly responseHeaders: readonly string[];
+    readonly exposeHeaders: string;
+    readonly errorCode: string;
+  },
+): Promise<Response> {
   const incomingUrl = new URL(request.url);
-  const upstreamUrl = `${NAYORI_API_ORIGIN}/v1${incomingUrl.search}`;
+  const upstreamUrl = `${NAYORI_API_ORIGIN}${profile.upstreamPath}${incomingUrl.search}`;
   const headers = new Headers();
-  for (const name of PAYMENT_REQUEST_HEADERS) {
+  for (const name of profile.requestHeaders) {
     const value = request.headers.get(name);
     if (value !== null) headers.set(name, value);
   }
@@ -85,10 +122,10 @@ export async function proxyNayoriPaidResource(request: Request): Promise<Respons
     });
     const responseHeaders = new Headers({
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Expose-Headers": NAYORI_PAYMENT_EXPOSE_HEADERS,
+      "Access-Control-Expose-Headers": profile.exposeHeaders,
       "Cache-Control": "no-store",
     });
-    for (const name of PAYMENT_RESPONSE_HEADERS) {
+    for (const name of profile.responseHeaders) {
       const value = upstream.headers.get(name);
       if (value !== null) responseHeaders.set(name, value);
     }
@@ -100,7 +137,7 @@ export async function proxyNayoriPaidResource(request: Request): Promise<Respons
     return Response.json(
       {
         error: {
-          code: "paid_resource_temporarily_unavailable",
+          code: profile.errorCode,
           message: "The Nayori paid resource is temporarily unavailable.",
         },
       },
@@ -113,4 +150,24 @@ export async function proxyNayoriPaidResource(request: Request): Promise<Respons
       },
     );
   }
+}
+
+export function proxyNayoriPaidResource(request: Request): Promise<Response> {
+  return proxyNayoriPaidResourceWithProfile(request, {
+    upstreamPath: "/v1",
+    requestHeaders: PAYMENT_REQUEST_HEADERS,
+    responseHeaders: PAYMENT_RESPONSE_HEADERS,
+    exposeHeaders: NAYORI_PAYMENT_EXPOSE_HEADERS,
+    errorCode: "paid_resource_temporarily_unavailable",
+  });
+}
+
+export function proxyNayoriMppResource(request: Request): Promise<Response> {
+  return proxyNayoriPaidResourceWithProfile(request, {
+    upstreamPath: "/mpp/v1",
+    requestHeaders: MPP_REQUEST_HEADERS,
+    responseHeaders: MPP_RESPONSE_HEADERS,
+    exposeHeaders: NAYORI_MPP_EXPOSE_HEADERS,
+    errorCode: "mpp_resource_temporarily_unavailable",
+  });
 }

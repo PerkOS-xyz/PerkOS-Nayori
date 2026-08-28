@@ -92,6 +92,32 @@ Use this skill when an agent needs the public paid report, or an invited partner
 Public direct payment and the API pilot are limited to Stacks testnet settlement. OAuth cannot sign a payment: the payer separately reviews and signs the exact STX, sBTC, or USDCx transaction. A signed quote, verification, broadcast, or pending state is not confirmed settlement.
 `,
   },
+  {
+    name: "nayori-mpp-usdcx",
+    description:
+      "Purchase Nayori's public capability report with MPP PaymentAuth and wallet-approved USDCx on Stacks testnet.",
+    content: `---
+name: nayori-mpp-usdcx
+description: Purchase Nayori's public capability report with MPP PaymentAuth and wallet-approved USDCx on Stacks testnet.
+---
+
+# Nayori MPP PaymentAuth
+
+Use this skill when a PaymentAuth-compatible agent needs Nayori's paid capability report in USDCx.
+
+## Procedure
+
+1. Send GET to [the MPP resource](${SITE_ORIGIN}/api/mpp/v1) and parse its WWW-Authenticate: Payment challenge plus the body extension containing the signed Nayori quote.
+2. Confirm method=usdc, intent=charge, methodDetails.type=stacks, the Stacks testnet network, USDCx asset, amount, recipient and expiry.
+3. Use @perkos/agent-sdk 0.5.0 or later to construct the unsigned transaction. Have Leather or the approved custody signer review and sign it without broadcasting from the wallet.
+4. Encode the credential and retry GET with Payment-Authorization: Payment ... plus X-NAYORI-SIGNED-QUOTE. Do not replace an unrelated OAuth Authorization: Bearer header.
+5. Treat 202 as pending. Follow Location after Retry-After until a 200 response includes Payment-Receipt.
+
+## Safety boundary
+
+The MPP route accepts USDCx only and settlement is testnet-only. Sponsorship is disabled. A challenge, signed transaction, verification, broadcast or pending response is not confirmed payment. Never send a seed phrase or private key.
+`,
+  },
 ] as const;
 
 export type AgentSkillName = (typeof agentSkills)[number]["name"];
@@ -118,6 +144,27 @@ export function buildApiCatalog(origin = SITE_ORIGIN) {
           },
           {
             href: `${SITE_ORIGIN}/auth.md`,
+            type: "text/markdown",
+          },
+        ],
+        status: [
+          {
+            href: `${NAYORI_API_ORIGIN}/health`,
+            type: "application/json",
+          },
+        ],
+      },
+      {
+        anchor: `${origin}/api/mpp/v1`,
+        "service-desc": [
+          {
+            href: `${NAYORI_API_ORIGIN}/openapi.json`,
+            type: "application/openapi+json",
+          },
+        ],
+        "service-doc": [
+          {
+            href: `${NAYORI_API_ORIGIN}/llms.txt`,
             type: "text/markdown",
           },
         ],
@@ -155,6 +202,21 @@ export function buildArdManifest(origin = SITE_ORIGIN) {
         representativeQueries: [
           "What can Nayori do on Stacks mainnet?",
           "Which Nayori contracts and assets are available?",
+        ],
+      },
+      {
+        "@context": "https://agenticresourcediscovery.org/context/v1",
+        identifier: "urn:air:nayori.ai:resource:mpp-usdcx-capability-report",
+        displayName: "Nayori MPP USDCx capability report",
+        type: "application/json",
+        url: `${origin}/api/mpp/v1`,
+        description:
+          "An MPP PaymentAuth USDCx resource delivered only after canonical Stacks testnet settlement.",
+        capabilities: ["mpp-paymentauth", "usdcx", "stacks-testnet", "wallet-approved"],
+        representativeQueries: [
+          "Purchase Nayori's capability report with MPP PaymentAuth",
+          "How do I pay Nayori with USDCx through Payment-Authorization?",
+          "When does Nayori return Payment-Receipt?",
         ],
       },
       {
@@ -224,6 +286,7 @@ export function buildDiscoveryLinkHeader(origin = SITE_ORIGIN): string {
     `<${origin}/.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"`,
     `<${NAYORI_API_ORIGIN}/openapi.json>; rel="service-desc"; type="application/json"`,
     `<${origin}/api/v1>; rel="payment"; type="application/json"`,
+    `<${origin}/api/mpp/v1>; rel="payment"; type="application/json"`,
     `<${origin}/llms.txt>; rel="service-doc"; type="text/markdown"`,
     `<${origin}/llms.txt>; rel="llms-txt"; type="text/markdown"`,
     `<${origin}${ARD_PATH}>; rel="ard"; type="application/json"`,

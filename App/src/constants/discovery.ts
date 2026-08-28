@@ -40,6 +40,7 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       evidence: `${origin}/evidence`,
       evidenceJson: `${origin}/api/evidence.json`,
       paidResource: `${origin}/api/v1`,
+      mppPaidResource: `${origin}/api/mpp/v1`,
       facilitator: {
         origin: NAYORI_FACILITATOR_ORIGIN,
         supported: `${NAYORI_FACILITATOR_ORIGIN}/supported`,
@@ -98,6 +99,25 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
           sponsorship: false,
         },
       },
+      {
+        id: "mpp-usdcx-stacks",
+        description:
+          "Purchase the public Nayori report through MPP PaymentAuth with wallet-approved USDCx on Stacks.",
+        assets: ["USDCx"],
+        publicResource: {
+          url: `${origin}/api/mpp/v1`,
+          network: STACKS_TESTNET_ID,
+          protocol: "mpp-paymentauth",
+          method: "usdc",
+          intent: "charge",
+          type: "stacks",
+          credentialHeader: "Payment-Authorization",
+          receiptHeader: "Payment-Receipt",
+          settlement: "asynchronous-confirmation",
+          walletApproval: "required",
+          sponsorship: false,
+        },
+      },
     ],
     authorization: {
       reads: "public",
@@ -115,6 +135,7 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       webApplication: true,
       publicFacilitatorApi: true,
       publicPaidResource: true,
+      mppPaymentAuth: true,
       quoteIssuance: true,
       paymentVerification: true,
       settlement: true,
@@ -147,6 +168,7 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 - [Public evidence](${origin}/evidence): Explorer-verifiable M1 baseline and explicitly attested M2 adoption.
 - [Evidence JSON](${origin}/api/evidence.json): Versioned machine-readable evidence manifest.
 - [Public x402 resource](${origin}/api/v1): A real x402 v2 payment challenge for a settlement-backed Nayori capability report on Stacks testnet.
+- [Public MPP resource](${origin}/api/mpp/v1): MPP PaymentAuth usdc/charge/stacks challenge for the same report, paid in USDCx on Stacks testnet.
 - [Machine manifest](${origin}/.well-known/agent.json): Structured capabilities and canonical contracts.
 - [API Catalog](${origin}/.well-known/api-catalog): RFC 9727 links to the public quote API description, documentation and status.
 - [ARD catalog](${origin}/.well-known/ard.json): Search-oriented descriptions of Nayori's agentic resources.
@@ -157,7 +179,7 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 
 - [Application and contracts](https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce): Public source, Clarity contracts and deployment evidence.
 - [Nayori Agent SDK](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK): TypeScript SDK published as \`@perkos/agent-sdk\`.
-- [Nayori x402 API](${NAYORI_API_ORIGIN}): Public paid-resource server plus invite-only merchant and MCP operations on Stacks testnet.
+- [Nayori commerce API](${NAYORI_API_ORIGIN}): Public x402 and MPP paid-resource server plus invite-only merchant and MCP operations on Stacks testnet.
 - [Nayori facilitator](${NAYORI_FACILITATOR_ORIGIN}/supported): Isolated quote, verification, settlement-confirmation and delivery-ledger runtime.
 - [API capabilities](${NAYORI_API_ORIGIN}/supported): Exact network, mechanism, assets and availability flags.
 - [API OpenAPI schema](${NAYORI_API_ORIGIN}/openapi.json): Machine-readable HTTP contract.
@@ -183,6 +205,7 @@ Supporting browsers can discover three read-only WebMCP tools on the application
 - Escrowed jobs: STX and sBTC.
 - Request-bound direct x402 profile in the SDK: STX, sBTC and USDCx.
 - The real same-origin paid resource is ${origin}/api/v1. It returns PAYMENT-REQUIRED, accepts a wallet-created PAYMENT-SIGNATURE and the advertised X-NAYORI-SIGNED-QUOTE, then returns 202 until canonical confirmation and PAYMENT-RESPONSE with the delivered report.
+- The MPP PaymentAuth resource is ${origin}/api/mpp/v1. It returns WWW-Authenticate: Payment, selects Payment-Authorization so OAuth Bearer remains separate, accepts USDCx only, and emits Payment-Receipt only after canonical confirmation and idempotent delivery.
 - The public Nayori API runs an invite-only partner pilot on Stacks testnet (\`${STACKS_TESTNET_ID}\`) for STX, sBTC and USDCx.
 - OAuth authorizes API and MCP access. It never signs a payment; each payment transaction remains separately wallet-approved.
 - A signed quote, successful verification or broadcast response is not proof of settlement. Only the confirmed settlement state and signed receipt cross that boundary.

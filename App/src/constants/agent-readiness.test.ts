@@ -28,6 +28,7 @@ describe("agent readiness discovery", () => {
       `${NAYORI_API_ORIGIN}/llms.txt`
     );
     expect(entry.status[0].href).toBe(`${NAYORI_API_ORIGIN}/health`);
+    expect(catalog.linkset[1].anchor).toBe(`${origin}/api/mpp/v1`);
   });
 
   it("describes only real ARD resources with search signals", () => {
@@ -36,6 +37,14 @@ describe("agent readiness discovery", () => {
     expect(manifest.specVersion).toBe("0.91");
     expect(manifest.host.identifier).toBe(origin);
     expect(manifest.entries.length).toBeGreaterThan(0);
+    expect(manifest.entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          identifier: "urn:air:nayori.ai:resource:mpp-usdcx-capability-report",
+          url: `${origin}/api/mpp/v1`,
+        }),
+      ]),
+    );
 
     for (const entry of manifest.entries) {
       expect(entry.identifier).toMatch(/^urn:air:nayori\.ai:/);
@@ -52,6 +61,9 @@ describe("agent readiness discovery", () => {
 
     expect(index.$schema).toBe(AGENT_SKILLS_SCHEMA);
     expect(index.skills).toHaveLength(agentSkills.length);
+    expect(index.skills).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "nayori-mpp-usdcx" })]),
+    );
 
     for (const skill of agentSkills) {
       const entry = index.skills.find((candidate) => candidate.name === skill.name);
@@ -89,6 +101,7 @@ describe("agent readiness discovery", () => {
     expect(link).toContain('rel="service-doc"');
     expect(link).toContain('rel="payment"');
     expect(link).toContain(`${origin}/api/v1`);
+    expect(link).toContain(`${origin}/api/mpp/v1`);
     expect(link).toContain('rel="ard"');
     expect(link).toContain('rel="ai-catalog"');
     expect(link).toContain('rel="agent-skills"');

@@ -10,6 +10,7 @@ export function generateStaticParams() {
     { skill: "nayori-discovery" },
     { skill: "nayori-onchain-commerce" },
     { skill: "nayori-x402-quotes" },
+    { skill: "nayori-mpp-usdcx" },
   ];
 }
 

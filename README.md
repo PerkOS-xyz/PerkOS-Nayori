@@ -43,7 +43,7 @@ Nayori by PerkOS provides a complete infrastructure layer for AI agents on Stack
 |---------|-------------|
 | **Agent Registry** | On-chain identity with metadata, endpoints, and access control |
 | **Job Escrow** | STX and sBTC escrow with evaluator-approved releases |
-| **x402 Payments** | Payment-native requests for machine-to-machine commerce |
+| **Agent HTTP Payments** | x402 for STX/sBTC/USDCx plus MPP PaymentAuth for USDCx |
 | **Reputation** | Rating system (1-5) with average scores and job tracking |
 | **Validation** | Agent verification with proof hashes and capabilities |
 | **Analytics** | Protocol metrics, growth charts, and activity feeds |
@@ -161,10 +161,14 @@ Nayori publishes a machine-readable map of capabilities that exist today:
   [`ai-catalog.json`](https://nayori.ai/.well-known/ai-catalog.json) describe searchable agentic
   resources.
 - [`/.well-known/agent-skills/index.json`](https://nayori.ai/.well-known/agent-skills/index.json)
-  lists three Agent Skills v0.2.0 artifacts with SHA-256 integrity digests.
+  lists four Agent Skills v0.2.0 artifacts with SHA-256 integrity digests.
 - [`/api/v1`](https://nayori.ai/api/v1) is the same-origin x402 v2 paid resource. It preserves
   `PAYMENT-REQUIRED`, `PAYMENT-SIGNATURE`, asynchronous settlement headers and
   `PAYMENT-RESPONSE` while forwarding no cookies or authorization credentials.
+- [`/api/mpp/v1`](https://nayori.ai/api/mpp/v1) is the separate MPP PaymentAuth resource for
+  USDCx on Stacks. It preserves `WWW-Authenticate: Payment`, `Payment-Authorization`, asynchronous
+  settlement headers and `Payment-Receipt`. The alternate credential header keeps OAuth Bearer
+  authorization separate from wallet payment authorization.
 - Supporting browsers receive three read-only WebMCP tools for capabilities, skills and public
   evidence. They
   cannot sign a transaction, access wallet credentials or change state.
@@ -639,8 +643,9 @@ npm test
 The current contracts and frontend are live on Stacks mainnet.
 
 - App: [nayori.ai](https://nayori.ai)
-- Quote API: [api.nayori.ai](https://api.nayori.ai) — authenticated quote issuance on Stacks
-  testnet; verification, settlement and sponsorship are not enabled
+- Commerce API: [api.nayori.ai](https://api.nayori.ai) — x402 and MPP paid resources plus
+  invite-only quotes, verification, testnet settlement, confirmation and delivery; mainnet
+  settlement and sponsorship remain disabled
 - PerkOS compatibility URL: [stacks.perkos.xyz](https://stacks.perkos.xyz)
 - Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 - STX escrow: `agentic-commerce-v2`

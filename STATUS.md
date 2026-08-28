@@ -8,8 +8,10 @@ Last verified: 2026-08-28
 
 - Production app: [nayori.ai](https://nayori.ai)
 - Partner API: [api.nayori.ai](https://api.nayori.ai) (invite-only testnet settlement)
-- Public x402 resource release candidate: [nayori.ai/api/v1](https://nayori.ai/api/v1)
-- Isolated facilitator target: [facilitator.nayori.ai](https://facilitator.nayori.ai)
+- Public x402 resource and confirmed testnet proof: [nayori.ai/api/v1](https://nayori.ai/api/v1)
+- Public MPP PaymentAuth USDCx release candidate:
+  [nayori.ai/api/mpp/v1](https://nayori.ai/api/mpp/v1)
+- Live isolated facilitator: [facilitator.nayori.ai](https://facilitator.nayori.ai)
 - Public evidence: [nayori.ai/evidence](https://nayori.ai/evidence)
 - PerkOS compatibility URL: [stacks.perkos.xyz](https://stacks.perkos.xyz)
 - Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
@@ -48,6 +50,10 @@ contract is part of the current product deployment.
   protocol headers to `api.nayori.ai/v1`; the API uses a merchant credential over HTTPS to the
   isolated facilitator. A payment returns 202 until confirmation and the fixed capability report
   is delivered only with `PAYMENT-RESPONSE` after the signed receipt exists.
+- The separate `/api/mpp/v1` route forwards only `Payment-Authorization`,
+  `X-NAYORI-SIGNED-QUOTE`, `Accept` and a request ID. It never forwards cookies or ordinary
+  `Authorization`; the API returns `Payment-Receipt` only after confirmed USDCx settlement and
+  idempotent delivery.
 - Chrome smoke testing loaded the existing sBTC job and the empty STX job list from chain.
 - The web release publishes an RFC 9727 API Catalog, ARD manifests, Agent Skills v0.2.0,
   content-usage signals, discovery `Link` headers and three read-only WebMCP tools. The tools do not
@@ -76,16 +82,15 @@ npm run verify:mainnet
 
 - Milestone 1 is approved and complete. The current STX and sBTC contracts remain unchanged.
 - Milestone 2 is in progress in the independent `PerkOS-Nayori-Agent-SDK` repository. The public
-  `@perkos/agent-sdk@0.3.2` package, signer adapters, testnet lifecycle, x402 v2 foundation and
-  request-bound STX/sBTC/USDCx verification profile are available.
+  `@perkos/agent-sdk@0.5.0` package, signer adapters, testnet lifecycle, x402 v2 foundation and MPP
+  PaymentAuth USDCx profile are available.
 - The invite-only API adds wallet-linked OAuth and authenticated MCP to the testnet confirmation
   and delivery-ledger path. OAuth authorizes API access but cannot sign a payment.
-- This release candidate adds a real same-origin x402 resource for testnet STX first; the same
-  SDK/facilitator profile supports sBTC and USDCx routes without changing M1 contracts.
-- The current production agent-readiness score is 73/100, Level 5 (Agent-Native), up from the
-  original 27/100 baseline. The latest evaluator reported four concrete gaps: DNS-AID, an OAuth
-  protected-resource identity mismatch, the `Auth.md` H1 and missing MCP `serverInfo`. This release
-  corrects the three HTTP-layer gaps; DNS-AID remains the DNS-layer action before rescoring.
+- The live x402 route supports the confirmed STX testnet proof. This release candidate adds a
+  distinct MPP `usdc/charge/stacks` route for USDCx without changing M1 contracts.
+- The current production agent-readiness score is **100/100, Level 5 (Agent-Native)**. DNSSEC,
+  DNS-AID, external OAuth, MCP, agent discovery and x402 are live; MPP is an interoperability and
+  revenue expansion rather than a score workaround.
 - Remaining Milestone 2 acceptance work includes the external security review, recorded SDK demo
   and the required mainnet/non-team adoption evidence.
 
@@ -94,5 +99,5 @@ npm run verify:mainnet
 1. Complete the external review, recorded SDK demo and mainnet/non-team adoption requirements for M2.
 2. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.
 3. Add operational alerts for failed Chainhook delivery and unusual escrow activity.
-4. Deploy and probe `facilitator.nayori.ai`, `api.nayori.ai/v1` and `nayori.ai/api/v1`, then
-   rescore Nayori and record the x402 evaluator result.
+4. Promote Platform, API and web in that order; probe `/mpp/v1` and `/api/mpp/v1`, then complete a
+   controlled Leather USDCx testnet lifecycle before inviting external developers.
