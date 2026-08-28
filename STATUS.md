@@ -62,8 +62,9 @@ contract is part of the current product deployment.
 - The web release publishes an RFC 9727 API Catalog, ARD manifests, Agent Skills v0.2.0,
   content-usage signals, discovery `Link` headers and three read-only WebMCP tools. The tools do not
   access wallets or expose state-changing actions.
-- The public evidence manifest records the approved 10,000-sat M1 lifecycle while keeping all
-  team-operated wallets out of M2 external-adoption counters.
+- The public transparency dashboard and versioned JSON snapshot read agent, job and transaction
+  totals from the canonical mainnet contracts. They preserve the approved 10,000-sat M1 lifecycle
+  as an explicit baseline and keep team-operated wallets out of M2 external-adoption counters.
 
 Run the public, signer-free verification at any time:
 
@@ -98,6 +99,8 @@ npm run verify:mainnet
   revenue expansion rather than a score workaround.
 - Remaining Milestone 2 acceptance work includes the external security review, recorded SDK demo
   and the required mainnet/non-team adoption evidence.
+- The canonical public transparency surface is `/evidence`; legacy analytics, activity, stats and
+  dashboard routes remain available for compatibility.
 
 ## Next product work
 
