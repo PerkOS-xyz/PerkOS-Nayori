@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:report": "vitest run -- --coverage --costs",
+    "security:gate": "node scripts/security-gate.mjs",
     "deploy:mainnet": "node scripts/deploy-current-mainnet.mjs",
     "deploy:stx-v2": "node scripts/deploy-stx-v2.mjs",
     "e2e:stx-v2:testnet": "node scripts/e2e-stx-v2-testnet.mjs",

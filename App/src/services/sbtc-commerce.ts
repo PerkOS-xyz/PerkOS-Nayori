@@ -144,17 +144,28 @@ export function submitSbtcWork(jobId: number, deliverable: string) {
   return call("submit-work", [Cl.uint(jobId), Cl.bufferFromAscii(deliverable.slice(0, 64))]);
 }
 
-// Settlement moves sBTC held by the contract, not by the caller.
-export function completeSbtcJob(jobId: number) {
-  return call("complete-job", [Cl.uint(jobId), tokenArg()], { postConditionMode: "allow" });
+// Settlement moves sBTC held by the contract, not by the caller. Constrain the exact
+// contract outflow so a wallet never authorizes an unspecified token transfer.
+function settlementOptions(sats: number) {
+  if (!Number.isSafeInteger(sats) || sats <= 0) {
+    throw new Error("Settlement amount must be a positive safe integer number of satoshis.");
+  }
+  const pc = Pc.principal(SBTC_COMMERCE)
+    .willSendEq(sats)
+    .ft(SBTC_TOKEN as any, "sbtc-token");
+  return { postConditions: [pc], postConditionMode: "deny" as const };
 }
 
-export function rejectSbtcJob(jobId: number) {
-  return call("reject-job", [Cl.uint(jobId), tokenArg()], { postConditionMode: "allow" });
+export function completeSbtcJob(jobId: number, sats: number) {
+  return call("complete-job", [Cl.uint(jobId), tokenArg()], settlementOptions(sats));
 }
 
-export function expireSbtcJob(jobId: number) {
-  return call("expire-job", [Cl.uint(jobId), tokenArg()], { postConditionMode: "allow" });
+export function rejectSbtcJob(jobId: number, sats: number) {
+  return call("reject-job", [Cl.uint(jobId), tokenArg()], settlementOptions(sats));
+}
+
+export function expireSbtcJob(jobId: number, sats: number) {
+  return call("expire-job", [Cl.uint(jobId), tokenArg()], settlementOptions(sats));
 }
 
 export function rateSbtcProvider(jobId: number, score: number, comment: string) {

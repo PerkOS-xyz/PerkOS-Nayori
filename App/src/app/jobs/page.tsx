@@ -373,27 +373,38 @@ export default function JobsPage() {
       `Fund job with ${unit}`
     );
 
-  const handleCompleteJob = (jobId: number) =>
+  const settlementOptions = (job: CommerceJob) => ({
+    postConditions: [Pc.principal(AGENTIC_COMMERCE).willSendEq(job.budget).ustx()],
+    postConditionMode: "deny" as const,
+  });
+
+  const handleCompleteJob = (job: CommerceJob) =>
     run(
       () =>
         isSbtc
-          ? completeSbtcJob(jobId)
-          : stxCall("complete-job", [Cl.uint(jobId)]),
-      `completing-${jobId}`,
+          ? completeSbtcJob(job.id, job.budget)
+          : stxCall("complete-job", [Cl.uint(job.id)], settlementOptions(job)),
+      `completing-${job.id}`,
       "Complete job"
     );
 
-  const handleRejectJob = (jobId: number) =>
+  const handleRejectJob = (job: CommerceJob) =>
     run(
-      () => (isSbtc ? rejectSbtcJob(jobId) : stxCall("reject-job", [Cl.uint(jobId)])),
-      `rejecting-${jobId}`,
+      () =>
+        isSbtc
+          ? rejectSbtcJob(job.id, job.budget)
+          : stxCall("reject-job", [Cl.uint(job.id)], settlementOptions(job)),
+      `rejecting-${job.id}`,
       "Reject job"
     );
 
-  const handleExpireJob = (jobId: number) =>
+  const handleExpireJob = (job: CommerceJob) =>
     run(
-      () => (isSbtc ? expireSbtcJob(jobId) : stxCall("expire-job", [Cl.uint(jobId)])),
-      `expiring-${jobId}`,
+      () =>
+        isSbtc
+          ? expireSbtcJob(job.id, job.budget)
+          : stxCall("expire-job", [Cl.uint(job.id)], settlementOptions(job)),
+      `expiring-${job.id}`,
       "Expire job and refund escrow"
     );
 
@@ -722,12 +733,12 @@ export default function JobsPage() {
                   )}
                   {permissions.canSettle && (
                     <>
-                      <button onClick={() => void handleCompleteJob(job.id)} className="btn-sm border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10">Complete</button>
-                      <button onClick={() => void handleRejectJob(job.id)} className="btn-sm border border-red-500/25 text-red-300 hover:bg-red-500/10">Reject</button>
+                      <button onClick={() => void handleCompleteJob(job)} className="btn-sm border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10">Complete</button>
+                      <button onClick={() => void handleRejectJob(job)} className="btn-sm border border-red-500/25 text-red-300 hover:bg-red-500/10">Reject</button>
                     </>
                   )}
                   {canExpire && (
-                    <button onClick={() => void handleExpireJob(job.id)} className="btn-sm border border-amber-500/30 text-amber-300 hover:bg-amber-500/10">
+                    <button onClick={() => void handleExpireJob(job)} className="btn-sm border border-amber-500/30 text-amber-300 hover:bg-amber-500/10">
                       <Clock3 className="h-3.5 w-3.5" /> Expire & refund
                     </button>
                   )}
