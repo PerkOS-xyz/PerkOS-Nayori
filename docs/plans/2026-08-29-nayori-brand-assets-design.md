@@ -21,7 +21,8 @@ Both runtimes declare the source dimensions and aspect ratio to prevent layout s
 served unoptimized so the non-root, read-only VPS containers never depend on a writable Next.js
 image cache. The Web background has empty alternative text because it is decorative and its full
 meaning already exists as HTML in the hero. The source files remain unchanged and the copies are
-byte-identical.
+byte-identical. Both standalone Docker runners explicitly copy `public/`; Next.js standalone output
+does not include that directory automatically.
 
 ## Alternatives rejected
 
@@ -36,7 +37,8 @@ byte-identical.
 ## Verification
 
 Package tests assert that each runtime has its intended PNGs, Web references only
-`Banner-Web.png`, and Docs references `Banner.png`. Lint, types, unit suites and production builds
-must pass for both applications. Browser QA must cover desktop and narrow responsive layouts,
-readable left-side hero content, visible right-side avatar, readable header identity and unchanged
-wallet/navigation behavior before the VPS-only rollout.
+`Banner-Web.png`, Docs references `Banner.png`, and both Dockerfiles copy `public/` into their final
+standalone images. Lint, types, unit suites and production builds must pass for both applications.
+The VPS-only image probes must request every brand asset before preview promotion. Browser QA must
+cover desktop and narrow responsive layouts, readable left-side hero content, visible right-side
+avatar, readable header identity and unchanged wallet/navigation behavior before production.
