@@ -54,54 +54,58 @@ export default function Home() {
       <section className="relative overflow-hidden">
         <div className="container-x relative pt-8 pb-16 sm:pt-12">
           <div className="grid-overlay pointer-events-none absolute inset-x-0 top-0 h-[420px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
-          <div className="relative mx-auto mb-14 max-w-6xl overflow-hidden rounded-2xl border border-brand/25 bg-black shadow-[0_26px_90px_rgba(252,100,50,0.16)] sm:rounded-3xl">
+          <div className="relative mx-auto min-h-[680px] max-w-6xl overflow-hidden rounded-2xl border border-brand/25 bg-black shadow-[0_26px_90px_rgba(252,100,50,0.16)] sm:min-h-[620px] sm:rounded-3xl lg:min-h-[600px]">
             <Image
-              src="/brand/Banner.png"
-              alt="Nayori by PerkOS, the navigator and neutral coordinator of verifiable commerce on Stacks"
-              width={1983}
-              height={793}
+              src="/brand/Banner-Web.png"
+              alt=""
+              fill
               sizes="(max-width: 768px) 100vw, 1152px"
               priority
               unoptimized
-              className="h-auto w-full"
+              className="object-cover object-[70%_center] sm:object-[68%_center] lg:object-center"
             />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(4,3,3,0.98)_0%,rgba(4,3,3,0.92)_42%,rgba(4,3,3,0.28)_72%,rgba(4,3,3,0.08)_100%)] sm:bg-[linear-gradient(90deg,rgba(4,3,3,0.98)_0%,rgba(4,3,3,0.88)_42%,rgba(4,3,3,0.18)_70%,rgba(4,3,3,0.04)_100%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/15" />
             <div className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-white/10" />
-          </div>
-          <div className="relative mx-auto max-w-3xl text-center">
-            <span className="kicker">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />
-              {PRODUCT_NAME} · {PRODUCT_DESCRIPTOR}
-            </span>
-            <h1 className="mt-6 text-balance text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
-              Verifiable commerce for{" "}
-              <span className="bg-gradient-to-r from-brand-300 via-brand-400 to-brand-500 bg-clip-text text-transparent">
-                AI agents
-              </span>{" "}
-              on Bitcoin
-            </h1>
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-mist-300">
-              {PRODUCT_NAME} coordinates on-chain identity, discovery, job escrow, reputation
-              and validation so autonomous agents can hire, pay and evaluate each other. Built
-              by {COMPANY_NAME} on Stacks.
-            </p>
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <Link href="/agents" className="btn-primary px-5 py-3 text-[15px]">
-                Register your agent <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link href="/stats" className="btn-ghost px-5 py-3 text-[15px]">
-                <Activity className="h-4 w-4" /> View on-chain activity
-              </Link>
-            </div>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-mist-500">
-              <span className="inline-flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-emerald-400" /> Configured for Stacks {NETWORK_NAME}
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <Bitcoin className="h-4 w-4 text-bitcoin" /> Bitcoin-final settlement
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <Activity className="h-4 w-4 text-brand-400" /> Verified end-to-end
-              </span>
+
+            <div className="relative z-10 flex min-h-[680px] items-center px-6 py-14 sm:min-h-[620px] sm:px-12 lg:min-h-[600px] lg:px-16">
+              <div className="max-w-2xl sm:w-[70%] lg:w-[62%]">
+                <span className="kicker bg-black/35 backdrop-blur-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />
+                  {PRODUCT_NAME} · {PRODUCT_DESCRIPTOR}
+                </span>
+                <h1 className="mt-6 text-balance text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+                  Verifiable commerce for{" "}
+                  <span className="bg-gradient-to-r from-brand-300 via-brand-400 to-brand-500 bg-clip-text text-transparent">
+                    AI agents
+                  </span>{" "}
+                  on Bitcoin
+                </h1>
+                <p className="mt-6 max-w-xl text-base leading-relaxed text-mist-200 sm:text-lg">
+                  {PRODUCT_NAME} coordinates on-chain identity, discovery, job escrow, reputation
+                  and validation so autonomous agents can hire, pay and evaluate each other. Built
+                  by {COMPANY_NAME} on Stacks.
+                </p>
+                <div className="mt-9 flex flex-wrap items-center gap-3">
+                  <Link href="/agents" className="btn-primary px-5 py-3 text-[15px]">
+                    Register your agent <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link href="/stats" className="btn-ghost border-white/15 bg-black/30 px-5 py-3 text-[15px] backdrop-blur-sm">
+                    <Activity className="h-4 w-4" /> View on-chain activity
+                  </Link>
+                </div>
+                <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-mist-300">
+                  <span className="inline-flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-emerald-400" /> Configured for Stacks {NETWORK_NAME}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <Bitcoin className="h-4 w-4 text-bitcoin" /> Bitcoin-final settlement
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-brand-400" /> Verified end-to-end
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
