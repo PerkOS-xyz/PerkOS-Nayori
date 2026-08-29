@@ -568,6 +568,28 @@ callers of `reputation-registry-v2`.
 | Rejected | Escrow refunded to client | Terminal |
 | Expired | Deadline passed and escrow refunded as applicable | Terminal |
 
+### Versioned escrow security candidate
+
+The repository also contains an **undeployed review candidate**. It does not change the production
+addresses or the application defaults above.
+
+| Component | Candidate contract | Review scope |
+| --- | --- | --- |
+| Reputation | `reputation-registry-v3` | Source- and job-namespaced outcomes/ratings, idempotent writes and two-step ownership |
+| STX escrow | `agentic-commerce-v3` | Bitcoin-height review liveness, durable reputation synchronization and two-step ownership |
+| sBTC escrow | `sbtc-commerce-v2` | The STX controls plus per-job SIP-010 token pinning |
+
+For submitted work, the candidate records a fixed Nayori review window of **144 Bitcoin burn
+blocks**. The evaluator may complete or reject through the exact deadline. Only after that deadline
+may any principal trigger a deterministic provider payout. That liveness payout uses the separate
+terminal state `Timeout paid (u6)` and does not count as a completed job, rating eligibility or
+reputation success. Failed reputation writes never roll back economic settlement; they remain
+durable and permissionlessly retryable.
+
+The candidate currently has no testnet or mainnet address. Its guarded deployment script supports
+testnet only, and production remains pinned to the verified contracts listed above until testnet
+evidence and the external review gate are complete.
+
 ## Product maturity and roadmap
 
 ### Production foundation

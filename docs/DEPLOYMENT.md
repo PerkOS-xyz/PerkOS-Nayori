@@ -64,6 +64,48 @@ This compares all deployed source code, verifies exposed owners, confirms the ca
 sBTC token and both reputation allowlist entries, and reads the current agent and job
 counts.
 
+## Versioned escrow candidate — testnet only
+
+The repository includes `reputation-registry-v3`, `agentic-commerce-v3` and `sbtc-commerce-v2` as
+an undeployed security-review candidate. Production remains on the contracts listed above. The
+candidate deployment script has no mainnet code path and refuses to read credentials unless the
+network and confirmation are both explicit.
+
+The reviewed testnet deployer must already contain the exact local `sip-010-trait` source. Keep its
+signer file outside Git, then run only after the local test and security gates pass:
+
+```bash
+npm test
+npm run security:gate
+
+STACKS_NETWORK=testnet \
+CONFIRM_VERSIONED_ESCROW_TESTNET_DEPLOY=yes \
+VERSIONED_ESCROW_TESTNET_ENV_PATH=/absolute/path/to/testnet.env \
+npm run deploy:versioned:testnet
+```
+
+The script:
+
+1. derives and verifies the `ST...` deployer before spending testnet STX;
+2. requires the existing SIP-010 trait to match the reviewed local source;
+3. deploys only missing candidate contracts and rejects same-name source mismatches;
+4. configures canonical testnet sBTC on `sbtc-commerce-v2`;
+5. authorizes both candidate escrow contracts on `reputation-registry-v3`;
+6. verifies ownership and writes a secret-free receipt to
+   `/tmp/nayori-versioned-escrow-testnet.json`.
+
+Only after that receipt and independent source checks exist may a branch-scoped preview select:
+
+```env
+NEXT_PUBLIC_STACKS_NETWORK=testnet
+NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v3
+NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v2
+NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3
+```
+
+Do not copy these names into production. A later mainnet activation requires a separately reviewed
+deployment path, external-review closure and an explicit release decision.
+
 ## Frontend production variables
 
 Configure these values in the target production build environment:
