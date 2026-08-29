@@ -9,6 +9,10 @@
   --bg: #0B0A09;
   --surface: #121110;
   --surface-2: #1A1715;
+  --nayori-glow-orange: #FF8A1E;
+  --nayori-glow-coral: #FC6432;
+  --nayori-bitcoin-orange: #F7931A;
+  --nayori-glow-soft: #FFC38A;
 }
 
 @layer base {
@@ -72,5 +76,234 @@
       linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
     background-size: 46px 46px;
+  }
+}
+
+/* Nayori landing atmosphere. Content remains visible unless the progressive motion controller is active. */
+.nayori-hero {
+  isolation: isolate;
+}
+
+.nayori-ambient,
+.nayori-embers {
+  pointer-events: none;
+  position: absolute;
+}
+
+.nayori-ambient {
+  z-index: -1;
+  width: min(52rem, 72vw);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  filter: blur(72px);
+  mix-blend-mode: screen;
+  opacity: 0.34;
+  will-change: transform;
+}
+
+.nayori-ambient-left {
+  left: -22rem;
+  top: -13rem;
+  background: radial-gradient(
+    circle,
+    rgba(255, 138, 30, 0.58) 0%,
+    rgba(252, 100, 50, 0.2) 42%,
+    transparent 70%
+  );
+  animation: nayori-ambient-left 16s ease-in-out infinite alternate;
+}
+
+.nayori-ambient-right {
+  right: -24rem;
+  top: 4rem;
+  background: radial-gradient(
+    circle,
+    rgba(247, 147, 26, 0.42) 0%,
+    rgba(255, 195, 138, 0.14) 40%,
+    transparent 70%
+  );
+  animation: nayori-ambient-right 20s ease-in-out infinite alternate;
+}
+
+.nayori-embers {
+  inset: 0;
+  z-index: -1;
+  opacity: 0.24;
+  background-image:
+    radial-gradient(circle, rgba(255, 195, 138, 0.8) 0 1px, transparent 1.7px),
+    radial-gradient(circle, rgba(252, 100, 50, 0.7) 0 0.8px, transparent 1.5px);
+  background-position: 0 0, 28px 44px;
+  background-size: 86px 86px, 124px 124px;
+  -webkit-mask-image: linear-gradient(to bottom, black 5%, rgba(0, 0, 0, 0.72) 58%, transparent 96%);
+  mask-image: linear-gradient(to bottom, black 5%, rgba(0, 0, 0, 0.72) 58%, transparent 96%);
+  animation: nayori-embers-drift 28s linear infinite;
+}
+
+.nayori-hero-frame {
+  animation: nayori-frame-breathe 7s ease-in-out infinite;
+}
+
+.nayori-hero-image {
+  animation: nayori-image-breathe 15s ease-in-out infinite alternate;
+}
+
+.nayori-hero-copy {
+  animation: nayori-rise-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.nayori-primary-glow {
+  box-shadow:
+    0 14px 34px -14px rgba(255, 138, 30, 0.96),
+    0 0 0 1px rgba(255, 195, 138, 0.14) inset;
+}
+
+.nayori-primary-glow:hover,
+.nayori-primary-glow:focus-visible {
+  box-shadow:
+    0 18px 44px -12px rgba(252, 100, 50, 0.94),
+    0 0 28px -8px rgba(247, 147, 26, 0.64),
+    0 0 0 1px rgba(255, 195, 138, 0.28) inset;
+  transform: translateY(-1px);
+}
+
+.nayori-primary-glow:focus-visible {
+  outline: 2px solid var(--nayori-glow-soft);
+  outline-offset: 3px;
+}
+
+.nayori-glow-card {
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+.nayori-glow-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  border-radius: inherit;
+  background: radial-gradient(34rem circle at 12% -8%, rgba(255, 138, 30, 0.17), transparent 45%);
+  opacity: 0.4;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+
+.nayori-glow-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.nayori-glow-card:hover,
+.nayori-glow-card:focus-within {
+  border-color: rgba(255, 138, 30, 0.34);
+  box-shadow:
+    0 18px 46px -30px rgba(252, 100, 50, 0.95),
+    0 0 0 1px rgba(247, 147, 26, 0.08) inset;
+  transform: translateY(-3px);
+}
+
+.nayori-glow-card:hover::before,
+.nayori-glow-card:focus-within::before {
+  opacity: 0.85;
+}
+
+.nayori-chip {
+  background-image: linear-gradient(135deg, rgba(255, 138, 30, 0.035), transparent 58%);
+  box-shadow: 0 8px 24px -24px rgba(247, 147, 26, 0.82);
+}
+
+html.nayori-motion-ready [data-nayori-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 650ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--nayori-reveal-delay, 0ms);
+}
+
+html.nayori-motion-ready [data-nayori-reveal][data-nayori-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes nayori-ambient-left {
+  from { transform: translate3d(0, 0, 0) scale(0.94); }
+  to { transform: translate3d(7rem, 3rem, 0) scale(1.08); }
+}
+
+@keyframes nayori-ambient-right {
+  from { transform: translate3d(0, 2rem, 0) scale(1); }
+  to { transform: translate3d(-6rem, -2rem, 0) scale(1.12); }
+}
+
+@keyframes nayori-embers-drift {
+  from { background-position: 0 0, 28px 44px; }
+  to { background-position: 86px -172px, -96px -204px; }
+}
+
+@keyframes nayori-frame-breathe {
+  0%, 100% {
+    box-shadow: 0 26px 90px rgba(252, 100, 50, 0.14);
+  }
+  50% {
+    box-shadow:
+      0 30px 110px rgba(252, 100, 50, 0.23),
+      0 0 54px -28px rgba(255, 138, 30, 0.52);
+  }
+}
+
+@keyframes nayori-image-breathe {
+  from { transform: scale(1); }
+  to { transform: scale(1.018); }
+}
+
+@keyframes nayori-rise-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .nayori-ambient {
+    width: 44rem;
+    filter: blur(90px);
+    opacity: 0.24;
+  }
+
+  .nayori-ambient-left { left: -31rem; }
+  .nayori-ambient-right { right: -33rem; }
+  .nayori-embers { opacity: 0.13; background-size: 112px 112px, 154px 154px; }
+
+  .nayori-hero-frame {
+    animation-duration: 9s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nayori-ambient,
+  .nayori-embers,
+  .nayori-hero-frame,
+  .nayori-hero-image,
+  .nayori-hero-copy {
+    animation: none;
+  }
+
+  .nayori-primary-glow,
+  .nayori-glow-card,
+  .nayori-glow-card::before,
+  html.nayori-motion-ready [data-nayori-reveal] {
+    transition: none;
+  }
+
+  .nayori-primary-glow:hover,
+  .nayori-primary-glow:focus-visible,
+  .nayori-glow-card:hover,
+  .nayori-glow-card:focus-within,
+  html.nayori-motion-ready [data-nayori-reveal] {
+    opacity: 1;
+    transform: none;
   }
 }
