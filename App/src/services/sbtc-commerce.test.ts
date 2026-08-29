@@ -9,6 +9,7 @@ import {
   completeSbtcJob,
   expireSbtcJob,
   rejectSbtcJob,
+  settleSbtcReviewTimeout,
 } from "./sbtc-commerce";
 import { SBTC_TOKEN } from "../constants/sbtc";
 
@@ -19,6 +20,7 @@ describe("sBTC settlement transaction policy", () => {
     ["complete-job", completeSbtcJob],
     ["reject-job", rejectSbtcJob],
     ["expire-job", expireSbtcJob],
+    ["settle-review-timeout", settleSbtcReviewTimeout],
   ] as const) {
     it(`${operation} constrains the exact escrow outflow in deny mode`, async () => {
       request.mockResolvedValue({ txid: "0xabc" });

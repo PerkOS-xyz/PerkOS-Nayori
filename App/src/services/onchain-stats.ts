@@ -1,5 +1,7 @@
 import {
   CONTRACT_ADDRESS,
+  REPUTATION_CONTRACT_NAME,
+  SBTC_COMMERCE_CONTRACT_NAME,
   STX_COMMERCE_CONTRACT_NAME,
 } from "../constants/contract";
 import { NETWORK_NAME } from "../constants/network";
@@ -14,8 +16,8 @@ const CONTRACTS = [
   "agent-registry",
   STX_COMMERCE_CONTRACT_NAME,
   "validation-registry",
-  "sbtc-commerce",
-  "reputation-registry-v2",
+  SBTC_COMMERCE_CONTRACT_NAME,
+  REPUTATION_CONTRACT_NAME,
 ] as const;
 
 export interface RecentTx {
@@ -144,6 +146,19 @@ export async function getBlockHeight(): Promise<number> {
     if (!r.ok) return 0;
     const d = await r.json();
     return Number(d.stacks_tip_height ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+// Current Bitcoin height observed by Stacks. Versioned escrow review windows
+// use burn-block-height, not the faster Stacks block height.
+export async function getBurnBlockHeight(): Promise<number> {
+  try {
+    const r = await fetch(`${API}/v2/info`, { cache: "no-store" });
+    if (!r.ok) return 0;
+    const d = await r.json();
+    return Number(d.burn_block_height ?? 0);
   } catch {
     return 0;
   }

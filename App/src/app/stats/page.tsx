@@ -31,6 +31,8 @@ const FN_LABEL: Record<string, string> = {
   "complete-job": "Job completed",
   "reject-job": "Job rejected",
   "expire-job": "Job expired and refunded",
+  "settle-review-timeout": "Review timeout paid to provider",
+  "retry-reputation-sync": "Reputation sync retried",
   "rate-provider": "Provider rated",
   "rate-agent": "Agent rated",
   "add-protocol-caller": "Protocol caller added",

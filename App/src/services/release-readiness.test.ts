@@ -8,6 +8,8 @@ import {
   canOfferRating,
   CommerceJob,
   jobPermissions,
+  reviewDeadlineText,
+  reviewPermissions,
   RatingAvailability,
 } from "./commerce";
 
@@ -81,5 +83,49 @@ describe("consumed rating actions", () => {
   it("offers rating only after the on-chain check reports it available", () => {
     expect(canOfferRating(true, "available")).toBe(true);
     expect(canOfferRating(false, "available")).toBe(false);
+  });
+});
+
+describe("versioned review timeout actions", () => {
+  const submittedJob: CommerceJob = {
+    id: 9,
+    client: MAINNET,
+    provider: "SP000000000000000000002Q6VF78",
+    evaluator: "SP000000000000000000002Q6VF79",
+    description: "Bitcoin-height review test",
+    budget: 1_000_000,
+    expiredAt: 1_000,
+    status: 2,
+    submittedAtBurn: 900_000,
+    reviewDeadline: 900_144,
+    currency: "stx",
+  };
+
+  it("keeps evaluator actions available through the exact deadline", () => {
+    expect(
+      reviewPermissions(submittedJob, 900_144, submittedJob.evaluator)
+    ).toEqual({ canEvaluatorSettle: true, canTimeout: false });
+  });
+
+  it("offers permissionless timeout only after the deadline", () => {
+    expect(reviewPermissions(submittedJob, 900_145, MAINNET)).toEqual({
+      canEvaluatorSettle: false,
+      canTimeout: true,
+    });
+  });
+
+  it("does not expose timeout without a connected wallet or versioned deadline", () => {
+    expect(reviewPermissions(submittedJob, 900_145)).toEqual({
+      canEvaluatorSettle: false,
+      canTimeout: false,
+    });
+    expect(
+      reviewPermissions({ ...submittedJob, reviewDeadline: undefined }, 900_145, MAINNET)
+    ).toEqual({ canEvaluatorSettle: false, canTimeout: false });
+  });
+
+  it("labels the timeout boundary in Bitcoin blocks", () => {
+    expect(reviewDeadlineText(900_144, 900_144)).toMatch(/Evaluator deadline/);
+    expect(reviewDeadlineText(900_144, 900_145)).toMatch(/timeout available/);
   });
 });

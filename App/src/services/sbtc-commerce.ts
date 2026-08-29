@@ -1,10 +1,14 @@
 import { fetchCallReadOnlyFunction, cvToValue, Cl, Pc } from "@stacks/transactions";
 import { request } from "@stacks/connect";
 import { NETWORK, NETWORK_NAME } from "../constants/network";
-import { CONTRACT_ADDRESS } from "../constants/contract";
+import {
+  CONTRACT_ADDRESS,
+  SBTC_COMMERCE_CONTRACT_NAME,
+} from "../constants/contract";
 import { SBTC_TOKEN, SBTC_ADDRESS, SBTC_NAME } from "../constants/sbtc";
+import { parseReputationSync } from "./reputation-sync";
 
-const CONTRACT_NAME = "sbtc-commerce";
+const CONTRACT_NAME = SBTC_COMMERCE_CONTRACT_NAME;
 export const SBTC_COMMERCE = `${CONTRACT_ADDRESS}.${CONTRACT_NAME}` as `${string}.${string}`;
 
 // The token argument every escrow-moving function takes, so the contract can verify it
@@ -21,6 +25,11 @@ export interface SbtcJob {
   expiredAt: number;
   status: number;
   deliverable?: string;
+  submittedAtBurn?: number;
+  reviewDeadline?: number;
+  reputationSyncPending?: boolean;
+  reputationSyncLastError?: number;
+  reputationSyncOutcome?: number;
   escrow?: number; // sats
 }
 
@@ -50,6 +59,12 @@ export async function getSbtcJob(jobId: number): Promise<SbtcJob | null> {
       expiredAt: Number(t["expired-at"]?.value ?? 0),
       status: Number(t.status?.value ?? 0),
       deliverable: t.deliverable?.value ? t.deliverable.value.value : undefined,
+      submittedAtBurn: t["submitted-at-burn"]?.value
+        ? Number(t["submitted-at-burn"].value.value)
+        : undefined,
+      reviewDeadline: t["review-deadline"]?.value
+        ? Number(t["review-deadline"].value.value)
+        : undefined,
     };
   } catch (error) {
     console.error("Error getting sBTC job:", error);
@@ -74,6 +89,15 @@ export async function getSbtcEscrowBalance(jobId: number): Promise<number> {
   } catch (error) {
     console.error("Error getting sBTC escrow balance:", error);
     return 0;
+  }
+}
+
+export async function getSbtcReputationSync(jobId: number) {
+  try {
+    const cv = await read("get-reputation-sync", [Cl.uint(jobId)]);
+    return parseReputationSync(cv);
+  } catch {
+    return null;
   }
 }
 
@@ -166,6 +190,20 @@ export function rejectSbtcJob(jobId: number, sats: number) {
 
 export function expireSbtcJob(jobId: number, sats: number) {
   return call("expire-job", [Cl.uint(jobId), tokenArg()], settlementOptions(sats));
+}
+
+export function settleSbtcReviewTimeout(jobId: number, sats: number) {
+  return call(
+    "settle-review-timeout",
+    [Cl.uint(jobId), tokenArg()],
+    settlementOptions(sats)
+  );
+}
+
+export function retrySbtcReputationSync(jobId: number) {
+  return call("retry-reputation-sync", [Cl.uint(jobId)], {
+    postConditionMode: "deny",
+  });
 }
 
 export function rateSbtcProvider(jobId: number, score: number, comment: string) {

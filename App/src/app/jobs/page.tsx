@@ -9,6 +9,7 @@ import {
   Clock3,
   ExternalLink,
   Plus,
+  RefreshCw,
   Star,
   Wallet,
 } from "lucide-react";
@@ -22,6 +23,8 @@ import {
   fundSbtcJob,
   rateSbtcProvider,
   rejectSbtcJob,
+  retrySbtcReputationSync,
+  settleSbtcReviewTimeout,
   setSbtcBudget,
   submitSbtcWork,
 } from "../../services/sbtc-commerce";
@@ -40,8 +43,10 @@ import {
   jobHref,
   jobPermissions,
   RatingAvailability,
+  reviewDeadlineText,
+  reviewPermissions,
 } from "../../services/commerce";
-import { getBlockHeight } from "../../services/onchain-stats";
+import { getBlockHeight, getBurnBlockHeight } from "../../services/onchain-stats";
 import { humanizeContractError } from "../../services/contract-errors";
 import { trackTx, txExplorer, txIdOf } from "../../services/tx";
 import StatusBadge from "../../components/StatusBadge";
@@ -58,7 +63,7 @@ import { getConnectedStxAddress } from "../../services/wallet";
 
 const AGENTIC_COMMERCE =
   AGENTIC_COMMERCE_CONTRACT as `${string}.${string}`;
-const STATUS_OPTIONS = ["all", "open", "funded", "submitted", "completed", "rejected", "expired"] as const;
+const STATUS_OPTIONS = ["all", "open", "funded", "submitted", "completed", "rejected", "expired", "timeout-paid"] as const;
 const STATUS_INDEX: Record<string, number> = {
   open: 0,
   funded: 1,
@@ -66,6 +71,7 @@ const STATUS_INDEX: Record<string, number> = {
   completed: 3,
   rejected: 4,
   expired: 5,
+  "timeout-paid": 6,
 };
 const PAGE_SIZE = 20;
 
@@ -95,6 +101,7 @@ export default function JobsPage() {
   const [page, setPage] = useState(0);
   const [totalJobs, setTotalJobs] = useState(0);
   const [height, setHeight] = useState(0);
+  const [burnHeight, setBurnHeight] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -131,7 +138,7 @@ export default function JobsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [list, count, tip] = await Promise.all([
+      const [list, count, tip, burnTip] = await Promise.all([
         getCommerceJobs(currency, {
           newestFirst: true,
           includeEscrow: true,
@@ -140,10 +147,12 @@ export default function JobsPage() {
         }),
         getCommerceJobCount(currency),
         getBlockHeight(),
+        getBurnBlockHeight(),
       ]);
       setJobs(list);
       setTotalJobs(count);
       setHeight(tip);
+      setBurnHeight(burnTip);
     } catch (err) {
       console.error("Error loading jobs:", err);
       setError("Failed to load jobs. Please try again.");
@@ -408,6 +417,28 @@ export default function JobsPage() {
       "Expire job and refund escrow"
     );
 
+  const handleReviewTimeout = (job: CommerceJob) =>
+    run(
+      () =>
+        isSbtc
+          ? settleSbtcReviewTimeout(job.id, job.budget)
+          : stxCall("settle-review-timeout", [Cl.uint(job.id)], settlementOptions(job)),
+      `timing-out-${job.id}`,
+      "Pay provider after review timeout"
+    );
+
+  const handleRetryReputation = (job: CommerceJob) =>
+    run(
+      () =>
+        isSbtc
+          ? retrySbtcReputationSync(job.id)
+          : stxCall("retry-reputation-sync", [Cl.uint(job.id)], {
+              postConditionMode: "deny",
+            }),
+      `retrying-reputation-${job.id}`,
+      "Retry reputation synchronization"
+    );
+
   const handleRate = (jobId: number) => {
     const ratingKey = `${currency}:${jobId}`;
     return run(
@@ -618,6 +649,7 @@ export default function JobsPage() {
         <div className="mt-6 space-y-4">
           {filteredJobs.map((job) => {
             const permissions = jobPermissions(job, address);
+            const review = reviewPermissions(job, burnHeight, address);
             const ratingState = ratingStates[`${job.currency}:${job.id}`];
             const canRate = canOfferRating(
               permissions.canRate,
@@ -625,12 +657,15 @@ export default function JobsPage() {
             );
             const expired = height > 0 && height >= job.expiredAt;
             const canExpire = expired && (job.status === 0 || job.status === 1);
+            const canRetryReputation = Boolean(address && job.reputationSyncPending);
             const hasActions =
               permissions.canSetBudget ||
               permissions.canFund ||
               permissions.canAssign ||
               permissions.canSubmit ||
-              permissions.canSettle ||
+              review.canEvaluatorSettle ||
+              review.canTimeout ||
+              canRetryReputation ||
               permissions.canRate ||
               canExpire;
 
@@ -653,17 +688,35 @@ export default function JobsPage() {
 
                 <JobStepper status={job.status} />
 
-                <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-5">
+                <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-6">
                   <div><dt className="text-xs text-mist-500">Client</dt><dd className="truncate text-xs text-mist-300"><Addr value={job.client} /></dd></div>
                   <div><dt className="text-xs text-mist-500">Provider</dt><dd className="truncate text-xs text-mist-300"><Addr value={job.provider} /></dd></div>
                   <div><dt className="text-xs text-mist-500">Evaluator</dt><dd className="truncate text-xs text-mist-300"><Addr value={job.evaluator} /></dd></div>
                   <div><dt className="text-xs text-mist-500">Budget</dt><dd className="text-white">{formatJobAmount(job.budget, currency)}</dd></div>
                   <div><dt className="text-xs text-mist-500">Expiry</dt><dd className={expired && job.status < 3 ? "text-red-300" : "text-mist-300"}>{expiryText(job.expiredAt, height, job.status)}</dd></div>
+                  {job.reviewDeadline !== undefined && (
+                    <div>
+                      <dt className="text-xs text-mist-500">Bitcoin review window</dt>
+                      <dd className={review.canTimeout ? "text-amber-300" : "text-mist-300"}>
+                        {reviewDeadlineText(job.reviewDeadline, burnHeight)}
+                      </dd>
+                    </div>
+                  )}
                 </dl>
 
                 {Boolean(job.escrow) && (
                   <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-bitcoin/25 bg-bitcoin/10 px-2.5 py-1 text-xs text-bitcoin-400">
                     <Bitcoin className="h-3.5 w-3.5" /> Escrow locked: <span className="font-mono">{formatJobAmount(job.escrow!, currency)}</span>
+                  </div>
+                )}
+
+                {job.reputationSyncPending && (
+                  <div className="mt-3 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2 text-xs text-amber-200">
+                    Economic settlement is final. Reputation synchronization is pending
+                    {job.reputationSyncLastError
+                      ? ` (registry error u${job.reputationSyncLastError})`
+                      : ""}
+                    ; any connected wallet may retry it.
                   </div>
                 )}
 
@@ -731,11 +784,21 @@ export default function JobsPage() {
                   {permissions.canSubmit && (
                     <button onClick={() => setActionForm({ jobId: job.id, mode: "deliverable", value: "" })} className="btn-sm bg-brand text-white hover:bg-brand-600">Submit Work</button>
                   )}
-                  {permissions.canSettle && (
+                  {review.canEvaluatorSettle && (
                     <>
                       <button onClick={() => void handleCompleteJob(job)} className="btn-sm border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10">Complete</button>
                       <button onClick={() => void handleRejectJob(job)} className="btn-sm border border-red-500/25 text-red-300 hover:bg-red-500/10">Reject</button>
                     </>
+                  )}
+                  {review.canTimeout && (
+                    <button onClick={() => void handleReviewTimeout(job)} className="btn-sm border border-amber-500/30 text-amber-300 hover:bg-amber-500/10">
+                      <Clock3 className="h-3.5 w-3.5" /> Pay provider after timeout
+                    </button>
+                  )}
+                  {canRetryReputation && (
+                    <button onClick={() => void handleRetryReputation(job)} className="btn-sm border border-brand/30 text-brand-200 hover:bg-brand/10">
+                      <RefreshCw className="h-3.5 w-3.5" /> Retry reputation sync
+                    </button>
                   )}
                   {canExpire && (
                     <button onClick={() => void handleExpireJob(job)} className="btn-sm border border-amber-500/30 text-amber-300 hover:bg-amber-500/10">
