@@ -6,6 +6,33 @@ Clarity smart contracts for PerkOS Stacks Agentic Commerce.
 
 Four core contracts providing agent identity, job escrow, reputation, and validation on Stacks.
 
+## Versioned escrow security candidate — not deployed
+
+The current mainnet contracts and historical evidence below remain authoritative. Three additional
+contracts are present for local review and a controlled testnet release candidate:
+
+| Candidate | Purpose |
+| --- | --- |
+| `reputation-registry-v3.clar` | Idempotent outcomes and ratings namespaced by protocol source and job ID |
+| `agentic-commerce-v3.clar` | STX escrow with Bitcoin-height review liveness and durable reputation retry |
+| `sbtc-commerce-v2.clar` | SIP-010 escrow with the same liveness controls and token pinning per funded job |
+
+Submission records `submitted-at-burn` and `review-deadline = submitted-at-burn + 144`. The
+evaluator remains authoritative while `burn-block-height <= review-deadline`. Only when
+`burn-block-height > review-deadline` may any principal call `settle-review-timeout`, which pays
+the provider and records terminal status `u6`. A timeout payout is deliberately excluded from
+completed-job reputation and rating eligibility.
+
+Settlement never depends on reputation availability. A failed outcome write is recorded in the
+commerce contract and can be retried by any principal after the registry authorization is fixed.
+Ownership changes use propose/accept, and sBTC jobs retain the token principal pinned at funding
+even if the default token for future jobs changes.
+
+The candidate has **no public-network address yet**. Run the full local suite with `npm test`. A
+future testnet deployment must use the guarded, source-aware
+`npm run deploy:versioned:testnet` command documented in `docs/DEPLOYMENT.md`; the script contains
+no mainnet path.
+
 ## Contract Addresses
 
 A Clarity contract's address is deterministic: `<deployer-principal>.<contract-name>`. The four

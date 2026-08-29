@@ -4,6 +4,7 @@ import {
   CONTRACT_ADDRESS,
   STX_COMMERCE_CONTRACT_NAME,
 } from "../constants/contract";
+import { parseReputationSync, type ReputationSyncState } from "./reputation-sync";
 
 export interface Job {
   id: number;
@@ -15,6 +16,11 @@ export interface Job {
   expiredAt: number;
   status: number;
   deliverable?: string;
+  submittedAtBurn?: number;
+  reviewDeadline?: number;
+  reputationSyncPending?: boolean;
+  reputationSyncLastError?: number;
+  reputationSyncOutcome?: number;
   escrow?: number;
 }
 
@@ -43,6 +49,12 @@ export async function getJob(jobId: number): Promise<Job | null> {
       expiredAt: Number(t["expired-at"]?.value ?? 0),
       status: Number(t.status?.value ?? 0),
       deliverable: t.deliverable?.value ? t.deliverable.value.value : undefined,
+      submittedAtBurn: t["submitted-at-burn"]?.value
+        ? Number(t["submitted-at-burn"].value.value)
+        : undefined,
+      reviewDeadline: t["review-deadline"]?.value
+        ? Number(t["review-deadline"].value.value)
+        : undefined,
     };
   } catch (error) {
     console.error("Error getting job:", error);
@@ -85,6 +97,22 @@ export async function getEscrowBalance(jobId: number): Promise<number> {
   } catch (error) {
     console.error("Error getting escrow balance:", error);
     return 0;
+  }
+}
+
+export async function getReputationSync(jobId: number): Promise<ReputationSyncState | null> {
+  try {
+    const cv = await fetchCallReadOnlyFunction({
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: STX_COMMERCE_CONTRACT_NAME,
+      functionName: "get-reputation-sync",
+      functionArgs: [Cl.uint(jobId)],
+      network: NETWORK,
+      senderAddress: CONTRACT_ADDRESS,
+    });
+    return parseReputationSync(cv);
+  } catch {
+    return null;
   }
 }
 

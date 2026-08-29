@@ -75,6 +75,8 @@ docker build \
   --build-arg NEXT_PUBLIC_STACKS_NETWORK=mainnet \
   --build-arg NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH \
   --build-arg NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v2 \
+  --build-arg NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce \
+  --build-arg NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v2 \
   --build-arg NEXT_PUBLIC_SITE_URL=https://preview.nayori.ai \
   -t nayori-web .
 
@@ -167,6 +169,8 @@ testnet must be selected explicitly.
 NEXT_PUBLIC_STACKS_NETWORK=mainnet
 NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
 NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v2
+NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce
+NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v2
 NEXT_PUBLIC_SITE_URL=https://nayori.ai
 ```
 
@@ -177,6 +181,16 @@ For a testnet release candidate, use the public values in `testnet.env.example` 
 preview environment. Keep production unchanged until the release is explicitly approved.
 Branch-scoped preview variables are preferred so unrelated deployments retain their own
 configuration.
+
+The three contract-name variables are intentionally independent. A versioned escrow candidate can
+therefore be exercised on a testnet preview without changing production or recompiling contract
+names into the service layer. Do not select a candidate name until its source and post-deployment
+wiring have been verified on that network.
+
+Candidate settlement reads the live escrow rather than assuming the job budget is still held. For
+funded sBTC jobs it also reads `get-job-payment-token` and binds both the trait argument and exact
+fungible-token post-condition to that pinned principal. A missing funded-job token fails closed
+before Leather opens; an unfunded open job can expire with zero outflow and no pinned token.
 
 An invalid `NEXT_PUBLIC_STACKS_NETWORK` now fails the build instead of silently falling back to
 mainnet.

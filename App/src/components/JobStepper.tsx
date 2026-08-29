@@ -1,20 +1,21 @@
-import { Check, X } from "lucide-react";
+import { Check, Clock3, X } from "lucide-react";
 
 const STEPS = ["Open", "Funded", "Submitted", "Completed"];
 
 // Visual lifecycle for a job: Open -> Funded -> Submitted -> Completed,
-// with Rejected (4) / Expired (5) shown as terminal states.
+// with Rejected (4), Expired (5), or Timeout paid (6) shown as terminal states.
 export default function JobStepper({ status }: { status: number }) {
   const rejected = status === 4;
   const expired = status === 5;
+  const timedOut = status === 6;
   const isDone = status === 3;
-  const reached = rejected ? 2 : expired ? 0 : Math.min(status, 3);
+  const reached = rejected || timedOut ? 2 : expired ? 0 : Math.min(status, 3);
 
   return (
     <div className="mt-4 flex items-center">
       {STEPS.map((label, i) => {
         const last = i === STEPS.length - 1;
-        const terminalHere = last && (rejected || expired);
+        const terminalHere = last && (rejected || expired || timedOut);
         const done = !terminalHere && (i < reached || isDone);
         const current = !terminalHere && i === reached && !isDone;
 
@@ -23,8 +24,15 @@ export default function JobStepper({ status }: { status: number }) {
         else if (current) ring = "border-brand/40 bg-brand/10 text-brand-300";
         if (terminalHere && rejected) ring = "border-red-500/40 bg-red-500/10 text-red-300";
         if (terminalHere && expired) ring = "border-white/15 bg-white/[0.04] text-mist-400";
+        if (terminalHere && timedOut) ring = "border-amber-500/40 bg-amber-500/10 text-amber-300";
 
-        const text = terminalHere ? (rejected ? "Rejected" : "Expired") : label;
+        const text = terminalHere
+          ? rejected
+            ? "Rejected"
+            : expired
+              ? "Expired"
+              : "Timeout paid"
+          : label;
         const lit = done || current || terminalHere;
 
         return (
@@ -35,6 +43,8 @@ export default function JobStepper({ status }: { status: number }) {
                   <Check className="h-3.5 w-3.5" />
                 ) : terminalHere && rejected ? (
                   <X className="h-3.5 w-3.5" />
+                ) : terminalHere && timedOut ? (
+                  <Clock3 className="h-3.5 w-3.5" />
                 ) : (
                   i + 1
                 )}

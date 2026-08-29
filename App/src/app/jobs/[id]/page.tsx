@@ -12,8 +12,9 @@ import {
   getCommerceEscrow,
   getCommerceJob,
   parseCurrency,
+  reviewDeadlineText,
 } from "../../../services/commerce";
-import { getBlockHeight } from "../../../services/onchain-stats";
+import { getBlockHeight, getBurnBlockHeight } from "../../../services/onchain-stats";
 import StatusBadge from "../../../components/StatusBadge";
 import JobStepper from "../../../components/JobStepper";
 import Addr from "../../../components/Addr";
@@ -24,17 +25,20 @@ export default function JobDetailPage() {
   const [job, setJob] = useState<CommerceJob | null>(null);
   const [escrow, setEscrow] = useState(0);
   const [height, setHeight] = useState(0);
+  const [burnHeight, setBurnHeight] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [nextJob, tip] = await Promise.all([
+      const [nextJob, tip, burnTip] = await Promise.all([
         getCommerceJob(id, currency),
         getBlockHeight(),
+        getBurnBlockHeight(),
       ]);
       setJob(nextJob);
       setHeight(tip);
+      setBurnHeight(burnTip);
       setEscrow(nextJob ? await getCommerceEscrow(id, currency) : 0);
       setLoading(false);
     })();
@@ -100,6 +104,18 @@ export default function JobDetailPage() {
           <span className="mt-1 block font-mono text-xs text-mist-500">Block #{job.expiredAt}</span>
         </Field>
         <Field label="Protocol"><span className="text-mist-200">{currencyProtocolLabel(currency)} escrow</span></Field>
+        {job.reviewDeadline !== undefined && (
+          <Field label="Bitcoin review deadline">
+            <span className="text-mist-200">
+              {reviewDeadlineText(job.reviewDeadline, burnHeight)}
+            </span>
+            {job.submittedAtBurn !== undefined && (
+              <span className="mt-1 block font-mono text-xs text-mist-500">
+                Submitted at Bitcoin block #{job.submittedAtBurn}
+              </span>
+            )}
+          </Field>
+        )}
       </div>
 
       {job.deliverable && (

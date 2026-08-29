@@ -22,6 +22,23 @@ Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 The STX product path uses only `agentic-commerce-v2`. The sBTC contract accepts the canonical
 mainnet token `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`.
 
+## Versioned review candidate
+
+<StatusRow>
+  <StatusBadge tone="planned">Not deployed</StatusBadge>
+  <StatusBadge tone="testnet">Testnet path only</StatusBadge>
+</StatusRow>
+
+The public repository also contains `reputation-registry-v3`, `agentic-commerce-v3` and
+`sbtc-commerce-v2`. These names have no public-network address and are not used by the production
+application. They add a fixed 144 Bitcoin burn-block evaluator window, a separate timeout-paid
+state, retryable reputation synchronization, source/job namespacing, per-job sBTC token pinning and
+two-step ownership.
+
+This documentation distinguishes source availability from deployment. Do not construct a
+transaction for a candidate contract until the target network has a source-verified deployment and
+the integration environment explicitly selects that name.
+
 ## Verification
 
 Clone the public repository and run the signer-free verifier:

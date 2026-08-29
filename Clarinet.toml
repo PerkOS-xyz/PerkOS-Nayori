@@ -38,5 +38,18 @@ epoch = "2.5"
 path = "contracts/sbtc-commerce.clar"
 epoch = "2.5"
 
+# --- Versioned pre-launch security candidate ---
+[contracts.reputation-registry-v3]
+path = "contracts/reputation-registry-v3.clar"
+epoch = "2.5"
+
+[contracts.agentic-commerce-v3]
+path = "contracts/agentic-commerce-v3.clar"
+epoch = "2.5"
+
+[contracts.sbtc-commerce-v2]
+path = "contracts/sbtc-commerce-v2.clar"
+epoch = "2.5"
+
 [repl]
 costs_version = 2

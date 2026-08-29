@@ -46,14 +46,49 @@ plan:
       path: contracts/agent-registry.clar
       clarity-version: 2
     - transaction-type: emulated-contract-publish
-      contract-name: reputation-registry
+      contract-name: reputation-registry-v2
       emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-      path: contracts/reputation-registry.clar
+      path: contracts/reputation-registry-v2.clar
       clarity-version: 2
     - transaction-type: emulated-contract-publish
       contract-name: agentic-commerce
       emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
       path: contracts/agentic-commerce.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
+      contract-name: reputation-registry-v3
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/reputation-registry-v3.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
+      contract-name: agentic-commerce-v3
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/agentic-commerce-v3.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
+      contract-name: sip-010-trait
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/sip-010-trait.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
+      contract-name: mock-sbtc-token
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/mock-sbtc-token.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
+      contract-name: reputation-registry
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/reputation-registry.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
+      contract-name: sbtc-commerce
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/sbtc-commerce.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
+      contract-name: sbtc-commerce-v2
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/sbtc-commerce-v2.clar
       clarity-version: 2
     - transaction-type: emulated-contract-publish
       contract-name: validation-registry

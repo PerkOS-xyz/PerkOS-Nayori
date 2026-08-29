@@ -12,11 +12,20 @@ import {
 } from "../constants/evidence";
 import {
   CONTRACT_ADDRESS,
+  SBTC_COMMERCE_CONTRACT_NAME,
   STX_COMMERCE_CONTRACT_NAME,
 } from "../constants/contract";
 import { NETWORK } from "../constants/network";
 
-const JOB_STATUS = ["Open", "Funded", "Submitted", "Completed", "Rejected", "Expired"] as const;
+const JOB_STATUS = [
+  "Open",
+  "Funded",
+  "Submitted",
+  "Completed",
+  "Rejected",
+  "Expired",
+  "Timeout paid",
+] as const;
 
 export interface TransparencyAgent {
   id: number;
@@ -315,7 +324,7 @@ export async function loadTransparencySnapshot(): Promise<TransparencySnapshot> 
   try {
     const [agentCount, sbtcJobCount, stxJobCount, stats] = await Promise.all([
       readCount("agent-registry", "get-agent-count"),
-      readCount("sbtc-commerce", "get-job-count"),
+      readCount(SBTC_COMMERCE_CONTRACT_NAME, "get-job-count"),
       readCount(STX_COMMERCE_CONTRACT_NAME, "get-job-count"),
       getOnchainStats({ strict: true, recentLimit: 50 }),
     ]);

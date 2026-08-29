@@ -30,6 +30,8 @@ const FN: Record<string, { label: string; cat: string; icon: any; cls: string }>
   "fund-job": { label: "Job funded", cat: "funded", icon: Coins, cls: "border-bitcoin/30 text-bitcoin-400" },
   "complete-job": { label: "Job completed", cat: "completed", icon: CheckCircle2, cls: "border-emerald-500/30 text-emerald-300" },
   "reject-job": { label: "Job rejected", cat: "rejected", icon: XCircle, cls: "border-red-500/30 text-red-300" },
+  "settle-review-timeout": { label: "Review timeout paid", cat: "timeout", icon: Coins, cls: "border-amber-500/30 text-amber-300" },
+  "retry-reputation-sync": { label: "Reputation sync retried", cat: "jobs", icon: RefreshCw, cls: "border-brand/30 text-brand-300" },
 };
 
 const FILTERS: Record<string, string> = {
@@ -39,6 +41,7 @@ const FILTERS: Record<string, string> = {
   funded: "Funded",
   completed: "Completed",
   rejected: "Rejected",
+  timeout: "Timeout paid",
 };
 
 const shorten = (a: string) => (a ? `${a.slice(0, 5)}…${a.slice(-4)}` : "");

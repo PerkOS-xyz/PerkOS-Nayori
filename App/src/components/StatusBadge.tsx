@@ -5,6 +5,7 @@ const STATUS_CONFIG: Record<number, { label: string; dot: string; cls: string }>
   3: { label: "Completed", dot: "bg-emerald-400", cls: "border-emerald-500/30 text-emerald-300" },
   4: { label: "Rejected", dot: "bg-red-400", cls: "border-red-500/30 text-red-300" },
   5: { label: "Expired", dot: "bg-mist-500", cls: "border-white/10 text-mist-500" },
+  6: { label: "Timeout paid", dot: "bg-amber-400", cls: "border-amber-500/30 text-amber-300" },
 };
 
 export default function StatusBadge({ status }: { status: number }) {

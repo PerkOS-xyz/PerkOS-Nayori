@@ -2,6 +2,7 @@ import {
   getJob,
   getJobCount,
   getEscrowBalance,
+  getReputationSync,
   hasRatedJob as hasRatedStxJob,
   Job,
 } from "./agentic-commerce";
@@ -9,12 +10,17 @@ import {
   getSbtcJob,
   getSbtcJobCount,
   getSbtcEscrowBalance,
+  getSbtcReputationSync,
   hasRatedJob as hasRatedSbtcJob,
   SbtcJob,
 } from "./sbtc-commerce";
 import { formatSbtcCompact, formatStx } from "../utils/format";
 import { NETWORK_NAME } from "../constants/network";
-import { STX_COMMERCE_IS_HARDENED } from "../constants/contract";
+import {
+  SBTC_COMMERCE_HAS_REVIEW_TIMEOUT,
+  STX_COMMERCE_HAS_REVIEW_TIMEOUT,
+  STX_COMMERCE_IS_HARDENED,
+} from "../constants/contract";
 
 export type Currency = "sbtc" | "stx";
 export type CommerceJob = (Job | SbtcJob) & { currency: Currency };
@@ -55,7 +61,24 @@ export async function getCommerceJob(
   currency: Currency
 ): Promise<CommerceJob | null> {
   const job = currency === "sbtc" ? await getSbtcJob(jobId) : await getJob(jobId);
-  return job ? { ...job, currency } : null;
+  if (!job) return null;
+
+  const hasDurableReputation =
+    currency === "sbtc"
+      ? SBTC_COMMERCE_HAS_REVIEW_TIMEOUT
+      : STX_COMMERCE_HAS_REVIEW_TIMEOUT;
+  if (hasDurableReputation && (job.status === 3 || job.status === 4)) {
+    const sync =
+      currency === "sbtc"
+        ? await getSbtcReputationSync(jobId)
+        : await getReputationSync(jobId);
+    if (sync) {
+      job.reputationSyncPending = sync.pending;
+      job.reputationSyncLastError = sync.lastError;
+      job.reputationSyncOutcome = sync.outcome;
+    }
+  }
+  return { ...job, currency };
 }
 
 export async function getCommerceJobCount(currency: Currency): Promise<number> {
@@ -148,6 +171,26 @@ export function jobPermissions(job: CommerceJob, address?: string) {
   };
 }
 
+export function reviewPermissions(
+  job: CommerceJob,
+  burnBlockHeight: number,
+  address?: string
+) {
+  const isEvaluator = sameAddress(job.evaluator, address);
+  const hasDeadline = Number.isSafeInteger(job.reviewDeadline);
+  const reviewOpen =
+    job.status === 2 &&
+    (!hasDeadline || burnBlockHeight === 0 || burnBlockHeight <= job.reviewDeadline!);
+  return {
+    canEvaluatorSettle: reviewOpen && isEvaluator,
+    canTimeout:
+      Boolean(address) &&
+      job.status === 2 &&
+      hasDeadline &&
+      burnBlockHeight > job.reviewDeadline!,
+  };
+}
+
 export const STACKS_BLOCK_SECONDS = 5;
 
 export function durationToBlocks(amount: number, unit: "hours" | "days") {
@@ -159,6 +202,7 @@ export function expiryText(expiredAt: number, currentHeight: number, status?: nu
   if (status === 3) return "Closed · completed";
   if (status === 4) return "Closed · rejected";
   if (status === 5) return "Expired";
+  if (status === 6) return "Closed · timeout paid";
   if (!currentHeight) return `Block #${expiredAt}`;
   const remaining = expiredAt - currentHeight;
   if (remaining <= 0) return "Expired";
@@ -166,6 +210,16 @@ export function expiryText(expiredAt: number, currentHeight: number, status?: nu
   if (seconds < 3_600) return `~${Math.max(1, Math.ceil(seconds / 60))} min left`;
   if (seconds < 86_400) return `~${Math.ceil(seconds / 3_600)} hr left`;
   return `~${Math.ceil(seconds / 86_400)} days left`;
+}
+
+
+export function reviewDeadlineText(reviewDeadline?: number, burnBlockHeight?: number) {
+  if (!Number.isSafeInteger(reviewDeadline)) return null;
+  if (!burnBlockHeight) return `Bitcoin block #${reviewDeadline}`;
+  const remaining = reviewDeadline! - burnBlockHeight;
+  if (remaining < 0) return `Review timeout available · Bitcoin block #${reviewDeadline}`;
+  if (remaining === 0) return `Evaluator deadline · Bitcoin block #${reviewDeadline}`;
+  return `${remaining} Bitcoin block${remaining === 1 ? "" : "s"} left · #${reviewDeadline}`;
 }
 
 export function isValidStacksAddress(address: string, currency?: Currency) {

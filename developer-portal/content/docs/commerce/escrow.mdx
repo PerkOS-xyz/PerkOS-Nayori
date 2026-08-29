@@ -34,6 +34,38 @@ an explicit refund path.
 Completion pays the provider and updates job-linked reputation. Rejection and eligible expiry
 return escrow according to the contract lifecycle.
 
+## Reviewed candidate lifecycle
+
+<StatusRow>
+  <StatusBadge tone="planned">Source available · Not deployed</StatusBadge>
+</StatusRow>
+
+The versioned candidate begins a fixed 144 Bitcoin burn-block review window when the provider
+submits work. The evaluator can approve or reject through the exact deadline. After the deadline,
+any caller can release escrow to the provider so an unavailable evaluator cannot trap funds.
+
+<Mermaid
+  label="Versioned escrow review-window lifecycle"
+  chart={`stateDiagram-v2
+    [*] --> Open: create job
+    Open --> Funded: set budget and fund
+    Funded --> Submitted: provider submits
+    Submitted --> Completed: evaluator approves at or before deadline
+    Submitted --> Rejected: evaluator rejects at or before deadline
+    Submitted --> TimeoutPaid: any caller settles after deadline
+    Open --> Expired: original deadline passes
+    Funded --> Expired: original deadline passes
+    Completed --> [*]
+    Rejected --> [*]
+    TimeoutPaid --> [*]
+    Expired --> [*]`}
+/>
+
+`TimeoutPaid (u6)` proves that the provider received escrow through the liveness path. It is not a
+completed-job attestation, cannot be rated and does not increment completed or disputed reputation.
+If a normal completion or rejection cannot write reputation, settlement remains final and the
+recorded synchronization can be retried permissionlessly.
+
 ## Asset-specific funding
 
 STX funding constrains the exact micro-STX transfer. sBTC funding constrains the canonical SIP-010

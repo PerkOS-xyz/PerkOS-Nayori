@@ -1,8 +1,11 @@
 import { fetchCallReadOnlyFunction, cvToValue, Cl } from "@stacks/transactions";
 import { NETWORK } from "../constants/network";
-import { CONTRACT_ADDRESS } from "../constants/contract";
+import {
+  CONTRACT_ADDRESS,
+  REPUTATION_CONTRACT_NAME,
+} from "../constants/contract";
 
-const CONTRACT_NAME = "reputation-registry-v2";
+const CONTRACT_NAME = REPUTATION_CONTRACT_NAME;
 
 export interface ReputationV2 {
   totalScore: number;

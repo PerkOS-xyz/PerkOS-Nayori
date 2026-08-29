@@ -48,6 +48,28 @@ forbidPattern(
   "allow-mode post conditions are forbidden",
 );
 
+const versionedEscrowTestnetDeploy = "scripts/deploy-versioned-escrow-testnet.mjs";
+requirePattern(
+  versionedEscrowTestnetDeploy,
+  /STACKS_NETWORK\s*!==\s*["']testnet["']/,
+  "the versioned candidate must require an explicit testnet network",
+);
+requirePattern(
+  versionedEscrowTestnetDeploy,
+  /CONFIRM_VERSIONED_ESCROW_TESTNET_DEPLOY\s*!==\s*["']yes["']/,
+  "the versioned candidate requires its own typed testnet confirmation",
+);
+requirePattern(
+  versionedEscrowTestnetDeploy,
+  /postConditionMode:\s*PostConditionMode\.Deny/,
+  "deny-mode post conditions are required",
+);
+forbidPattern(
+  versionedEscrowTestnetDeploy,
+  /STACKS_MAINNET|PostConditionMode\.Allow/,
+  "the testnet-only candidate must have no mainnet or allow-mode path",
+);
+
 for (const path of [
   "scripts/deploy-mainnet.mjs",
   "scripts/deploy-sbtc-mainnet.mjs",
@@ -77,8 +99,13 @@ requirePattern(
   "sBTC settlement must constrain the exact escrow outflow",
 );
 requirePattern(
+  "App/src/services/sbtc-commerce.ts",
+  /get-job-payment-token[\s\S]*?tokenArg\(token\)[\s\S]*?settlementOptions\(sats, token, allowZero\)/,
+  "versioned sBTC settlement must bind the job-pinned token before wallet access",
+);
+requirePattern(
   "App/src/app/jobs/page.tsx",
-  /Pc\.principal\(AGENTIC_COMMERCE\)\.willSendEq\(job\.budget\)\.ustx\(\)/,
+  /const amount = exactEscrow\(job, allowZero\)[\s\S]*?Pc\.principal\(AGENTIC_COMMERCE\)\.willSendEq\(amount\)\.ustx\(\)[\s\S]*?postConditionMode:\s*["']deny["']/,
   "STX settlement must constrain the exact escrow outflow",
 );
 

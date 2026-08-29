@@ -8,6 +8,10 @@ export const CONTRACT_ADDRESS =
   (NETWORK_NAME === "mainnet" ? MAINNET_DEPLOYER : TESTNET_DEPLOYER);
 export const STX_COMMERCE_CONTRACT_NAME =
   process.env.NEXT_PUBLIC_STX_COMMERCE_CONTRACT || "agentic-commerce-v2";
+export const SBTC_COMMERCE_CONTRACT_NAME =
+  process.env.NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT || "sbtc-commerce";
+export const REPUTATION_CONTRACT_NAME =
+  process.env.NEXT_PUBLIC_REPUTATION_CONTRACT || "reputation-registry-v2";
 
 const prefixMatches =
   (NETWORK_NAME === "mainnet" && CONTRACT_ADDRESS.startsWith("SP")) ||
@@ -25,8 +29,22 @@ if (!/^[a-z][a-z0-9-]{0,39}$/.test(STX_COMMERCE_CONTRACT_NAME)) {
   );
 }
 
+for (const [variable, contractName] of [
+  ["NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT", SBTC_COMMERCE_CONTRACT_NAME],
+  ["NEXT_PUBLIC_REPUTATION_CONTRACT", REPUTATION_CONTRACT_NAME],
+] as const) {
+  if (!/^[a-z][a-z0-9-]{0,39}$/.test(contractName)) {
+    throw new Error(`${variable} (${contractName}) is not a valid Clarity contract name`);
+  }
+}
+
 export const AGENT_REGISTRY_CONTRACT = `${CONTRACT_ADDRESS}.agent-registry`;
 export const AGENTIC_COMMERCE_CONTRACT =
   `${CONTRACT_ADDRESS}.${STX_COMMERCE_CONTRACT_NAME}`;
 export const STX_COMMERCE_IS_HARDENED =
-  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v2";
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v2" ||
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v3";
+export const STX_COMMERCE_HAS_REVIEW_TIMEOUT =
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v3";
+export const SBTC_COMMERCE_HAS_REVIEW_TIMEOUT =
+  SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v2";
