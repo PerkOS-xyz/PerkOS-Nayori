@@ -111,6 +111,33 @@ the preview. The OAuth service and Platform must pass their live metadata/JWKS a
 token-verification probes before the web points discovery to `oauth.nayori.ai`. Publish DNS-AID
 only after those production endpoints are independently testable.
 
+## Developer documentation deployment
+
+`developer-portal/` is an independent Next.js/Fumadocs application for `docs.nayori.ai`. It must
+not be served from the transactional Web container after its dedicated rollout.
+
+Build `developer-portal/Dockerfile` only on the Nayori VPS from the exact merged source archive.
+Run its validation before building:
+
+```bash
+cd developer-portal
+npm ci
+npm run verify
+```
+
+Promote a dedicated preview container and validate:
+
+1. `/api/health`, `/api/search`, `/sitemap.xml`, `/robots.txt`, `/llms.txt` and `/openapi.json`;
+2. canonical metadata uses `https://docs.nayori.ai`;
+3. SDK, OAuth, escrow, x402, MPP, contracts and generated API pages render;
+4. protected and economic API operations have no generic browser proxy;
+5. desktop, keyboard and 390-pixel mobile layouts have no horizontal page overflow; and
+6. every Mermaid diagram renders with Stacks orange `#FC6432`.
+
+After preview passes, change only the Caddy upstream for `docs.nayori.ai` from the temporary Web
+alias to the dedicated docs service. Retain the prior route and image as rollback artifacts. This
+deployment does not enable settlement, sponsorship, OAuth registration or any contract change.
+
 ## Nayori partner API
 
 The public API is available at [api.nayori.ai](https://api.nayori.ai) as a separate, testnet-only

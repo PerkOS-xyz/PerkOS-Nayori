@@ -1,0 +1,24 @@
+---
+title: Deployments and public origins
+description: Canonical Nayori domains, responsibilities, networks and access boundaries.
+---
+
+| Origin | Responsibility | Network/access |
+| --- | --- | --- |
+| `nayori.ai` | Brand, discovery, evidence and same-origin paid resources | Public |
+| `app.nayori.ai` | Human-facing registry and escrow application | Stacks mainnet |
+| `docs.nayori.ai` | This developer portal | Public |
+| `api.nayori.ai` | Resource API, OAuth-protected partner API and MCP | Testnet pilot |
+| `facilitator.nayori.ai` | Quote, verify, settlement confirmation and receipts | Testnet settlement |
+| `oauth.nayori.ai` | OAuth issuer, wallet claims and JWKS | Public metadata; scoped access |
+
+## Compatibility origin
+
+`nayori.perkos.xyz` maintains the product relationship with PerkOS. New integrations should use
+the canonical `nayori.ai` origins above.
+
+## Release boundary
+
+The Web application, documentation, API/facilitator and OAuth issuer are independent deployment
+roles. A healthy docs release does not imply that an economic runtime changed or that a new
+settlement network was enabled.

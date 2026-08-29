@@ -1,0 +1,32 @@
+---
+title: Networks and assets
+description: Understand which Nayori capabilities are on mainnet, testnet or intentionally disabled.
+---
+
+| Capability | Network | Assets | Status |
+| --- | --- | --- | --- |
+| Identity registry | Stacks mainnet | STX fees | Live |
+| Job escrow | Stacks mainnet | STX, sBTC | Live |
+| Reputation | Stacks mainnet | On-chain records | Live |
+| x402 direct resource | Stacks testnet | STX live profile; SDK supports STX/sBTC/USDCx | Controlled rollout |
+| MPP direct resource | Stacks testnet | USDCx | Controlled rollout |
+| Facilitator sponsorship | None | — | Disabled |
+| Facilitator mainnet settlement | None | — | Disabled pending rollout gates |
+
+## CAIP-2 identifiers
+
+```text
+Stacks mainnet: stacks:1
+Stacks testnet: stacks:2147483648
+```
+
+Never infer network from an address alone. Fix the network in the client configuration and reject a
+quote, challenge or transaction plan that names another network.
+
+## Units
+
+- STX amounts are expressed in micro-STX (`1 STX = 1,000,000 micro-STX`).
+- sBTC amounts are expressed in satoshis.
+- USDCx uses six decimal places and its canonical SIP-010 asset identifier.
+
+See [deployment reference](/reference/deployments) for current contract addresses and public origins.

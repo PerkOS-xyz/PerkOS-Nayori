@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Nayori">
+  <rect width="64" height="64" rx="14" fill="#090909"/>
+  <path d="M32 8 56 21 32 34 8 21 32 8Z" fill="#FC6432"/>
+  <path d="m8 29 24 13 24-13v12L32 54 8 41V29Z" fill="#FC8A61"/>
+  <path d="m17 24 15 8 15-8-15-8-15 8Z" fill="#170B07" opacity=".42"/>
+</svg>

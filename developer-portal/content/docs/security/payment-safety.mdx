@@ -1,0 +1,33 @@
+---
+title: Payment safety model
+description: Apply exact intent validation, post-conditions, replay protection and confirmation gates.
+---
+
+## Client controls
+
+1. Parse the challenge or quote using the declared protocol version.
+2. Match network, asset, amount, recipient and resource against local intent.
+3. Enforce per-transaction and per-session spending limits.
+4. Verify nonce, fee cap, transaction type, contract/function and post-conditions.
+5. Request a signature only after every field matches.
+
+## Server controls
+
+1. Verify quote signature, expiry and request binding.
+2. Parse the full signed Stacks transaction.
+3. Atomically reserve the challenge and transaction ID against replay.
+4. Broadcast once.
+5. Reconcile against canonical chain state.
+6. Create a signed receipt.
+7. Deliver idempotently with a stable response digest.
+
+## Explicitly disabled
+
+- Arbitrary transaction proxying.
+- Generic documentation proxying of bearer credentials.
+- Mainnet facilitator settlement.
+- Fee sponsorship.
+- Delivery on validation, broadcast or pending status.
+
+Report security issues privately through the repository's responsible-disclosure channel. Do not
+include keys, tokens or personal wallet material in public issues.

@@ -1,0 +1,20 @@
+{
+  "pages": [
+    "get-health",
+    "get-readiness",
+    "get-supported",
+    "get-x402-metadata",
+    "get-agent-manifest",
+    "get-llm-instructions",
+    "get-open-api",
+    "get-paid-nayori-capability-report",
+    "get-mpp-paid-nayori-capability-report",
+    "get-oauth-authorization-server-metadata",
+    "get-oauth-protected-resource-metadata",
+    "get-oauth-verification-keys",
+    "get-mcp-server-card",
+    "invoke-mcp-streamable-http",
+    "get-quote-verification-keys",
+    "issue-quote"
+  ]
+}

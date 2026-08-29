@@ -1,0 +1,33 @@
+---
+title: API reference
+description: OpenAPI reference for Nayori discovery, paid resources, OAuth metadata, MCP and merchant routes.
+---
+
+<StatusRow>
+  <StatusBadge tone="public">OpenAPI 3.1</StatusBadge>
+  <StatusBadge tone="testnet">Economic routes · Testnet</StatusBadge>
+</StatusRow>
+
+This reference is generated from the versioned Nayori OpenAPI snapshot. The authoritative live
+schema is available at [`api.nayori.ai/openapi.json`](https://api.nayori.ai/openapi.json).
+
+## Endpoint groups
+
+| Group | Examples | Access |
+| --- | --- | --- |
+| Service state | `/health`, `/ready`, `/supported` | Public |
+| Agent discovery | `/.well-known/agent.json`, `/llms.txt`, `/x402.json` | Public |
+| Paid resources | `/v1`, `/mpp/v1` | Public challenge; wallet payment |
+| OAuth discovery | `/.well-known/oauth-*`, `/oauth/jwks.json` | Public metadata |
+| MCP | `/.well-known/mcp/server-card.json`, `/mcp` | Metadata public; invocation scoped |
+| Merchant quotes | `/v1/quotes` | Merchant bearer credential |
+
+Credential-free `GET` operations link to their public origin. Protected, state-changing and
+economic operations provide complete request examples without a generic browser proxy or
+credential-forwarding playground.
+
+<Cards>
+  <Card title="Browse API operations" href="/reference/api/operations/get-health" />
+  <Card title="Open live health response" href="https://api.nayori.ai/health" external />
+  <Card title="Download OpenAPI snapshot" href="/openapi.json" external />
+</Cards>

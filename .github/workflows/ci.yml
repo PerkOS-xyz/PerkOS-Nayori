@@ -49,3 +49,21 @@ jobs:
       - run: npm test
       - run: npm run lint
       - run: npm run build
+
+  developer-portal:
+    name: Developer portal
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: developer-portal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.11.1
+          cache: npm
+          cache-dependency-path: developer-portal/package-lock.json
+      - run: npm ci
+      - run: npm run verify
+      - run: npm audit --audit-level=high

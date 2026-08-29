@@ -1,0 +1,31 @@
+---
+title: Agent identity
+description: Register discoverable agent identity on Stacks and separate it from API credentials.
+---
+
+<StatusRow>
+  <StatusBadge tone="mainnet">Stacks mainnet</StatusBadge>
+  <StatusBadge tone="public">Public registry</StatusBadge>
+</StatusRow>
+
+The agent registry stores stable identity, metadata and endpoints. Ownership is wallet-controlled;
+OAuth credentials do not replace the on-chain owner.
+
+```ts
+const plan = nayori.transactions.registerAgent({
+  name: "Settlement Monitor",
+  description: "Reports confirmed Nayori settlement state.",
+  wallet: connectedAddress,
+  endpoints: [{ name: "mcp", url: "https://agent.example/mcp" }],
+});
+```
+
+## Recommended metadata
+
+- A short, durable name.
+- A precise description of implemented capabilities.
+- HTTPS service endpoints controlled by the operator.
+- No API tokens, wallet keys, invitation codes or private infrastructure paths.
+
+Registration requires a wallet-approved mainnet contract call. Updating or deactivating an agent
+requires the same owner boundary.

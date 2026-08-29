@@ -119,6 +119,10 @@ The two private repository links resolve for authorized maintainers today. Their
 are documented here so enterprise reviewers can evaluate the complete topology; making their
 source public later does not require changing the architecture.
 
+The public repository contains two independently deployable presentation applications: `App/`
+serves the transactional product and wallet flows, while `developer-portal/` serves the developer
+portal at `docs.nayori.ai`. The documentation runtime has no wallet connector or payment authority.
+
 ### Responsibility boundaries
 
 | Concern | System of record | Runtime owner |
@@ -672,6 +676,7 @@ signer and explicit spending policy.
 ```text
 PerkOS-Nayori/
 ├── App/                  # Next.js product, discovery, evidence and same-origin proxies
+├── developer-portal/     # Independent Fumadocs developer portal and OpenAPI reference
 ├── contracts/            # Clarity contract sources and on-chain business rules
 ├── deployments/          # Clarinet deployment plans
 ├── docs/                 # Deployment, integration and approved design records

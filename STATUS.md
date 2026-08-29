@@ -7,6 +7,9 @@ Last verified: 2026-08-28
 **Live on Stacks mainnet.**
 
 - Production app: [nayori.ai](https://nayori.ai)
+- Developer portal candidate: independent `developer-portal/` application with self-hosted search, generated
+  OpenAPI reference and complete SDK/commerce onboarding. It replaces the temporary
+  `docs.nayori.ai` Web alias only after merge and VPS preview validation.
 - Partner API: [api.nayori.ai](https://api.nayori.ai) (invite-only testnet settlement)
 - Public x402 resource and confirmed testnet proof: [nayori.ai/api/v1](https://nayori.ai/api/v1)
 - Public MPP PaymentAuth USDCx resource:

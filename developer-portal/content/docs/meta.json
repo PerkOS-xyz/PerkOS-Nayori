@@ -1,0 +1,17 @@
+{
+  "title": "Nayori Documentation",
+  "pages": [
+    "index",
+    "---Start here---",
+    "getting-started",
+    "---Agent platform---",
+    "agents",
+    "---Commerce---",
+    "commerce",
+    "---Reference---",
+    "reference",
+    "---Trust and operations---",
+    "security",
+    "resources"
+  ]
+}

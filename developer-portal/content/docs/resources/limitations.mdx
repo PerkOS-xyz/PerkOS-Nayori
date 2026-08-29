@@ -1,0 +1,19 @@
+---
+title: Known limitations
+description: Current product and documentation boundaries developers must account for.
+---
+
+- Direct x402 and MPP facilitator settlement is controlled on Stacks testnet.
+- Mainnet facilitator settlement and sponsorship are disabled.
+- Partner OAuth/MCP enrollment remains invite-only.
+- MPP uses USDCx; the hosted x402 resource currently exercises the STX profile.
+- Browser signing requires a compatible Stacks wallet such as Leather.
+- Headless custody requires an application-owned secret manager, KMS, HSM or isolated signer.
+- Indexer availability can delay observations even when chain state is correct.
+- A transaction broadcast or pending status is not confirmed settlement.
+- The API schema is a versioned snapshot and displays its last verification date; runtime challenges
+  remain authoritative for price, recipient and payment requirements.
+
+These limitations are deliberate rollout and security boundaries, not instructions to bypass
+checks. Consult [deployments](/reference/deployments) and [payment safety](/security/payment-safety)
+before an integration moves beyond read-only evaluation.

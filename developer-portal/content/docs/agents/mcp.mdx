@@ -1,0 +1,33 @@
+---
+title: MCP integration
+description: Discover and invoke Nayori MCP tools with scoped OAuth access.
+---
+
+<StatusRow>
+  <StatusBadge tone="testnet">Testnet pilot</StatusBadge>
+  <StatusBadge tone="restricted">Invite-only partner scope</StatusBadge>
+</StatusRow>
+
+The MCP endpoint uses Streamable HTTP and OAuth scope `mcp:invoke`. Tool discovery and payment
+authorization are separate domains.
+
+```bash
+curl -sS https://api.nayori.ai/.well-known/mcp/server-card.json
+```
+
+```ts
+const tools = await partners.callMcp({
+  accessToken: token.accessToken,
+  method: "tools/list",
+});
+```
+
+MCP tools must not receive seed phrases or private keys. A tool may prepare a payment intent or
+transaction plan, but a wallet or controlled signer approves the final Stacks transaction.
+
+## Failure modes
+
+- `401`: token missing, expired or issued by an unexpected issuer.
+- `403`: token is valid but lacks `mcp:invoke`.
+- JSON-RPC error: method or tool input is invalid.
+- Payment challenge: the requested resource has a separate economic requirement.
