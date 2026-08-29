@@ -23,4 +23,12 @@ describe('Nayori Docs brand assets', () => {
     expect(logo).toContain('/brand/PerkOS.png');
     expect(overview).toContain('<BrandBanner />');
   });
+
+  it('copies public assets into the standalone VPS image', () => {
+    const dockerfile = readFileSync(resolve(process.cwd(), 'Dockerfile'), 'utf8');
+
+    expect(dockerfile).toContain(
+      'COPY --from=builder --chown=nextjs:nodejs /app/public ./public',
+    );
+  });
 });

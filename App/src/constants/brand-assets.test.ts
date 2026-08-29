@@ -25,4 +25,12 @@ describe("Nayori Web brand assets", () => {
     expect(home).not.toContain('/brand/Banner.png');
     expect(home).toContain('alt=""');
   });
+
+  it("copies public assets into the standalone VPS image", () => {
+    const dockerfile = readFileSync(resolve(process.cwd(), "Dockerfile"), "utf8");
+
+    expect(dockerfile).toContain(
+      "COPY --from=builder --chown=nextjs:nodejs /app/public ./public",
+    );
+  });
 });
