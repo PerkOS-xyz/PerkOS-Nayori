@@ -10,6 +10,10 @@ function markdownTarget(pathname: string) {
 
 export default function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  if (pathname === '/favicon.ico') {
+    return NextResponse.redirect(new URL('/icon.svg', request.nextUrl), 308);
+  }
+
   if (excludedPrefixes.some((prefix) => pathname.startsWith(prefix))) {
     return NextResponse.next();
   }

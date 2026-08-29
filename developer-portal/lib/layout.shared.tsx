@@ -1,7 +1,7 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 import { BookOpenText, Boxes, Code2, ExternalLink } from 'lucide-react';
 import { gitConfig, productLinks } from './shared';
-import { NayoriLogo } from '@/components/nayori-logo';
+import { NayoriLogo, PerkOSLogo } from '@/components/nayori-logo';
 
 export function baseOptions(): BaseLayoutProps {
   return {
@@ -9,9 +9,12 @@ export function baseOptions(): BaseLayoutProps {
       // JSX supported
       title: (
         <span className="flex items-center gap-2 font-semibold">
-          <NayoriLogo className="size-6" />
+          <NayoriLogo className="size-7" />
           <span>Nayori</span>
           <span className="hidden text-xs font-medium text-fd-muted-foreground sm:inline">Docs</span>
+          <span className="hidden items-center gap-1 border-l border-fd-border pl-2 text-[10px] font-medium text-fd-muted-foreground lg:inline-flex">
+            by <PerkOSLogo /> PerkOS
+          </span>
         </span>
       ),
     },
