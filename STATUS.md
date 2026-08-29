@@ -33,7 +33,9 @@ The candidate adds a fixed 144 Bitcoin burn-block review window after submission
 authority through the exact deadline, permissionless provider payout after the deadline, a
 non-completion `u6` timeout state, durable retryable reputation synchronization, protocol/job
 namespacing, sBTC token pinning per funded job and two-step ownership transfer. The web can select
-the candidate only through explicit testnet preview variables.
+the candidate only through explicit testnet preview variables. Candidate Web settlement reads the
+live escrow and job-pinned sBTC token before opening the wallet, while zero-balance open expiry
+uses no transfer post-condition.
 
 ## Mainnet contracts
 

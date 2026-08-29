@@ -99,8 +99,13 @@ requirePattern(
   "sBTC settlement must constrain the exact escrow outflow",
 );
 requirePattern(
+  "App/src/services/sbtc-commerce.ts",
+  /get-job-payment-token[\s\S]*?tokenArg\(token\)[\s\S]*?settlementOptions\(sats, token, allowZero\)/,
+  "versioned sBTC settlement must bind the job-pinned token before wallet access",
+);
+requirePattern(
   "App/src/app/jobs/page.tsx",
-  /Pc\.principal\(AGENTIC_COMMERCE\)\.willSendEq\(job\.budget\)\.ustx\(\)/,
+  /const amount = exactEscrow\(job, allowZero\)[\s\S]*?Pc\.principal\(AGENTIC_COMMERCE\)\.willSendEq\(amount\)\.ustx\(\)[\s\S]*?postConditionMode:\s*["']deny["']/,
   "STX settlement must constrain the exact escrow outflow",
 );
 

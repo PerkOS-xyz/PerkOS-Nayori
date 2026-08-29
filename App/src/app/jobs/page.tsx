@@ -75,6 +75,23 @@ const STATUS_INDEX: Record<string, number> = {
 };
 const PAGE_SIZE = 20;
 
+function exactEscrow(job: CommerceJob, allowZero = false) {
+  const amount = job.escrow;
+  if (
+    amount === undefined ||
+    !Number.isSafeInteger(amount) ||
+    amount < 0 ||
+    (!allowZero && amount === 0)
+  ) {
+    throw new Error(
+      allowZero
+        ? "Could not verify the current escrow balance."
+        : "Could not verify a positive current escrow balance."
+    );
+  }
+  return amount;
+}
+
 type ActionForm =
   | { jobId: number; mode: "budget"; value: string }
   | { jobId: number; mode: "provider"; value: string }
@@ -382,16 +399,22 @@ export default function JobsPage() {
       `Fund job with ${unit}`
     );
 
-  const settlementOptions = (job: CommerceJob) => ({
-    postConditions: [Pc.principal(AGENTIC_COMMERCE).willSendEq(job.budget).ustx()],
-    postConditionMode: "deny" as const,
-  });
+  const settlementOptions = (job: CommerceJob, allowZero = false) => {
+    const amount = exactEscrow(job, allowZero);
+    return {
+      postConditions:
+        amount === 0
+          ? []
+          : [Pc.principal(AGENTIC_COMMERCE).willSendEq(amount).ustx()],
+      postConditionMode: "deny" as const,
+    };
+  };
 
   const handleCompleteJob = (job: CommerceJob) =>
     run(
       () =>
         isSbtc
-          ? completeSbtcJob(job.id, job.budget)
+          ? completeSbtcJob(job.id, exactEscrow(job))
           : stxCall("complete-job", [Cl.uint(job.id)], settlementOptions(job)),
       `completing-${job.id}`,
       "Complete job"
@@ -401,7 +424,7 @@ export default function JobsPage() {
     run(
       () =>
         isSbtc
-          ? rejectSbtcJob(job.id, job.budget)
+          ? rejectSbtcJob(job.id, exactEscrow(job))
           : stxCall("reject-job", [Cl.uint(job.id)], settlementOptions(job)),
       `rejecting-${job.id}`,
       "Reject job"
@@ -411,8 +434,8 @@ export default function JobsPage() {
     run(
       () =>
         isSbtc
-          ? expireSbtcJob(job.id, job.budget)
-          : stxCall("expire-job", [Cl.uint(job.id)], settlementOptions(job)),
+          ? expireSbtcJob(job.id, exactEscrow(job, true))
+          : stxCall("expire-job", [Cl.uint(job.id)], settlementOptions(job, true)),
       `expiring-${job.id}`,
       "Expire job and refund escrow"
     );
@@ -421,7 +444,7 @@ export default function JobsPage() {
     run(
       () =>
         isSbtc
-          ? settleSbtcReviewTimeout(job.id, job.budget)
+          ? settleSbtcReviewTimeout(job.id, exactEscrow(job))
           : stxCall("settle-review-timeout", [Cl.uint(job.id)], settlementOptions(job)),
       `timing-out-${job.id}`,
       "Pay provider after review timeout"

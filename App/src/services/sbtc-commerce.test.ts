@@ -41,8 +41,21 @@ describe("sBTC settlement transaction policy", () => {
     });
   }
 
-  it("rejects a zero settlement amount before opening the wallet", () => {
-    expect(() => completeSbtcJob(7, 0)).toThrow(/positive safe integer/i);
+  it("rejects a zero completion amount before opening the wallet", async () => {
+    await expect(completeSbtcJob(7, 0)).rejects.toThrow(/positive safe integer/i);
     expect(request).not.toHaveBeenCalled();
+  });
+
+  it("allows zero-outflow expiry without an asset post-condition", async () => {
+    request.mockResolvedValue({ txid: "0xabc" });
+
+    await expireSbtcJob(7, 0);
+
+    const [, options] = request.mock.calls[0];
+    expect(options).toEqual(expect.objectContaining({
+      functionName: "expire-job",
+      postConditionMode: "deny",
+      postConditions: [],
+    }));
   });
 });

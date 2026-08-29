@@ -586,6 +586,11 @@ terminal state `Timeout paid (u6)` and does not count as a completed job, rating
 reputation success. Failed reputation writes never roll back economic settlement; they remain
 durable and permissionlessly retryable.
 
+When the candidate is selected, the Web and SDK read the current escrow and the funded job's
+pinned sBTC token before opening a settlement signature. Their trait argument and exact deny-mode
+post-condition use that historical token. A zero-balance open job can still expire with no asset
+outflow or pinned token.
+
 The candidate currently has no testnet or mainnet address. Its guarded deployment script supports
 testnet only, and production remains pinned to the verified contracts listed above until testnet
 evidence and the external review gate are complete.

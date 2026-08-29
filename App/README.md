@@ -187,6 +187,11 @@ therefore be exercised on a testnet preview without changing production or recom
 names into the service layer. Do not select a candidate name until its source and post-deployment
 wiring have been verified on that network.
 
+Candidate settlement reads the live escrow rather than assuming the job budget is still held. For
+funded sBTC jobs it also reads `get-job-payment-token` and binds both the trait argument and exact
+fungible-token post-condition to that pinned principal. A missing funded-job token fails closed
+before Leather opens; an unfunded open job can expire with zero outflow and no pinned token.
+
 An invalid `NEXT_PUBLIC_STACKS_NETWORK` now fails the build instead of silently falling back to
 mainnet.
 
