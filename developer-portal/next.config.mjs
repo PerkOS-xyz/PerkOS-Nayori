@@ -1,12 +1,16 @@
 import { createMDX } from 'fumadocs-mdx/next';
+import { createRequire } from 'node:module';
 
 const withMDX = createMDX();
+const require = createRequire(import.meta.url);
 
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
   output: 'standalone',
   outputFileTracingRoot: process.cwd(),
+  cacheHandler: require.resolve('./cache-handler.cjs'),
+  cacheMaxMemorySize: 0,
   poweredByHeader: false,
   async headers() {
     return [
