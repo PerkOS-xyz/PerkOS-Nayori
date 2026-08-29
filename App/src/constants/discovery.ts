@@ -35,7 +35,7 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       apiCatalog: `${origin}/.well-known/api-catalog`,
       ard: `${origin}/.well-known/ard.json`,
       agentSkills: `${origin}/.well-known/agent-skills/index.json`,
-      source: "https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce",
+      source: "https://github.com/PerkOS-xyz/PerkOS-Nayori",
       sdk: "https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK",
       evidence: `${origin}/evidence`,
       evidenceJson: `${origin}/api/evidence.json`,
@@ -177,7 +177,7 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 
 ## Developer resources
 
-- [Application and contracts](https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce): Public source, Clarity contracts and deployment evidence.
+- [Application and contracts](https://github.com/PerkOS-xyz/PerkOS-Nayori): Public source, Clarity contracts and deployment evidence.
 - [Nayori Agent SDK](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK): TypeScript SDK published as \`@perkos/agent-sdk\`.
 - [Nayori commerce API](${NAYORI_API_ORIGIN}): Public x402 and MPP paid-resource server plus invite-only merchant and MCP operations on Stacks testnet.
 - [Nayori facilitator](${NAYORI_FACILITATOR_ORIGIN}/supported): Isolated quote, verification, settlement-confirmation and delivery-ledger runtime.

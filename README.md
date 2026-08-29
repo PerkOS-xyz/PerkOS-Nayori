@@ -360,8 +360,8 @@ sequenceDiagram
 
 ```bash
 # Clone repository
-git clone https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce.git
-cd Stacks-Agentic-Commerce
+git clone https://github.com/PerkOS-xyz/PerkOS-Nayori.git
+cd PerkOS-Nayori
 
 # Install frontend dependencies
 cd App && npm install
@@ -436,7 +436,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## Project Structure
 
 ```
-Stacks-Agentic-Commerce/
+PerkOS-Nayori/
 ├── App/                          # Next.js frontend
 │   ├── src/
 │   │   ├── app/

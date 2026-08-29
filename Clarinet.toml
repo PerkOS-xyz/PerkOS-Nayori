@@ -1,5 +1,5 @@
 [project]
-name = "Stacks-Agentic-Commerce"
+name = "PerkOS-Nayori"
 authors = ["Julio M Cruz <julio@perkos.io>"]
 description = "Agent infrastructure on Stacks: Agent identity registry + job escrow with x402 payments"
 telemetry = false
