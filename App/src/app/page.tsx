@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Fingerprint,
   Lock,
@@ -51,8 +52,21 @@ export default function Home() {
     <div>
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="container-x relative pt-20 pb-16 sm:pt-28">
+        <div className="container-x relative pt-8 pb-16 sm:pt-12">
           <div className="grid-overlay pointer-events-none absolute inset-x-0 top-0 h-[420px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+          <div className="relative mx-auto mb-14 max-w-6xl overflow-hidden rounded-2xl border border-brand/25 bg-black shadow-[0_26px_90px_rgba(252,100,50,0.16)] sm:rounded-3xl">
+            <Image
+              src="/brand/Banner.png"
+              alt="Nayori by PerkOS, the navigator and neutral coordinator of verifiable commerce on Stacks"
+              width={1983}
+              height={793}
+              sizes="(max-width: 768px) 100vw, 1152px"
+              priority
+              unoptimized
+              className="h-auto w-full"
+            />
+            <div className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-white/10" />
+          </div>
           <div className="relative mx-auto max-w-3xl text-center">
             <span className="kicker">
               <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />

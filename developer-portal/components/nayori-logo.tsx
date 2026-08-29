@@ -1,11 +1,30 @@
-import type { SVGProps } from 'react';
+import Image from 'next/image';
 
-export function NayoriLogo(props: SVGProps<SVGSVGElement>) {
+export function NayoriLogo({ className = 'size-7' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" role="img" aria-label="Nayori" {...props}>
-      <path d="M16 2 29 9 16 16 3 9 16 2Z" fill="#FC6432" />
-      <path d="m3 14 13 7 13-7v6L16 27 3 20v-6Z" fill="#FC8A61" />
-      <path d="m8 11 8 4.3 8-4.3-8-4.3L8 11Z" fill="#170B07" opacity=".42" />
-    </svg>
+    <Image
+      src="/brand/Logo.png"
+      alt="Nayori"
+      width={1254}
+      height={1254}
+      sizes="28px"
+      priority
+      unoptimized
+      className={`rounded-full border border-[#FC6432]/40 object-cover shadow-[0_0_16px_rgba(252,100,50,0.2)] ${className}`}
+    />
+  );
+}
+
+export function PerkOSLogo({ className = 'size-5' }: { className?: string }) {
+  return (
+    <Image
+      src="/brand/PerkOS.png"
+      alt=""
+      width={1254}
+      height={1254}
+      sizes="20px"
+      unoptimized
+      className={`rounded object-cover ${className}`}
+    />
   );
 }

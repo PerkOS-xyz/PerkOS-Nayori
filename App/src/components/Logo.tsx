@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export function GithubMark({ className = "h-4 w-4" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
@@ -8,17 +10,29 @@ export function GithubMark({ className = "h-4 w-4" }: { className?: string }) {
 
 export default function Logo({ className = "h-7 w-7" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="pk-logo" x1="2" y1="2" x2="30" y2="30" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#FFB266" />
-          <stop offset="1" stopColor="#F2780A" />
-        </linearGradient>
-      </defs>
-      {/* stacked layers — Stacks motif */}
-      <path d="M16 3 29 10.5 16 18 3 10.5z" fill="url(#pk-logo)" />
-      <path d="M3 16 16 23.5 29 16" stroke="url(#pk-logo)" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" opacity="0.65" />
-      <path d="M3 21.5 16 29 29 21.5" stroke="url(#pk-logo)" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" opacity="0.35" />
-    </svg>
+    <Image
+      src="/brand/Logo.png"
+      alt="Nayori"
+      width={1254}
+      height={1254}
+      sizes="36px"
+      priority
+      unoptimized
+      className={`rounded-full border border-brand-300/35 object-cover shadow-[0_0_18px_rgba(252,100,50,0.22)] ${className}`}
+    />
+  );
+}
+
+export function PerkOSMark({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <Image
+      src="/brand/PerkOS.png"
+      alt=""
+      width={1254}
+      height={1254}
+      sizes="20px"
+      unoptimized
+      className={`rounded object-cover ${className}`}
+    />
   );
 }
