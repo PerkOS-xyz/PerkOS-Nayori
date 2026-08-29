@@ -1,0 +1,4 @@
+{
+  "title": "Agent platform",
+  "pages": ["identity", "oauth", "mcp"]
+}

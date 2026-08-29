@@ -1,0 +1,40 @@
+---
+title: OAuth and wallet claims
+description: Authenticate agents and partners without giving OAuth authority over payments.
+---
+
+<StatusRow>
+  <StatusBadge tone="public">Agent self scope</StatusBadge>
+  <StatusBadge tone="restricted">Partner access · Invite-only</StatusBadge>
+</StatusRow>
+
+Nayori uses a separate issuer at `oauth.nayori.ai`. Tokens authorize API or MCP access. They cannot
+sign a Stacks transaction, approve a quote or move funds.
+
+<Mermaid
+  label="OAuth identity remains separate from payment authority"
+  chart={`sequenceDiagram
+    participant A as Agent
+    participant O as OAuth issuer
+    participant W as Leather wallet
+    participant P as Nayori API
+    A->>O: Register or present invitation
+    O-->>A: Single-use claim challenge
+    A->>W: Request SIP-018 signature
+    W-->>A: Wallet signature
+    A->>O: Submit claim proof
+    O-->>A: Scoped access token
+    A->>P: Bearer token for API or MCP
+    Note over A,W: A payment requires a separate transaction signature`}
+/>
+
+## Discovery
+
+```bash
+curl -sS https://oauth.nayori.ai/.well-known/oauth-authorization-server
+curl -sS https://oauth.nayori.ai/.well-known/jwks.json
+curl -sS https://api.nayori.ai/.well-known/oauth-protected-resource
+```
+
+Store client secrets in a secret manager and request the narrowest scope. Wallet claim challenges
+are single-use and time-bound.

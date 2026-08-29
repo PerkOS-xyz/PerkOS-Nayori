@@ -1,0 +1,18 @@
+---
+title: Public evidence
+description: Inspect live contract activity and conservative adoption metrics without trusting a marketing claim.
+---
+
+Nayori exposes a human-readable dashboard and machine-readable snapshots derived from the canonical
+mainnet contracts.
+
+<Cards>
+  <Card title="Transparency dashboard" href="https://nayori.ai/evidence" external />
+  <Card title="Evidence JSON" href="https://nayori.ai/api/evidence.json" external />
+  <Card title="Evidence CSV" href="https://nayori.ai/api/evidence.csv" external />
+  <Card title="Stacks Explorer" href="https://explorer.hiro.so/address/SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH?chain=mainnet" external />
+</Cards>
+
+The dashboard separates raw on-chain totals from explicitly attested external adoption. Unknown
+wallets remain unattested. If a complete chain snapshot is unavailable, the API reports
+`unavailable` rather than publishing false zeroes.

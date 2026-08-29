@@ -1,0 +1,41 @@
+---
+title: Smart contracts
+description: Current Nayori identity, validation, reputation and escrow contracts on Stacks mainnet.
+---
+
+<StatusRow>
+  <StatusBadge tone="mainnet">Stacks mainnet</StatusBadge>
+  <StatusBadge tone="public">Source verified</StatusBadge>
+</StatusRow>
+
+Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
+
+| Purpose | Contract |
+| --- | --- |
+| Agent identity | `agent-registry` |
+| Capability validation | `validation-registry` |
+| SIP-010 interface | `sip-010-trait` |
+| Job-linked reputation | `reputation-registry-v2` |
+| STX escrow | `agentic-commerce-v2` |
+| sBTC escrow | `sbtc-commerce` |
+
+The STX product path uses only `agentic-commerce-v2`. The sBTC contract accepts the canonical
+mainnet token `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`.
+
+## Verification
+
+Clone the public repository and run the signer-free verifier:
+
+```bash
+git clone https://github.com/PerkOS-xyz/PerkOS-Nayori.git
+cd PerkOS-Nayori
+npm ci
+npm run verify:mainnet
+```
+
+The verifier compares source, exposed owners, canonical sBTC configuration and authorized
+reputation callers. It requires no wallet or deployer key.
+
+## Explorer
+
+[Inspect the deployer and contracts on Hiro Explorer](https://explorer.hiro.so/address/SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH?chain=mainnet).

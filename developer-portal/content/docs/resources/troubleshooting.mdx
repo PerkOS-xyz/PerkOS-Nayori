@@ -1,0 +1,32 @@
+---
+title: Troubleshooting
+description: Diagnose network, wallet, OAuth, payment and confirmation problems safely.
+---
+
+## Wallet shows the wrong account or network
+
+Confirm the expected Stacks network before constructing the plan. Disconnect and reconnect Leather
+only after verifying the application origin. Never reuse a mainnet address assumption for a
+testnet transaction.
+
+## Transaction intent mismatch
+
+Compare network, nonce, fee, sponsorship flag, recipient, amount, contract call and post-conditions.
+Do not weaken the comparison to make a signed transaction pass.
+
+## HTTP 402 repeats after payment submission
+
+Use the settlement identifier and canonical polling location returned by the server. An expired or
+failed settlement requires a new challenge; reusing the old credential should fail.
+
+## OAuth 401 or 403
+
+- `401`: refresh or reissue a token from the expected issuer.
+- `403`: request the required scope through the approved enrollment path.
+
+Do not place client secrets or bearer tokens in URLs, screenshots, issues or documentation.
+
+## Chain data unavailable
+
+Retry public reads with bounded backoff. Treat missing or incomplete indexer data as unavailable,
+not as a zero balance, absent job or successful settlement.

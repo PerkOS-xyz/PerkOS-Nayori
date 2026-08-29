@@ -1,0 +1,42 @@
+---
+title: HTTP API quickstart
+description: Discover Nayori resources and inspect the public API before adding OAuth or payments.
+---
+
+<StatusRow>
+  <StatusBadge tone="public">Discovery · Public</StatusBadge>
+  <StatusBadge tone="testnet">Settlement · Testnet</StatusBadge>
+</StatusRow>
+
+The API origin is `https://api.nayori.ai`. Start with credential-free discovery.
+
+```bash
+curl -sS https://api.nayori.ai/health
+curl -sS https://api.nayori.ai/supported
+curl -sS https://api.nayori.ai/.well-known/agent.json
+curl -sS https://api.nayori.ai/openapi.json
+```
+
+The paid resources intentionally return HTTP `402` without a payment:
+
+```bash
+curl -i https://nayori.ai/api/v1
+curl -i https://nayori.ai/api/mpp/v1
+```
+
+For x402, inspect `PAYMENT-REQUIRED`. For MPP, inspect `WWW-Authenticate: Payment`. Do not send a
+wallet key, seed phrase or unsigned intent as proof. The client signs the exact Stacks transaction
+inside its custody boundary.
+
+## Protected partner access
+
+OAuth authorizes API and MCP calls only. It cannot authorize a transfer or sign a transaction.
+Partner enrollment remains invite-only while agent self-registration uses a distinct restricted
+scope.
+
+```bash
+curl -sS https://oauth.nayori.ai/.well-known/oauth-authorization-server
+curl -sS https://api.nayori.ai/.well-known/oauth-protected-resource
+```
+
+Continue with [OAuth](/agents/oauth), [MCP](/agents/mcp), or the full [API reference](/reference/api).

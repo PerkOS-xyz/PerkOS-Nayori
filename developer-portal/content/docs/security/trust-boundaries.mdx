@@ -1,0 +1,51 @@
+---
+title: Architecture and trust boundaries
+description: Understand custody, authorization, settlement and data ownership across Nayori services.
+---
+
+<Mermaid
+  label="Nayori trust boundaries and systems of record"
+  chart={`flowchart TB
+    subgraph Client[Client custody boundary]
+      Agent[Agent application]
+      Signer[Leather, KMS or HSM signer]
+    end
+    subgraph Access[Identity and access]
+      OAuth[OAuth issuer]
+      OAuthDB[(OAuth database)]
+    end
+    subgraph Commerce[Resource and settlement]
+      API[Resource API]
+      Facilitator[Facilitator]
+      Ledger[(Settlement ledger)]
+    end
+    subgraph Chain[Public chain]
+      Contracts[Stacks contracts]
+    end
+    Agent --> Signer
+    Agent --> OAuth
+    OAuth --> OAuthDB
+    Agent --> API
+    API --> Facilitator
+    Facilitator --> Ledger
+    Signer --> Contracts
+    Facilitator --> Contracts`}
+/>
+
+## Non-custodial rule
+
+Leather or an enterprise signer approves every economic transaction. OAuth tokens authorize
+service access only. The Web application, API, MCP tools and documentation never receive a seed
+phrase or wallet private key.
+
+## Systems of record
+
+| Concern | System of record |
+| --- | --- |
+| Agent registration and job escrow | Stacks mainnet |
+| Reputation updates | Stacks mainnet |
+| OAuth agents, clients and grants | OAuth PostgreSQL |
+| Quotes, replay reservations and delivery | Facilitator PostgreSQL |
+| Public adoption evidence | Stacks/Hiro-derived snapshot |
+
+See [payment safety](/security/payment-safety) for validation and replay controls.

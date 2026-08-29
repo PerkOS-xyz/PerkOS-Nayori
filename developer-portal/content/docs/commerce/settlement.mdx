@@ -1,0 +1,24 @@
+---
+title: Settlement and delivery
+description: Distinguish validation, broadcast, confirmation, receipt and resource delivery.
+---
+
+| State | Meaning | May deliver? |
+| --- | --- | --- |
+| Quoted | Server issued a signed, bounded offer | No |
+| Validated | Submitted transaction matches the intent | No |
+| Broadcast | Network accepted the transaction submission | No |
+| Pending | Transaction has no canonical terminal result yet | No |
+| Confirmed | Canonical execution succeeded | Not until receipt exists |
+| Receipted | Durable signed settlement receipt exists | Yes |
+| Delivered | Stable delivery record and response digest exist | Yes, idempotently |
+| Failed | Transaction aborted, dropped or violated policy | No |
+
+The settlement identifier is stable across polling. Retrying a confirmed request returns the same
+delivery rather than broadcasting or charging again.
+
+## Application rule
+
+Treat `202` as an instruction to poll the supplied same-origin `Location`. Never interpret it as
+success. Treat `409` as terminal for that settlement identifier and obtain a fresh challenge before
+trying another payment.

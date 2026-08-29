@@ -12,7 +12,9 @@ private runtime configuration or overstating mainnet readiness.
 
 ## Decisions
 
-- Add a separate `Docs/` Next.js application inside the public `PerkOS-Nayori` repository.
+- Add a separate `developer-portal/` Next.js application inside the public `PerkOS-Nayori`
+  repository. This unambiguous name avoids the case-insensitive `Docs/` versus existing `docs/`
+  collision on macOS while preserving an independent runtime boundary.
 - Deploy it as an independent VPS container and route only `docs.nayori.ai` to it.
 - Use Fumadocs UI/MDX with self-hosted ZBSearch, generated OpenAPI reference pages and Nayori brand
   styling. The docs runtime has no wallet connection and no authority to sign or settle payments.
@@ -44,7 +46,7 @@ points to the next safe action.
 
 ## Application architecture
 
-`Docs/` owns its package manifest, lockfile, TypeScript configuration, Fumadocs configuration,
+`developer-portal/` owns its package manifest, lockfile, TypeScript configuration, Fumadocs configuration,
 content tree, public assets, tests and Dockerfile. It builds independently from `App/` and uses a
 non-root standalone container. The root path is the documentation homepage; document routes are
 root-relative so `docs.nayori.ai/getting-started` is canonical rather than a nested `/docs` path.
@@ -60,10 +62,10 @@ self-hosted so no developer query is sent to a third party. Empty queries, no-re
 backend failures have explicit accessible UI states.
 
 Fumadocs OpenAPI renders the versioned schema with endpoint descriptions, parameters, responses,
-TypeScript types and copyable curl/TypeScript/Python examples. An interactive playground is
-enabled only for credential-free read operations. Protected, state-changing or economic
-operations show snippets but cannot be executed through a generic documentation proxy. OAuth,
-wallet signing and payment authorization remain separate trust boundaries.
+TypeScript types and copyable curl/TypeScript/Python examples. Credential-free read operations
+link directly to their public origin; the portal does not provide a generic request proxy or
+browser playground. Protected, state-changing and economic operations remain documentation-only.
+OAuth, wallet signing and payment authorization remain separate trust boundaries.
 
 ## Content ownership and freshness
 
@@ -89,7 +91,7 @@ credentials are prohibited from content and examples.
 
 ## Deployment
 
-The VPS builds `Docs/Dockerfile` from the exact merged source archive. A dedicated Compose service
+The VPS builds `developer-portal/Dockerfile` from the exact merged source archive. A dedicated Compose service
 and internal port are promoted first to a preview hostname, then to `docs.nayori.ai`. Caddy replaces
 the current alias to the Web container only after health, canonical metadata, search, representative
 guides, OpenAPI reference and mobile QA pass. The previous Caddy route and image remain rollback

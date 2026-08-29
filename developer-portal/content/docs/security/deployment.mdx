@@ -1,0 +1,27 @@
+---
+title: Operational deployment model
+description: Promote Nayori components in dependency order with fail-closed gates and rollback.
+---
+
+The dependency order for commerce releases is:
+
+```text
+OAuth or facilitator dependency → API/resource server → Web proxy → documentation
+```
+
+Documentation deploys independently and must not change DNS or runtime routing until preview QA
+passes.
+
+## Documentation promotion gates
+
+- Exact merged source archive and recorded SHA-256.
+- VPS-only container build; no local Docker build.
+- Non-root process and read-only public content.
+- `/api/health`, search, sitemap, `robots.txt` and `llms.txt` pass.
+- Representative SDK, escrow, x402, MPP and API pages render.
+- Canonical URLs point to `https://docs.nayori.ai`.
+- Desktop, keyboard and 390-pixel mobile QA pass.
+- Previous image and Caddy route remain available for rollback.
+
+The docs release can describe an existing capability but cannot enable settlement, sponsorship,
+OAuth registration or a contract change.

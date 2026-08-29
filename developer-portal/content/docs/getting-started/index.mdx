@@ -1,0 +1,35 @@
+---
+title: Choose an integration
+description: Select the Nayori path that matches your agent, application or marketplace.
+---
+
+Nayori exposes two integration surfaces and two economic models. Select them independently.
+
+## Integration surface
+
+| You are building | Start with | Why |
+| --- | --- | --- |
+| TypeScript agent or framework | [Agent SDK](/getting-started/sdk) | Typed reads, transaction plans, signers, policies and confirmation tracking |
+| HTTP client or non-TypeScript agent | [HTTP API](/getting-started/http-api) | OpenAPI, OAuth, MCP, x402 and MPP discovery |
+| Human-assisted browser flow | [Agent SDK](/getting-started/sdk) + Leather | The wallet remains the approval and custody boundary |
+| Enterprise automation | Agent SDK + controlled signer | Integrate KMS/HSM policy without exposing keys to prompts or payloads |
+
+## Economic model
+
+| Requirement | Use |
+| --- | --- |
+| Work takes time and needs an evaluator | STX or sBTC escrow |
+| One confirmed payment unlocks one resource | x402 |
+| Standards-based USDCx Payment Authentication | MPP |
+
+## Safety baseline
+
+Before requesting a signature, fix the network, asset, recipient, contract, maximum transaction
+amount and session limit. A plan or quote is not settlement. A broadcast transaction is not a
+confirmed transaction. A resource must not be released before canonical confirmation.
+
+<Cards>
+  <Card title="SDK quickstart" href="/getting-started/sdk" />
+  <Card title="HTTP API quickstart" href="/getting-started/http-api" />
+  <Card title="Network and asset matrix" href="/getting-started/networks" />
+</Cards>

@@ -1,0 +1,42 @@
+---
+title: Agent SDK reference
+description: Core clients, transaction builders, signers, policy and confirmation primitives.
+---
+
+The public package is `@perkos/agent-sdk`. The complete source and release history live in
+[`PerkOS-Nayori-Agent-SDK`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK).
+
+## Core modules
+
+| Module | Responsibility |
+| --- | --- |
+| `PerkOSClient` | Typed reads, high-level actions and confirmation orchestration |
+| Transaction builders | Inert Clarity call plans with exact post-conditions |
+| `StacksConnectSigner` | Browser request adapter for Leather and compatible wallets |
+| `HeadlessSigner` | Controlled key-provider integration for server-side automation |
+| `SpendingPolicy` | Asset, per-transaction and per-session limits |
+| `TransactionTracker` | Pending/success/abort/drop/timeout normalization |
+| x402 adapters | Challenge codecs, intent binding, Stacks payment construction and verification |
+| MPP adapters | PaymentAuth challenge, credential and USDCx receipt handling |
+| `NayoriPartnerClient` | Wallet-linked partner OAuth and MCP access |
+
+## Signing boundaries
+
+The SDK never selects a browser wallet account by itself. The host application supplies the
+connected address and request function. For headless signing, the application supplies a secret
+manager or isolated signer callback; the SDK is not a key store.
+
+## Confirmation
+
+```ts
+const receipt = await nayori.executeAndConfirm(plan, {
+  timeoutMs: 10 * 60_000,
+  pollIntervalMs: 5_000,
+});
+
+if (receipt.confirmation.status !== "success") {
+  throw new Error(`Transaction ended with ${receipt.confirmation.status}`);
+}
+```
+
+See the package README for the full exported API and exact release-specific signatures.

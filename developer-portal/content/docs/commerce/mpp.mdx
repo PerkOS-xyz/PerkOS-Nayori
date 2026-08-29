@@ -1,0 +1,33 @@
+---
+title: MPP PaymentAuth and USDCx
+description: Use HTTP Payment Authentication with USDCx on Stacks for direct resource access.
+---
+
+<StatusRow>
+  <StatusBadge tone="testnet">Public resource · Testnet</StatusBadge>
+  <StatusBadge tone="public">USDCx</StatusBadge>
+</StatusRow>
+
+Nayori implements the MPP `Payment` authentication scheme with `method="usdc"`,
+`intent="charge"` and the Stacks profile. The canonical resource is
+`https://nayori.ai/api/mpp/v1`.
+
+```bash
+curl -i https://nayori.ai/api/mpp/v1
+```
+
+The `WWW-Authenticate: Payment` challenge selects `Payment-Authorization`. Ordinary
+`Authorization: Bearer` remains available for OAuth, so identity access and payment credentials do
+not collide.
+
+## Credential boundary
+
+The client validates the challenge, applies spending policy and signs the exact SIP-010 USDCx
+transaction. The resource server verifies the credential and returns `202` while settlement is
+pending. `Payment-Receipt` appears only after canonical confirmation and idempotent delivery.
+
+```bash
+npm run quickstart:mpp
+```
+
+The SDK quickstart is offline and never requests a real signature or broadcast.

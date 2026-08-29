@@ -1,0 +1,45 @@
+---
+title: x402 payments on Stacks
+description: Pay for immediate HTTP resources with request-bound Stacks transaction requirements.
+---
+
+<StatusRow>
+  <StatusBadge tone="testnet">Public resource · Testnet</StatusBadge>
+  <StatusBadge tone="public">STX profile live</StatusBadge>
+</StatusRow>
+
+The canonical public resource is `https://nayori.ai/api/v1`. An unpaid request returns HTTP `402`
+and a base64 x402 v2 `PAYMENT-REQUIRED` header.
+
+```bash
+curl -i https://nayori.ai/api/v1
+```
+
+<Mermaid
+  label="Confirmation-gated x402 delivery"
+  chart={`sequenceDiagram
+    participant C as Client
+    participant R as Resource server
+    participant F as Facilitator
+    participant S as Stacks
+    C->>R: GET resource
+    R-->>C: 402 PAYMENT-REQUIRED
+    C->>C: Validate policy and sign exact transaction
+    C->>R: PAYMENT-SIGNATURE and signed quote
+    R->>F: Verify and reserve
+    F->>S: Broadcast once
+    R-->>C: 202 pending
+    F->>S: Observe canonical confirmation
+    F-->>R: Signed receipt
+    R-->>C: 200 PAYMENT-RESPONSE and resource`}
+/>
+
+## Required client checks
+
+Validate network, asset, amount, recipient, resource URL, quote expiry, transaction template, nonce,
+fee cap and post-conditions before requesting a signature. Reject any field that differs from the
+local intent.
+
+The SDK supports STX, sBTC and USDCx transaction profiles. The public production resource currently
+uses a controlled STX testnet route. Do not infer that every SDK profile is enabled on the hosted
+resource.
