@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { CSSProperties } from "react";
 import {
   Fingerprint,
   Lock,
@@ -11,6 +12,7 @@ import {
   Bitcoin,
 } from "lucide-react";
 import HomeStats from "../components/HomeStats";
+import LandingMotionController from "../components/LandingMotionController";
 import {
   COMPANY_NAME,
   PRODUCT_DESCRIPTOR,
@@ -47,14 +49,22 @@ const STEPS = [
   { n: "03", title: "Settle", desc: "On approval, escrow pays the provider and reputation updates automatically." },
 ];
 
+const revealDelay = (index: number): CSSProperties =>
+  ({ "--nayori-reveal-delay": `${index * 90}ms` }) as CSSProperties;
+
 export default function Home() {
   return (
     <div>
+      <LandingMotionController />
+
       {/* Hero */}
-      <section className="relative overflow-hidden">
+      <section className="nayori-hero relative isolate overflow-hidden">
+        <div aria-hidden="true" className="nayori-ambient nayori-ambient-left" />
+        <div aria-hidden="true" className="nayori-ambient nayori-ambient-right" />
+        <div aria-hidden="true" className="nayori-embers" />
         <div className="container-x relative pt-8 pb-16 sm:pt-12">
           <div className="grid-overlay pointer-events-none absolute inset-x-0 top-0 h-[420px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
-          <div className="relative mx-auto min-h-[680px] max-w-6xl overflow-hidden rounded-2xl border border-brand/25 bg-black shadow-[0_26px_90px_rgba(252,100,50,0.16)] sm:min-h-[620px] sm:rounded-3xl lg:min-h-[600px]">
+          <div className="nayori-hero-frame relative mx-auto min-h-[680px] max-w-6xl overflow-hidden rounded-2xl border border-brand/25 bg-black shadow-[0_26px_90px_rgba(252,100,50,0.16)] sm:min-h-[620px] sm:rounded-3xl lg:min-h-[600px]">
             <Image
               src="/brand/Banner-Web.png"
               alt=""
@@ -62,14 +72,14 @@ export default function Home() {
               sizes="(max-width: 768px) 100vw, 1152px"
               priority
               unoptimized
-              className="object-cover object-[70%_center] sm:object-[68%_center] lg:object-center"
+              className="nayori-hero-image object-cover object-[70%_center] sm:object-[68%_center] lg:object-center"
             />
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(4,3,3,0.98)_0%,rgba(4,3,3,0.92)_42%,rgba(4,3,3,0.28)_72%,rgba(4,3,3,0.08)_100%)] sm:bg-[linear-gradient(90deg,rgba(4,3,3,0.98)_0%,rgba(4,3,3,0.88)_42%,rgba(4,3,3,0.18)_70%,rgba(4,3,3,0.04)_100%)]" />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/15" />
             <div className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-white/10" />
 
             <div className="relative z-10 flex min-h-[680px] items-center px-6 py-14 sm:min-h-[620px] sm:px-12 lg:min-h-[600px] lg:px-16">
-              <div className="max-w-2xl sm:w-[70%] lg:w-[62%]">
+              <div className="nayori-hero-copy max-w-2xl sm:w-[70%] lg:w-[62%]">
                 <span className="kicker bg-black/35 backdrop-blur-sm">
                   <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />
                   {PRODUCT_NAME} · {PRODUCT_DESCRIPTOR}
@@ -87,7 +97,7 @@ export default function Home() {
                   by {COMPANY_NAME} on Stacks.
                 </p>
                 <div className="mt-9 flex flex-wrap items-center gap-3">
-                  <Link href="/agents" className="btn-primary px-5 py-3 text-[15px]">
+                  <Link href="/agents" className="btn-primary nayori-primary-glow px-5 py-3 text-[15px]">
                     Register your agent <ArrowRight className="h-4 w-4" />
                   </Link>
                   <Link href="/stats" className="btn-ghost border-white/15 bg-black/30 px-5 py-3 text-[15px] backdrop-blur-sm">
@@ -114,8 +124,13 @@ export default function Home() {
       {/* Features */}
       <section className="container-x">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="card card-hover p-6">
+          {FEATURES.map((f, index) => (
+            <div
+              key={f.title}
+              className="card card-hover nayori-glow-card p-6"
+              data-nayori-reveal
+              style={revealDelay(index)}
+            >
               <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-brand/25 bg-brand/10 text-brand-300">
                 <f.icon className="h-5 w-5" strokeWidth={1.75} />
               </div>
@@ -127,21 +142,26 @@ export default function Home() {
       </section>
 
       {/* Stats band */}
-      <section className="container-x mt-6">
+      <section className="container-x mt-6" data-nayori-reveal>
         <HomeStats />
       </section>
 
       {/* How it works */}
       <section className="container-x mt-24">
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto max-w-2xl text-center" data-nayori-reveal>
           <span className="kicker">How it works</span>
           <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
             One workflow, two settlement assets
           </h2>
         </div>
         <div className="mt-12 grid gap-4 md:grid-cols-3">
-          {STEPS.map((s) => (
-            <div key={s.n} className="card relative p-7">
+          {STEPS.map((s, index) => (
+            <div
+              key={s.n}
+              className="card nayori-glow-card relative p-7"
+              data-nayori-reveal
+              style={revealDelay(index)}
+            >
               <span className="font-mono text-sm font-semibold text-brand-400">{s.n}</span>
               <h3 className="mt-3 text-lg font-semibold text-white">{s.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-mist-300">{s.desc}</p>
@@ -152,7 +172,7 @@ export default function Home() {
 
       {/* Tech */}
       <section className="container-x mt-20">
-        <div className="flex flex-col items-center gap-5">
+        <div className="flex flex-col items-center gap-5" data-nayori-reveal>
           <span className="text-xs font-medium uppercase tracking-[0.18em] text-mist-500">
             Built with
           </span>
@@ -160,7 +180,7 @@ export default function Home() {
             {["Stacks", "Clarity", "sBTC", "Next.js 15", "Stacks.js", "TypeScript"].map((t) => (
               <span
                 key={t}
-                className="rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5 text-sm text-mist-300"
+                className="nayori-chip rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5 text-sm text-mist-300"
               >
                 {t}
               </span>
