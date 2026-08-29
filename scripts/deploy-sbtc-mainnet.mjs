@@ -14,6 +14,13 @@ import {
 } from "@stacks/transactions";
 import { STACKS_MAINNET as network } from "@stacks/network";
 
+const RETIRED_UNSAFE_SCRIPT = true;
+if (RETIRED_UNSAFE_SCRIPT) {
+  throw new Error(
+    "This historical sBTC deployer is permanently retired because it uses permissive post-conditions. Use npm run deploy:mainnet after reviewing its typed confirmation guard."
+  );
+}
+
 const API = "https://api.hiro.so";
 const SBTC_MAINNET = "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token";
 const RESULT_PATH = "/private/tmp/claude-501/-Users-osx-Projects-Stacks/9ce56664-604b-4571-86cd-771a7ab5ffd1/scratchpad/deploy-sbtc-mainnet.json";

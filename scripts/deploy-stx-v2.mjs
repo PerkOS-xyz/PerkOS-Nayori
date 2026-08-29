@@ -12,7 +12,8 @@ import {
 } from "@stacks/transactions";
 import { STACKS_MAINNET, STACKS_TESTNET } from "@stacks/network";
 
-const target = process.env.STACKS_NETWORK === "testnet" ? "testnet" : "mainnet";
+// An omitted or misspelled network must never select mainnet.
+const target = process.env.STACKS_NETWORK === "mainnet" ? "mainnet" : "testnet";
 const network = target === "mainnet" ? STACKS_MAINNET : STACKS_TESTNET;
 const api = target === "mainnet" ? "https://api.hiro.so" : "https://api.testnet.hiro.so";
 const envPath = target === "mainnet" ? ".env.mainnet" : ".env";
@@ -24,6 +25,14 @@ const callFee = 200_000n;
 if (process.env.CONFIRM_STX_V2_DEPLOY !== "yes") {
   throw new Error(
     "Refusing to deploy. Set CONFIRM_STX_V2_DEPLOY=yes after reviewing the network, name and fees."
+  );
+}
+if (
+  target === "mainnet" &&
+  process.env.CONFIRM_STX_V2_MAINNET_DEPLOY !== "yes"
+) {
+  throw new Error(
+    "Refusing to spend mainnet STX. Set CONFIRM_STX_V2_MAINNET_DEPLOY=yes in addition to the general deploy confirmation."
   );
 }
 if (!/^[a-z][a-z0-9-]{0,39}$/.test(contractName)) {
@@ -80,7 +89,7 @@ const deployTx = await makeContractDeploy({
   nonce: nonce++,
   fee: deployFee,
   clarityVersion: 2,
-  postConditionMode: PostConditionMode.Allow,
+  postConditionMode: PostConditionMode.Deny,
 });
 const deployResult = await broadcastTransaction({ transaction: deployTx, network });
 if (deployResult.error) {
@@ -97,7 +106,7 @@ const allowTx = await makeContractCall({
   network,
   nonce,
   fee: callFee,
-  postConditionMode: PostConditionMode.Allow,
+  postConditionMode: PostConditionMode.Deny,
 });
 const allowResult = await broadcastTransaction({ transaction: allowTx, network });
 if (allowResult.error) {

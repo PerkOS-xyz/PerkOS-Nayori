@@ -14,6 +14,13 @@ import {
 } from "@stacks/transactions";
 import { STACKS_MAINNET as network } from "@stacks/network";
 
+const RETIRED_UNSAFE_SCRIPT = true;
+if (RETIRED_UNSAFE_SCRIPT) {
+  throw new Error(
+    "This historical mainnet E2E is permanently retired because it uses permissive post-conditions and ephemeral actors. Verify the immutable M1 evidence read-only and use the reviewed SDK workflow for new activity."
+  );
+}
+
 const API = "https://api.hiro.so";
 const EXP = (t) => `https://explorer.hiro.so/txid/${t}?chain=mainnet`;
 const SBTC = "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token";

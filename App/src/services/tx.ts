@@ -54,5 +54,4 @@ export async function trackTx(
   }
   onStatus?.("pending");
   toast.info("Still pending, check the explorer", txExplorer(txid));
-  onConfirmed?.();
 }
