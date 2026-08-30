@@ -67,7 +67,9 @@ counts.
 ## Versioned escrow candidate — testnet only
 
 The repository includes `reputation-registry-v3`, `agentic-commerce-v4` and `sbtc-commerce-v3` as
-the current isolated 12-block security-review candidate. It is not deployed on a public network.
+the current isolated 12-block security-review candidate. v4/v3 are deployed only on Stacks testnet
+under `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5` from exact merge
+`b15544d601bd4e49610be854f7ad33a0af90c0a7`.
 The earlier immutable v3/v2 generation remains deployed only on testnet at 144 blocks as
 historical evidence. Production remains on the contracts listed above. The
 candidate deployment script has no mainnet code path and refuses to read credentials unless the
@@ -76,6 +78,17 @@ network and confirmation are both explicit.
 The active PoX-5 testnet sBTC principal is
 `SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token`. The older `ST1F7...` principal is retained
 only in frozen historical sources/evidence. Mainnet remains `SM3VD...` and is unaffected.
+
+Verified v4/v3 testnet evidence on 2026-08-30:
+
+- `agentic-commerce-v4` deployment: `e487f4f5…dd9b8`, block 209312, `success (ok true)`;
+- `sbtc-commerce-v3` deployment: `1ec7fff7…b7a9`, block 209314, `success (ok true)`;
+- PoX-5 configuration and both reputation allowlists: blocks 209316–209320, all `success (ok true)`;
+- STX complete: PASS 27/27;
+- official PoX-5 sBTC complete: PASS 30/30;
+- sBTC real-timeout preparation: PASS 20/20, job `u2`, deadline `11103`, settle from `11104`.
+
+These controlled testnet identities never count as external M2 adoption.
 
 Keep the reviewed testnet deployer's signer file outside Git, then run only after the local test and
 security gates pass:

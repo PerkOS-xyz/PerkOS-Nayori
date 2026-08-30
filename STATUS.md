@@ -1,6 +1,6 @@
 # PerkOS Stacks Agentic Commerce — Project Status
 
-Last verified: 2026-08-29
+Last verified: 2026-08-30
 
 ## Current status
 
@@ -27,7 +27,16 @@ Last verified: 2026-08-29
 
 `reputation-registry-v3`, `agentic-commerce-v4` and `sbtc-commerce-v3` are the current source-level
 review candidate. The v4/v3 escrow contracts use a fixed 12 Bitcoin burn-block review window and
-are **not deployed on any public network**. Production and the application defaults are unchanged.
+are deployed **only on Stacks testnet** under
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`. Production and the application defaults are
+unchanged.
+
+The exact PR #95 merge `b15544d601bd4e49610be854f7ad33a0af90c0a7` passed the security gate
+and 100/100 tests before the testnet deployment. `agentic-commerce-v4` and `sbtc-commerce-v3`
+confirmed at blocks 209312 and 209314; official PoX-5 sBTC configuration and reputation caller
+authorization confirmed at blocks 209316–209320. Controlled complete paths pass 27/27 for STX and
+30/30 for sBTC. The real-timeout sBTC job `u2` passed preparation 20/20 with submission burn
+`11091`, deadline `11103` and settlement allowed from `11104`.
 
 The earlier immutable `agentic-commerce-v3` and `sbtc-commerce-v2` generation remains deployed
 only on testnet under `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`. Its STX and official PoX-5
@@ -126,8 +135,8 @@ npm run verify:mainnet
 
 ## Next product work
 
-1. Merge and deploy the new 12-block v4/v3 candidate only to testnet, then repeat STX, sBTC and
-   real timeout E2E evidence.
+1. Settle the prepared v3 testnet job `u2` only from burn block `11104`; verify terminal `u6`, zero
+   escrow, one exact payout and no completion/reputation/rating credit.
 2. Complete the external review before any mainnet contract activation.
 3. Complete the recorded SDK demo and mainnet/non-team adoption requirements for M2.
 4. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.

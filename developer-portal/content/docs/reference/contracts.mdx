@@ -25,22 +25,28 @@ mainnet token `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`.
 ## Versioned review candidate
 
 <StatusRow>
-  <StatusBadge tone="planned">Not deployed</StatusBadge>
-  <StatusBadge tone="testnet">Testnet path only</StatusBadge>
+  <StatusBadge tone="testnet">Deployed on testnet</StatusBadge>
+  <StatusBadge tone="public">Source verified</StatusBadge>
 </StatusRow>
 
 The public repository also contains the current source candidate `reputation-registry-v3`,
-`agentic-commerce-v4` and `sbtc-commerce-v3`. The v4/v3 escrow names have no public-network address
-and are not used by the production application. They add a fixed 12 Bitcoin burn-block evaluator
+`agentic-commerce-v4` and `sbtc-commerce-v3`. The v4/v3 escrow names are deployed only on testnet
+under `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5` and are not used by the production application.
+They add a fixed 12 Bitcoin burn-block evaluator
 window, a separate timeout-paid state, retryable reputation synchronization, source/job
 namespacing, per-job sBTC token pinning and two-step ownership.
 
 The earlier immutable `agentic-commerce-v3` and `sbtc-commerce-v2` contracts remain testnet-only
 at 144 blocks as historical evidence.
 
-This documentation distinguishes source availability from deployment. Do not construct a
-transaction for a candidate contract until the target network has a source-verified deployment and
-the integration environment explicitly selects that name.
+Exact merge `b15544d601bd4e49610be854f7ad33a0af90c0a7` produced the current deployment.
+`agentic-commerce-v4` and `sbtc-commerce-v3` confirmed at blocks 209312 and 209314; STX complete
+passes 27/27 and official PoX-5 sBTC complete passes 30/30. The prepared real-timeout job may be
+settled only from burn block `11104`.
+
+This documentation distinguishes testnet evidence from production activation. Construct candidate
+transactions only against the source-verified testnet deployer and only when the integration
+environment explicitly selects the v4/v3 names.
 
 ## Verification
 
@@ -59,3 +65,5 @@ reputation callers. It requires no wallet or deployer key.
 ## Explorer
 
 [Inspect the deployer and contracts on Hiro Explorer](https://explorer.hiro.so/address/SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH?chain=mainnet).
+
+[Inspect the 12-block candidate on Hiro Explorer](https://explorer.hiro.so/address/ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5?chain=testnet).
