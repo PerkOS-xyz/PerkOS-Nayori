@@ -67,9 +67,13 @@ counts.
 ## Versioned escrow candidate — testnet only
 
 The repository includes `reputation-registry-v3`, `agentic-commerce-v3` and `sbtc-commerce-v2` as
-an undeployed security-review candidate. Production remains on the contracts listed above. The
+an isolated security-review candidate deployed only on testnet. Production remains on the contracts listed above. The
 candidate deployment script has no mainnet code path and refuses to read credentials unless the
 network and confirmation are both explicit.
+
+The active PoX-5 testnet sBTC principal is
+`SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token`. The older `ST1F7...` principal is retained
+only in frozen historical sources/evidence. Mainnet remains `SM3VD...` and is unaffected.
 
 Keep the reviewed testnet deployer's signer file outside Git, then run only after the local test and
 security gates pass:
@@ -90,7 +94,8 @@ The script:
 2. requires the existing SIP-010 trait to match the reviewed local source;
 3. deploys the local `sip-010-trait` first when absent, then only missing candidate contracts, and
    rejects every same-name source mismatch;
-4. configures canonical testnet sBTC on `sbtc-commerce-v2`;
+4. configures the official PoX-5 testnet sBTC on `sbtc-commerce-v2`, but only when its current
+   owner-controlled default differs;
 5. authorizes both candidate escrow contracts on `reputation-registry-v3`;
 6. verifies ownership and writes a secret-free receipt to
    `/tmp/nayori-versioned-escrow-testnet.json`.
@@ -112,7 +117,8 @@ npm run e2e:versioned:testnet
 
 Supported assets are `stx` and `sbtc`. A complete run verifies exact funding, submitted state,
 the too-early timeout guard, evaluator payout, cleared escrow, durable reputation outcome and
-rating persistence. The sBTC run also verifies the per-job pinned token.
+rating persistence. The sBTC run also requires the PoX-5 asset balance and verifies the per-job
+pinned token. Never substitute an unofficial SIP-010 token.
 
 Timeout evidence is intentionally split rather than waiting in one process for 144 Bitcoin blocks:
 

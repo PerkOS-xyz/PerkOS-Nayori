@@ -14,6 +14,13 @@ import {
 } from "@stacks/transactions";
 import { STACKS_TESTNET as network } from "@stacks/network";
 
+const RETIRED_UNSAFE_SCRIPT = true;
+if (RETIRED_UNSAFE_SCRIPT) {
+  throw new Error(
+    "This historical M1 testnet deployer is permanently retired because it uses permissive post-conditions and the pre-PoX-5 token. Use npm run deploy:versioned:testnet after reviewing its typed confirmation guard."
+  );
+}
+
 const API = "https://api.testnet.hiro.so";
 const SBTC_TESTNET = "ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token";
 const RESULT_PATH = "/private/tmp/claude-501/-Users-osx-Projects-Stacks/9ce56664-604b-4571-86cd-771a7ab5ffd1/scratchpad/deploy-sbtc-testnet.json";

@@ -50,6 +50,8 @@ forbidPattern(
 
 const versionedEscrowTestnetDeploy = "scripts/deploy-versioned-escrow-testnet.mjs";
 const versionedEscrowTestnetE2e = "scripts/e2e-versioned-escrow-testnet.mjs";
+const pox5TestnetSbtc = /SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1\.sbtc-token/;
+const retiredTestnetSbtc = /ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT\.sbtc-token/;
 requirePattern(
   versionedEscrowTestnetDeploy,
   /STACKS_NETWORK\s*!==\s*["']testnet["']/,
@@ -112,9 +114,29 @@ forbidPattern(
 );
 
 for (const path of [
+  versionedEscrowTestnetDeploy,
+  versionedEscrowTestnetE2e,
+  "App/src/constants/sbtc.ts",
+  ".env.example",
+]) {
+  requirePattern(
+    path,
+    pox5TestnetSbtc,
+    "active testnet surfaces must pin the official PoX-5 sBTC token",
+  );
+  forbidPattern(
+    path,
+    retiredTestnetSbtc,
+    "the retired pre-PoX-5 token is forbidden in active testnet surfaces",
+  );
+}
+
+for (const path of [
   "scripts/deploy-mainnet.mjs",
   "scripts/deploy-sbtc-mainnet.mjs",
   "scripts/e2e-sbtc-mainnet.mjs",
+  "scripts/deploy-sbtc-testnet.mjs",
+  "scripts/e2e-sbtc-testnet.mjs",
 ]) {
   const contents = source(path);
   const retired = contents.indexOf("RETIRED_UNSAFE_SCRIPT");

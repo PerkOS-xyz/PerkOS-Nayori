@@ -5,7 +5,7 @@ import { NETWORK_NAME } from "./network";
 export const SBTC_TOKEN =
   NETWORK_NAME === "mainnet"
     ? "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token"
-    : "ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token";
+    : "SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token";
 
 export const [SBTC_ADDRESS, SBTC_NAME] = SBTC_TOKEN.split(".") as [string, string];
 
