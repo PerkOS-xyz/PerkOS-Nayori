@@ -49,6 +49,7 @@ forbidPattern(
 );
 
 const versionedEscrowTestnetDeploy = "scripts/deploy-versioned-escrow-testnet.mjs";
+const versionedEscrowTestnetE2e = "scripts/e2e-versioned-escrow-testnet.mjs";
 requirePattern(
   versionedEscrowTestnetDeploy,
   /STACKS_NETWORK\s*!==\s*["']testnet["']/,
@@ -78,6 +79,36 @@ forbidPattern(
   versionedEscrowTestnetDeploy,
   /STACKS_MAINNET|PostConditionMode\.Allow/,
   "the testnet-only candidate must have no mainnet or allow-mode path",
+);
+requirePattern(
+  versionedEscrowTestnetE2e,
+  /process\.env\.STACKS_NETWORK\s*!==\s*["']testnet["']/,
+  "versioned E2E must require explicit testnet",
+);
+requirePattern(
+  versionedEscrowTestnetE2e,
+  /CONFIRM_VERSIONED_ESCROW_TESTNET_E2E\s*!==\s*["']yes["']/,
+  "versioned E2E must require typed confirmation",
+);
+requirePattern(
+  versionedEscrowTestnetE2e,
+  /Pc\.principal\(client\)[\s\S]*?willSendEq\(amount\)[\s\S]*?Pc\.principal\(escrowContract\)[\s\S]*?willSendEq\(amount\)/,
+  "versioned E2E must bind exact client funding and escrow settlement outflows",
+);
+requirePattern(
+  versionedEscrowTestnetE2e,
+  /postConditionMode:\s*PostConditionMode\.Deny/,
+  "versioned E2E contract calls must fail closed",
+);
+requirePattern(
+  versionedEscrowTestnetE2e,
+  /randomPrivateKey\(\)[\s\S]*?output\.actors\s*=\s*\{\s*provider,\s*evaluator\s*\}/,
+  "versioned E2E must generate isolated actors and persist public principals only",
+);
+forbidPattern(
+  versionedEscrowTestnetE2e,
+  /STACKS_MAINNET|PostConditionMode\.Allow|output\.(providerKey|evaluatorKey)|actors:\s*\{[^}]*Key/,
+  "versioned E2E must not expose mainnet, allow mode or actor keys",
 );
 
 for (const path of [
