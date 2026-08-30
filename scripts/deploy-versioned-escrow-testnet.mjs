@@ -23,6 +23,7 @@ const ENV_PATH = process.env.VERSIONED_ESCROW_TESTNET_ENV_PATH || ".env";
 const RESULT_PATH = "/tmp/nayori-versioned-escrow-testnet.json";
 const SBTC_TESTNET =
   "SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token";
+const REVIEW_WINDOW_BURN_BLOCKS = 12n;
 const DEPLOY_FEE = 1_000_000n;
 const CALL_FEE = 200_000n;
 const sleep = (milliseconds) =>
@@ -33,8 +34,8 @@ const CONTRACTS = [
   // deployer must publish it before the versioned contracts.
   { name: "sip-010-trait", file: "sip-010-trait.clar" },
   { name: "reputation-registry-v3", file: "reputation-registry-v3.clar" },
-  { name: "agentic-commerce-v3", file: "agentic-commerce-v3.clar" },
-  { name: "sbtc-commerce-v2", file: "sbtc-commerce-v2.clar" },
+  { name: "agentic-commerce-v4", file: "agentic-commerce-v4.clar" },
+  { name: "sbtc-commerce-v3", file: "sbtc-commerce-v3.clar" },
 ];
 const OWNED_CONTRACTS = CONTRACTS.filter(
   ({ name }) => name !== "sip-010-trait"
@@ -97,8 +98,8 @@ const output = {
   appEnv: {
     NEXT_PUBLIC_STACKS_NETWORK: "testnet",
     NEXT_PUBLIC_CONTRACT_ADDRESS: deployer,
-    NEXT_PUBLIC_STX_COMMERCE_CONTRACT: "agentic-commerce-v3",
-    NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT: "sbtc-commerce-v2",
+    NEXT_PUBLIC_STX_COMMERCE_CONTRACT: "agentic-commerce-v4",
+    NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT: "sbtc-commerce-v3",
     NEXT_PUBLIC_REPUTATION_CONTRACT: "reputation-registry-v3",
   },
 };
@@ -243,12 +244,12 @@ for (const { name } of CONTRACTS) {
 
 const [sbtcAddress, sbtcName] = SBTC_TESTNET.split(".");
 const configuredToken = cvToValue(
-  await read("sbtc-commerce-v2", "get-payment-token")
+  await read("sbtc-commerce-v3", "get-payment-token")
 ).value;
 if (configuredToken !== SBTC_TESTNET) {
   await callContract(
     "set-payment-token",
-    "sbtc-commerce-v2",
+    "sbtc-commerce-v3",
     "set-payment-token",
     [Cl.contractPrincipal(sbtcAddress, sbtcName)],
     nonce++
@@ -257,7 +258,7 @@ if (configuredToken !== SBTC_TESTNET) {
   console.log("  ↷ canonical testnet sBTC token already configured");
 }
 
-for (const caller of ["agentic-commerce-v3", "sbtc-commerce-v2"]) {
+for (const caller of ["agentic-commerce-v4", "sbtc-commerce-v3"]) {
   const callerPrincipal = Cl.contractPrincipal(deployer, caller);
   const isAllowed = cvToValue(
     await read("reputation-registry-v3", "is-registered-caller", [callerPrincipal])
@@ -273,6 +274,17 @@ for (const caller of ["agentic-commerce-v3", "sbtc-commerce-v2"]) {
     [callerPrincipal],
     nonce++
   );
+}
+
+for (const escrow of ["agentic-commerce-v4", "sbtc-commerce-v3"]) {
+  const configuredReviewWindow = BigInt(
+    cvToValue(await read(escrow, "get-review-window")).value
+  );
+  if (configuredReviewWindow !== REVIEW_WINDOW_BURN_BLOCKS) {
+    throw new Error(
+      `${deployer}.${escrow} exposes review window ${configuredReviewWindow}, expected ${REVIEW_WINDOW_BURN_BLOCKS}`
+    );
+  }
 }
 
 for (const { name } of OWNED_CONTRACTS) {

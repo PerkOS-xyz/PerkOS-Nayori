@@ -576,10 +576,10 @@ addresses or the application defaults above.
 | Component | Candidate contract | Review scope |
 | --- | --- | --- |
 | Reputation | `reputation-registry-v3` | Source- and job-namespaced outcomes/ratings, idempotent writes and two-step ownership |
-| STX escrow | `agentic-commerce-v3` | Bitcoin-height review liveness, durable reputation synchronization and two-step ownership |
-| sBTC escrow | `sbtc-commerce-v2` | The STX controls plus per-job SIP-010 token pinning |
+| STX escrow | `agentic-commerce-v4` | Fixed 12-burn-block review liveness, durable reputation synchronization and two-step ownership |
+| sBTC escrow | `sbtc-commerce-v3` | The STX controls plus per-job SIP-010 token pinning |
 
-For submitted work, the candidate records a fixed Nayori review window of **144 Bitcoin burn
+For submitted work, the candidate records a fixed Nayori review window of **12 Bitcoin burn
 blocks**. The evaluator may complete or reject through the exact deadline. Only after that deadline
 may any principal trigger a deterministic provider payout. That liveness payout uses the separate
 terminal state `Timeout paid (u6)` and does not count as a completed job, rating eligibility or
@@ -591,12 +591,12 @@ pinned sBTC token before opening a settlement signature. Their trait argument an
 post-condition use that historical token. A zero-balance open job can still expire with no asset
 outflow or pinned token.
 
-The exact reviewed sources are deployed only on testnet under
-`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`; there is no candidate mainnet deployment. The STX
-complete path passed 27/27 controlled assertions. The guarded verifier pins the official PoX-5
-testnet sBTC `SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token` before the sBTC lifecycle.
-Production remains pinned to the verified contracts listed above until all testnet evidence and the
-external review gate are complete.
+The new v4/v3 sources are not deployed on any public network. The immutable earlier
+`agentic-commerce-v3` and `sbtc-commerce-v2` generation remains deployed only on testnet at 144
+blocks and retains its STX, sBTC and pending timeout evidence. The guarded v4/v3 deployer pins the
+official PoX-5 testnet sBTC `SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token` and verifies
+the 12-block constant before producing a receipt. Production remains pinned to the verified
+contracts listed above until all new testnet evidence and the external-review gate are complete.
 
 ## Product maturity and roadmap
 

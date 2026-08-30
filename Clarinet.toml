@@ -51,5 +51,14 @@ epoch = "2.5"
 path = "contracts/sbtc-commerce-v2.clar"
 epoch = "2.5"
 
+# --- 12 Bitcoin-block review-window candidate (testnet review only) ---
+[contracts.agentic-commerce-v4]
+path = "contracts/agentic-commerce-v4.clar"
+epoch = "2.5"
+
+[contracts.sbtc-commerce-v3]
+path = "contracts/sbtc-commerce-v3.clar"
+epoch = "2.5"
+
 [repl]
 costs_version = 2

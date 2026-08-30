@@ -8,15 +8,17 @@ const provider = accounts.get("wallet_2")!;
 const evaluator = accounts.get("wallet_3")!;
 const outsider = deployer;
 
-const STX = "agentic-commerce-v3";
-const SBTC = "sbtc-commerce-v2";
+const STX = "agentic-commerce-v4";
+const SBTC = "sbtc-commerce-v3";
 const REP = "reputation-registry-v3";
 const TOKEN = "mock-sbtc-token";
+const LEGACY_STX = "agentic-commerce-v3";
+const LEGACY_SBTC = "sbtc-commerce-v2";
 
 const STX_BUDGET = 1_000_000;
 const SBTC_BUDGET = 100_000;
 const SBTC_MINT = 5_000_000;
-const REVIEW_WINDOW = 144;
+const REVIEW_WINDOW = 12;
 
 const token = () => Cl.contractPrincipal(deployer, TOKEN);
 const contract = (name: string) => Cl.contractPrincipal(deployer, name);
@@ -124,10 +126,30 @@ function tokenBalance(principal: string) {
   return Number(response.value.value);
 }
 
-describe("agentic-commerce-v3 – Bitcoin review window", () => {
+describe("versioned escrow generations", () => {
+  it("preserves the deployed v3/v2 contracts at 144 burn blocks", () => {
+    expect(
+      simnet.callReadOnlyFn(LEGACY_STX, "get-review-window", [], deployer).result
+    ).toBeOk(Cl.uint(144));
+    expect(
+      simnet.callReadOnlyFn(LEGACY_SBTC, "get-review-window", [], deployer).result
+    ).toBeOk(Cl.uint(144));
+  });
+
+  it("selects 12 burn blocks only through the new v4/v3 contracts", () => {
+    expect(
+      simnet.callReadOnlyFn(STX, "get-review-window", [], deployer).result
+    ).toBeOk(Cl.uint(REVIEW_WINDOW));
+    expect(
+      simnet.callReadOnlyFn(SBTC, "get-review-window", [], deployer).result
+    ).toBeOk(Cl.uint(REVIEW_WINDOW));
+  });
+});
+
+describe("agentic-commerce-v4 – Bitcoin review window", () => {
   beforeEach(() => whitelist(STX));
 
-  it("records a fixed 144 Bitcoin-block deadline at submission", () => {
+  it("records a fixed 12 Bitcoin-block deadline at submission", () => {
     fundAssignSubmitStx();
 
     const stored = job(STX);
@@ -202,7 +224,9 @@ describe("agentic-commerce-v3 – Bitcoin review window", () => {
 
   it("uses the review deadline after submission even if original expiry passes", () => {
     fundAssignSubmitStx(10);
-    simnet.mineEmptyBlocks(20);
+    // Cross the original expiry while remaining inside the shorter 12-burn-block
+    // evaluator window recorded at submission.
+    simnet.mineEmptyBlocks(7);
 
     expect(simnet.blockHeight).toBeGreaterThan(Number(job(STX)["expired-at"].value));
     expect(
@@ -342,7 +366,7 @@ describe("versioned escrow – durable reputation synchronization", () => {
   });
 });
 
-describe("sbtc-commerce-v2 – token pinning and timeout", () => {
+describe("sbtc-commerce-v3 – token pinning and timeout", () => {
   beforeEach(() => setupSbtc());
 
   it("pins the token at funding so later default rotation cannot brick settlement", () => {
