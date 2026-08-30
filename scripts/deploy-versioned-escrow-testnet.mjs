@@ -36,6 +36,9 @@ const CONTRACTS = [
   { name: "agentic-commerce-v3", file: "agentic-commerce-v3.clar" },
   { name: "sbtc-commerce-v2", file: "sbtc-commerce-v2.clar" },
 ];
+const OWNED_CONTRACTS = CONTRACTS.filter(
+  ({ name }) => name !== "sip-010-trait"
+);
 
 if (process.env.STACKS_NETWORK !== "testnet") {
   throw new Error(
@@ -272,7 +275,7 @@ for (const caller of ["agentic-commerce-v3", "sbtc-commerce-v2"]) {
   );
 }
 
-for (const { name } of CONTRACTS) {
+for (const { name } of OWNED_CONTRACTS) {
   const owner = cvToValue(await read(name, "get-owner")).value;
   if (owner !== deployer) {
     throw new Error(`${deployer}.${name} is not owned by the reviewed deployer`);
