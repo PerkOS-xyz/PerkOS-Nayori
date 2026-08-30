@@ -10,6 +10,13 @@ import {
 } from "@stacks/transactions";
 import { STACKS_TESTNET as network } from "@stacks/network";
 
+const RETIRED_UNSAFE_SCRIPT = true;
+if (RETIRED_UNSAFE_SCRIPT) {
+  throw new Error(
+    "This historical M1 testnet E2E is permanently retired because it uses permissive post-conditions and the pre-PoX-5 token. Use npm run e2e:versioned:testnet with explicit testnet guards."
+  );
+}
+
 const API = "https://api.testnet.hiro.so";
 const EXP = (t) => `https://explorer.hiro.so/txid/${t}?chain=testnet`;
 const SBTC = "ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token";

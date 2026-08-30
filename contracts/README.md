@@ -106,7 +106,7 @@ Escrow currency is not hardcoded: `set-payment-token` (owner only) points the co
 canonical sBTC contract for the network, and every escrow call validates the token against it.
 
 - mainnet sBTC: `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`
-- testnet sBTC: `ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token`
+- PoX-5 testnet sBTC: `SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token`
 
 `mock-sbtc-token.clar` exists only for simnet tests and is never deployed to a public network.
 
@@ -163,6 +163,11 @@ The provider and evaluator in this run are wallets created for the demonstration
 full mechanism. Adoption by independent, non-team wallets is tracked separately.
 
 ### sBTC stack on testnet — deployed ✅
+
+> Historical M1 evidence below predates the PoX-5 token migration. Its contracts and txids remain
+> preserved, but the permissive deployment/E2E scripts are retired and must not be used for current
+> testnet activity. The versioned candidate uses the official PoX-5 token through the guarded
+> scripts documented in `docs/DEPLOYMENT.md`.
 
 Deployer `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`.
 

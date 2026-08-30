@@ -570,7 +570,7 @@ callers of `reputation-registry-v2`.
 
 ### Versioned escrow security candidate
 
-The repository also contains an **undeployed review candidate**. It does not change the production
+The repository also contains a **testnet-only review candidate**. It does not change the production
 addresses or the application defaults above.
 
 | Component | Candidate contract | Review scope |
@@ -591,9 +591,12 @@ pinned sBTC token before opening a settlement signature. Their trait argument an
 post-condition use that historical token. A zero-balance open job can still expire with no asset
 outflow or pinned token.
 
-The candidate currently has no testnet or mainnet address. Its guarded deployment script supports
-testnet only, and production remains pinned to the verified contracts listed above until testnet
-evidence and the external review gate are complete.
+The exact reviewed sources are deployed only on testnet under
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`; there is no candidate mainnet deployment. The STX
+complete path passed 27/27 controlled assertions. The guarded verifier pins the official PoX-5
+testnet sBTC `SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token` before the sBTC lifecycle.
+Production remains pinned to the verified contracts listed above until all testnet evidence and the
+external review gate are complete.
 
 ## Product maturity and roadmap
 

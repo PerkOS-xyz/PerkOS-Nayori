@@ -32,7 +32,7 @@ const JOB_ID_INPUT = process.env.VERSIONED_ESCROW_E2E_JOB_ID;
 const RESULT_PATH =
   process.env.VERSIONED_ESCROW_E2E_RESULT_PATH ||
   `/tmp/nayori-versioned-${ASSET}-${SCENARIO}-testnet.json`;
-const SBTC = "ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token";
+const SBTC = "SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token";
 const [SBTC_ADDRESS, SBTC_NAME] = SBTC.split(".");
 const SBTC_ASSET_NAME = "sbtc-token";
 const REPUTATION_NAME = "reputation-registry-v3";

@@ -23,11 +23,15 @@ Last verified: 2026-08-29
 - Contract sources: exact match with the reviewed repository sources
 - Contract tests: 98 passing (77 current-contract regressions plus 21 versioned-candidate tests)
 
-### Undeployed security candidate
+### Testnet security candidate
 
 `reputation-registry-v3`, `agentic-commerce-v3` and `sbtc-commerce-v2` are implemented and tested
-locally as a versioned review candidate. They are **not deployed to testnet or mainnet**, have no
-production transaction evidence and are not selected by the production application.
+as a versioned review candidate. Their exact reviewed sources are deployed only on testnet under
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`; they are **not deployed to mainnet**, have no
+production transaction evidence and are not selected by the production application. The STX
+complete path passed 27/27 controlled assertions. The sBTC path is gated on reconciling the
+owner-controlled default to the official PoX-5 testnet token
+`SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token`.
 
 The candidate adds a fixed 144 Bitcoin burn-block review window after submission, evaluator
 authority through the exact deadline, permissionless provider payout after the deadline, a
@@ -121,8 +125,8 @@ npm run verify:mainnet
 
 ## Next product work
 
-1. Deploy the versioned candidate to testnet through the guarded source-aware script and record its
-   secret-free receipt.
+1. Reconcile the versioned candidate to official PoX-5 testnet sBTC, run its deny-mode sBTC E2E and
+   record the secret-free receipt.
 2. Complete the external review before any mainnet contract activation.
 3. Complete the recorded SDK demo and mainnet/non-team adoption requirements for M2.
 4. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.

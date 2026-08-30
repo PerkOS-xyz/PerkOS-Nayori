@@ -22,7 +22,7 @@ const API = "https://api.testnet.hiro.so";
 const ENV_PATH = process.env.VERSIONED_ESCROW_TESTNET_ENV_PATH || ".env";
 const RESULT_PATH = "/tmp/nayori-versioned-escrow-testnet.json";
 const SBTC_TESTNET =
-  "ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token";
+  "SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token";
 const DEPLOY_FEE = 1_000_000n;
 const CALL_FEE = 200_000n;
 const sleep = (milliseconds) =>
