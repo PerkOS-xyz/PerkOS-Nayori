@@ -35,8 +35,11 @@ The exact PR #95 merge `b15544d601bd4e49610be854f7ad33a0af90c0a7` passed the sec
 and 100/100 tests before the testnet deployment. `agentic-commerce-v4` and `sbtc-commerce-v3`
 confirmed at blocks 209312 and 209314; official PoX-5 sBTC configuration and reputation caller
 authorization confirmed at blocks 209316–209320. Controlled complete paths pass 27/27 for STX and
-30/30 for sBTC. The real-timeout sBTC job `u2` passed preparation 20/20 with submission burn
-`11091`, deadline `11103` and settlement allowed from `11104`.
+30/30 for sBTC. The real-timeout sBTC job `u2` passed preparation 20/20, settlement 12/12 and
+separate public-state verification 10/10. It settled after the deadline at burn `11290` in tx
+`0x06537111ef6c75d3c5d750154f97a3b4a0c233a84639583f7af18b2386915bb9`, block `214365`, with
+terminal state `u6`, zero escrow, one exact 1,000-atomic-unit sBTC payout and no completion,
+reputation or rating credit. The public evidence is in `docs/TESTNET_SECURITY_EVIDENCE.md`.
 
 The earlier immutable `agentic-commerce-v3` and `sbtc-commerce-v2` generation remains deployed
 only on testnet under `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`. Its STX and official PoX-5
@@ -135,10 +138,9 @@ npm run verify:mainnet
 
 ## Next product work
 
-1. Settle the prepared v3 testnet job `u2` only from burn block `11104`; verify terminal `u6`, zero
-   escrow, one exact payout and no completion/reputation/rating credit.
-2. Complete the external review before any mainnet contract activation.
-3. Complete the recorded SDK demo and mainnet/non-team adoption requirements for M2.
-4. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.
-5. Add operational alerts for failed Chainhook delivery and unusual escrow activity.
-6. Complete a controlled Leather USDCx testnet lifecycle before inviting external developers.
+1. Complete the independent external review against the frozen testnet anchors and resolve or
+   formally mitigate every Critical/High finding before any mainnet contract activation.
+2. Complete the recorded SDK demo and mainnet/non-team adoption requirements for M2.
+3. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.
+4. Add operational alerts for failed Chainhook delivery and unusual escrow activity.
+5. Complete a controlled Leather USDCx testnet lifecycle before inviting external developers.

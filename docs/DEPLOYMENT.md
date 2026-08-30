@@ -86,9 +86,17 @@ Verified v4/v3 testnet evidence on 2026-08-30:
 - PoX-5 configuration and both reputation allowlists: blocks 209316–209320, all `success (ok true)`;
 - STX complete: PASS 27/27;
 - official PoX-5 sBTC complete: PASS 30/30;
-- sBTC real-timeout preparation: PASS 20/20, job `u2`, deadline `11103`, settle from `11104`.
+- sBTC real-timeout preparation: PASS 20/20, job `u2`, submitted at burn `11091`, deadline `11103`;
+- sBTC timeout settlement: PASS 12/12 plus 10/10 public-state checks, tx
+  [`0x06537111…15bb9`](https://explorer.hiro.so/txid/0x06537111ef6c75d3c5d750154f97a3b4a0c233a84639583f7af18b2386915bb9?chain=testnet),
+  block `214365`, burn `11290`, terminal `u6`, zero escrow and one exact 1,000-atomic-unit payout;
+- timeout payout created no completion outcome, reputation success or rating, and no second
+  settlement was broadcast.
 
 These controlled testnet identities never count as external M2 adoption.
+The complete frozen anchor and digest set is documented in
+[`TESTNET_SECURITY_EVIDENCE.md`](TESTNET_SECURITY_EVIDENCE.md). It is test evidence awaiting an
+independent review, not an audit opinion or mainnet release approval.
 
 Keep the reviewed testnet deployer's signer file outside Git, then run only after the local test and
 security gates pass:
