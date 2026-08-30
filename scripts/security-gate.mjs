@@ -69,6 +69,11 @@ requirePattern(
   /name:\s*["']sip-010-trait["'][\s\S]*?name:\s*["']reputation-registry-v3["']/,
   "the local SIP-010 trait must deploy before dependent versioned contracts",
 );
+requirePattern(
+  versionedEscrowTestnetDeploy,
+  /OWNED_CONTRACTS\s*=\s*CONTRACTS\.filter[\s\S]*?name\s*!==\s*["']sip-010-trait["'][\s\S]*?for\s*\(const\s*\{\s*name\s*\}\s*of\s*OWNED_CONTRACTS\)/,
+  "owner verification must exclude the stateless SIP-010 trait",
+);
 forbidPattern(
   versionedEscrowTestnetDeploy,
   /STACKS_MAINNET|PostConditionMode\.Allow/,
