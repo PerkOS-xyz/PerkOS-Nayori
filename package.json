@@ -15,6 +15,7 @@
     "deploy:mainnet": "node scripts/deploy-current-mainnet.mjs",
     "deploy:stx-v2": "node scripts/deploy-stx-v2.mjs",
     "deploy:versioned:testnet": "node scripts/deploy-versioned-escrow-testnet.mjs",
+    "e2e:versioned:testnet": "node scripts/e2e-versioned-escrow-testnet.mjs",
     "e2e:stx-v2:testnet": "node scripts/e2e-stx-v2-testnet.mjs",
     "verify:mainnet": "node scripts/verify-current-mainnet.mjs"
   },

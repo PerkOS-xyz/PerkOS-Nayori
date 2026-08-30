@@ -95,6 +95,42 @@ The script:
 6. verifies ownership and writes a secret-free receipt to
    `/tmp/nayori-versioned-escrow-testnet.json`.
 
+### Versioned escrow testnet E2E
+
+Run only after the exact candidate deployment receipt is verified. The runner has no mainnet path,
+generates isolated provider/evaluator identities only in memory, requires deny-mode exact funding
+and settlement post-conditions, and writes a secret-free receipt under `/tmp`.
+
+```bash
+STACKS_NETWORK=testnet \
+CONFIRM_VERSIONED_ESCROW_TESTNET_E2E=yes \
+VERSIONED_ESCROW_TESTNET_ENV_PATH=/absolute/path/to/testnet.env \
+VERSIONED_ESCROW_E2E_ASSET=stx \
+VERSIONED_ESCROW_E2E_SCENARIO=complete \
+npm run e2e:versioned:testnet
+```
+
+Supported assets are `stx` and `sbtc`. A complete run verifies exact funding, submitted state,
+the too-early timeout guard, evaluator payout, cleared escrow, durable reputation outcome and
+rating persistence. The sBTC run also verifies the per-job pinned token.
+
+Timeout evidence is intentionally split rather than waiting in one process for 144 Bitcoin blocks:
+
+```bash
+# Prepare a submitted job and record its job ID/review deadline.
+VERSIONED_ESCROW_E2E_SCENARIO=prepare-timeout npm run e2e:versioned:testnet
+
+# After the recorded Bitcoin review deadline has passed.
+VERSIONED_ESCROW_E2E_SCENARIO=settle-timeout \
+VERSIONED_ESCROW_E2E_JOB_ID=<job-id> \
+npm run e2e:versioned:testnet
+```
+
+Pass the same explicit network, confirmation, env path and asset variables to both commands. A
+timeout settlement checks the current Bitcoin height before signing, binds the exact live escrow
+outflow, requires terminal state `u6` and verifies that escrow is zero. Never count these internal
+testnet actors or jobs toward M2 adoption.
+
 Only after that receipt and independent source checks exist may a branch-scoped preview select:
 
 ```env
