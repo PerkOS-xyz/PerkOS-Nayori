@@ -43,8 +43,11 @@ export const AGENTIC_COMMERCE_CONTRACT =
   `${CONTRACT_ADDRESS}.${STX_COMMERCE_CONTRACT_NAME}`;
 export const STX_COMMERCE_IS_HARDENED =
   STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v2" ||
-  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v3";
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v3" ||
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v4";
 export const STX_COMMERCE_HAS_REVIEW_TIMEOUT =
-  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v3";
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v3" ||
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v4";
 export const SBTC_COMMERCE_HAS_REVIEW_TIMEOUT =
-  SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v2";
+  SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v2" ||
+  SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v3";

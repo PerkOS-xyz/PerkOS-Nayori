@@ -66,8 +66,10 @@ counts.
 
 ## Versioned escrow candidate — testnet only
 
-The repository includes `reputation-registry-v3`, `agentic-commerce-v3` and `sbtc-commerce-v2` as
-an isolated security-review candidate deployed only on testnet. Production remains on the contracts listed above. The
+The repository includes `reputation-registry-v3`, `agentic-commerce-v4` and `sbtc-commerce-v3` as
+the current isolated 12-block security-review candidate. It is not deployed on a public network.
+The earlier immutable v3/v2 generation remains deployed only on testnet at 144 blocks as
+historical evidence. Production remains on the contracts listed above. The
 candidate deployment script has no mainnet code path and refuses to read credentials unless the
 network and confirmation are both explicit.
 
@@ -94,7 +96,7 @@ The script:
 2. requires the existing SIP-010 trait to match the reviewed local source;
 3. deploys the local `sip-010-trait` first when absent, then only missing candidate contracts, and
    rejects every same-name source mismatch;
-4. configures the official PoX-5 testnet sBTC on `sbtc-commerce-v2`, but only when its current
+4. configures the official PoX-5 testnet sBTC on `sbtc-commerce-v3`, but only when its current
    owner-controlled default differs;
 5. authorizes both candidate escrow contracts on `reputation-registry-v3`;
 6. verifies ownership and writes a secret-free receipt to
@@ -120,7 +122,7 @@ the too-early timeout guard, evaluator payout, cleared escrow, durable reputatio
 rating persistence. The sBTC run also requires the PoX-5 asset balance and verifies the per-job
 pinned token. Never substitute an unofficial SIP-010 token.
 
-Timeout evidence is intentionally split rather than waiting in one process for 144 Bitcoin blocks:
+Timeout evidence is intentionally split rather than waiting in one process for 12 Bitcoin blocks:
 
 ```bash
 # Prepare a submitted job and record its job ID/review deadline.
@@ -141,8 +143,8 @@ Only after that receipt and independent source checks exist may a branch-scoped 
 
 ```env
 NEXT_PUBLIC_STACKS_NETWORK=testnet
-NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v3
-NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v2
+NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v4
+NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v3
 NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3
 ```
 

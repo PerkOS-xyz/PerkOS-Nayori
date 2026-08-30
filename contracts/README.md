@@ -14,10 +14,10 @@ contracts are present for local review and a controlled testnet release candidat
 | Candidate | Purpose |
 | --- | --- |
 | `reputation-registry-v3.clar` | Idempotent outcomes and ratings namespaced by protocol source and job ID |
-| `agentic-commerce-v3.clar` | STX escrow with Bitcoin-height review liveness and durable reputation retry |
-| `sbtc-commerce-v2.clar` | SIP-010 escrow with the same liveness controls and token pinning per funded job |
+| `agentic-commerce-v4.clar` | STX escrow with a fixed 12-burn-block review window and durable reputation retry |
+| `sbtc-commerce-v3.clar` | SIP-010 escrow with the same 12-block window and token pinning per funded job |
 
-Submission records `submitted-at-burn` and `review-deadline = submitted-at-burn + 144`. The
+Submission records `submitted-at-burn` and `review-deadline = submitted-at-burn + 12`. The
 evaluator remains authoritative while `burn-block-height <= review-deadline`. Only when
 `burn-block-height > review-deadline` may any principal call `settle-review-timeout`, which pays
 the provider and records terminal status `u6`. A timeout payout is deliberately excluded from
@@ -28,7 +28,9 @@ commerce contract and can be retried by any principal after the registry authori
 Ownership changes use propose/accept, and sBTC jobs retain the token principal pinned at funding
 even if the default token for future jobs changes.
 
-The candidate has **no public-network address yet**. Run the full local suite with `npm test`. A
+The 12-block candidate has **no public-network address yet**. The earlier immutable
+`agentic-commerce-v3` and `sbtc-commerce-v2` testnet generation remains in the repository at 144
+blocks as historical evidence. Run the full local suite with `npm test`. A
 future testnet deployment must use the guarded, source-aware
 `npm run deploy:versioned:testnet` command documented in `docs/DEPLOYMENT.md`; the script contains
 no mainnet path.

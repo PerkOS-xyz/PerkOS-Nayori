@@ -36,7 +36,8 @@ const SBTC = "SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token";
 const [SBTC_ADDRESS, SBTC_NAME] = SBTC.split(".");
 const SBTC_ASSET_NAME = "sbtc-token";
 const REPUTATION_NAME = "reputation-registry-v3";
-const CONTRACT_NAME = ASSET === "stx" ? "agentic-commerce-v3" : "sbtc-commerce-v2";
+const CONTRACT_NAME = ASSET === "stx" ? "agentic-commerce-v4" : "sbtc-commerce-v3";
+const REVIEW_WINDOW_BURN_BLOCKS = 12n;
 const BUDGET = ASSET === "stx" ? 100_000n : 1_000n;
 const ACTOR_FUNDING = 1_000_000n;
 const TRANSFER_FEE = 150_000n;
@@ -294,8 +295,8 @@ async function verifySources() {
   const names = [
     "sip-010-trait",
     REPUTATION_NAME,
-    "agentic-commerce-v3",
-    "sbtc-commerce-v2",
+    "agentic-commerce-v4",
+    "sbtc-commerce-v3",
   ];
   for (const name of names) {
     const expected = readFileSync(`contracts/${name}.clar`, "utf8");
@@ -313,7 +314,11 @@ async function verifySources() {
     });
   }
   const reviewWindow = uint(responseValue(await read(CONTRACT_NAME, "get-review-window")));
-  requireCheck("review window is 144 Bitcoin blocks", reviewWindow === 144n, String(reviewWindow));
+  requireCheck(
+    "review window is 12 Bitcoin blocks",
+    reviewWindow === REVIEW_WINDOW_BURN_BLOCKS,
+    String(reviewWindow)
+  );
   if (ASSET === "sbtc") {
     const paymentToken = String(
       scalar(responseValue(await read(CONTRACT_NAME, "get-payment-token")))
@@ -516,8 +521,8 @@ async function createAndRunJob() {
   output.job.reviewDeadline = reviewDeadline.toString();
   requireCheck("job state is submitted u2", uint(submittedJob.status) === 2n);
   requireCheck(
-    "deadline is exactly 144 Bitcoin blocks",
-    reviewDeadline - submittedAtBurn === 144n,
+    "deadline is exactly 12 Bitcoin blocks",
+    reviewDeadline - submittedAtBurn === REVIEW_WINDOW_BURN_BLOCKS,
     `${submittedAtBurn} -> ${reviewDeadline}`
   );
 

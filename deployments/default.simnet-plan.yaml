@@ -66,6 +66,11 @@ plan:
       path: contracts/agentic-commerce-v3.clar
       clarity-version: 2
     - transaction-type: emulated-contract-publish
+      contract-name: agentic-commerce-v4
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/agentic-commerce-v4.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
       contract-name: sip-010-trait
       emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
       path: contracts/sip-010-trait.clar
@@ -89,6 +94,11 @@ plan:
       contract-name: sbtc-commerce-v2
       emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
       path: contracts/sbtc-commerce-v2.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
+      contract-name: sbtc-commerce-v3
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/sbtc-commerce-v3.clar
       clarity-version: 2
     - transaction-type: emulated-contract-publish
       contract-name: validation-registry

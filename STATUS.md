@@ -21,20 +21,21 @@ Last verified: 2026-08-29
 - Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 - Settlement assets: STX and canonical mainnet sBTC
 - Contract sources: exact match with the reviewed repository sources
-- Contract tests: 98 passing (77 current-contract regressions plus 21 versioned-candidate tests)
+- Contract tests: 100 passing (77 current-contract regressions plus 23 versioned-candidate tests)
 
 ### Testnet security candidate
 
-`reputation-registry-v3`, `agentic-commerce-v3` and `sbtc-commerce-v2` are implemented and tested
-as a versioned review candidate. Their exact reviewed sources are deployed only on testnet under
-`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`; they are **not deployed to mainnet**, have no
-production transaction evidence and are not selected by the production application. The STX
-complete path passed 27/27 controlled assertions. The sBTC path is gated on reconciling the
-owner-controlled default to the official PoX-5 testnet token
-`SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token`.
+`reputation-registry-v3`, `agentic-commerce-v4` and `sbtc-commerce-v3` are the current source-level
+review candidate. The v4/v3 escrow contracts use a fixed 12 Bitcoin burn-block review window and
+are **not deployed on any public network**. Production and the application defaults are unchanged.
 
-The candidate adds a fixed 144 Bitcoin burn-block review window after submission, evaluator
-authority through the exact deadline, permissionless provider payout after the deadline, a
+The earlier immutable `agentic-commerce-v3` and `sbtc-commerce-v2` generation remains deployed
+only on testnet under `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`. Its STX and official PoX-5
+sBTC complete paths passed their controlled assertions; its 144-block timeout job remains
+historical evidence and is not M2 adoption.
+
+The current candidate preserves evaluator authority through the exact deadline, permissionless
+provider payout after the deadline, a
 non-completion `u6` timeout state, durable retryable reputation synchronization, protocol/job
 namespacing, sBTC token pinning per funded job and two-step ownership transfer. The web can select
 the candidate only through explicit testnet preview variables. Candidate Web settlement reads the
@@ -125,8 +126,8 @@ npm run verify:mainnet
 
 ## Next product work
 
-1. Reconcile the versioned candidate to official PoX-5 testnet sBTC, run its deny-mode sBTC E2E and
-   record the secret-free receipt.
+1. Merge and deploy the new 12-block v4/v3 candidate only to testnet, then repeat STX, sBTC and
+   real timeout E2E evidence.
 2. Complete the external review before any mainnet contract activation.
 3. Complete the recorded SDK demo and mainnet/non-team adoption requirements for M2.
 4. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.

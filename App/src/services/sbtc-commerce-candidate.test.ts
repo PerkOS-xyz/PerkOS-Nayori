@@ -21,7 +21,7 @@ vi.mock("@stacks/transactions", async (importOriginal) => {
 vi.mock("@stacks/connect", () => ({ request }));
 vi.mock("../constants/contract", () => ({
   CONTRACT_ADDRESS: candidateAddress,
-  SBTC_COMMERCE_CONTRACT_NAME: "sbtc-commerce-v2",
+  SBTC_COMMERCE_CONTRACT_NAME: "sbtc-commerce-v3",
   SBTC_COMMERCE_HAS_REVIEW_TIMEOUT: true,
 }));
 

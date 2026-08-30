@@ -50,6 +50,14 @@ forbidPattern(
 
 const versionedEscrowTestnetDeploy = "scripts/deploy-versioned-escrow-testnet.mjs";
 const versionedEscrowTestnetE2e = "scripts/e2e-versioned-escrow-testnet.mjs";
+const reviewWindowCandidate = [
+  "contracts/agentic-commerce-v4.clar",
+  "contracts/sbtc-commerce-v3.clar",
+];
+const historicalReviewWindow = [
+  "contracts/agentic-commerce-v3.clar",
+  "contracts/sbtc-commerce-v2.clar",
+];
 const pox5TestnetSbtc = /SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1\.sbtc-token/;
 const retiredTestnetSbtc = /ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT\.sbtc-token/;
 requirePattern(
@@ -71,6 +79,11 @@ requirePattern(
   versionedEscrowTestnetDeploy,
   /name:\s*["']sip-010-trait["'][\s\S]*?name:\s*["']reputation-registry-v3["']/,
   "the local SIP-010 trait must deploy before dependent versioned contracts",
+);
+requirePattern(
+  versionedEscrowTestnetDeploy,
+  /name:\s*["']agentic-commerce-v4["'][\s\S]*?name:\s*["']sbtc-commerce-v3["']/,
+  "the deployer must select only the 12-block v4/v3 escrow generation",
 );
 requirePattern(
   versionedEscrowTestnetDeploy,
@@ -111,6 +124,38 @@ forbidPattern(
   versionedEscrowTestnetE2e,
   /STACKS_MAINNET|PostConditionMode\.Allow|output\.(providerKey|evaluatorKey)|actors:\s*\{[^}]*Key/,
   "versioned E2E must not expose mainnet, allow mode or actor keys",
+);
+
+for (const path of reviewWindowCandidate) {
+  requirePattern(
+    path,
+    /\(define-constant REVIEW_WINDOW_BURN_BLOCKS u12\)/,
+    "the active review candidate must use the approved fixed 12-block window",
+  );
+  forbidPattern(
+    path,
+    /\(define-constant REVIEW_WINDOW_BURN_BLOCKS u144\)/,
+    "the active review candidate must not retain the historical 144-block policy",
+  );
+}
+
+for (const path of historicalReviewWindow) {
+  requirePattern(
+    path,
+    /\(define-constant REVIEW_WINDOW_BURN_BLOCKS u144\)/,
+    "the deployed historical candidate must remain immutable at 144 blocks",
+  );
+}
+
+requirePattern(
+  "App/src/constants/contract.ts",
+  /STX_COMMERCE_HAS_REVIEW_TIMEOUT[\s\S]*?agentic-commerce-v4/,
+  "the Web must recognize the v4 STX review-timeout interface",
+);
+requirePattern(
+  "App/src/constants/contract.ts",
+  /SBTC_COMMERCE_HAS_REVIEW_TIMEOUT[\s\S]*?sbtc-commerce-v3/,
+  "the Web must recognize the v3 sBTC review-timeout and token-pinning interface",
 );
 
 for (const path of [

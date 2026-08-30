@@ -29,11 +29,14 @@ mainnet token `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`.
   <StatusBadge tone="testnet">Testnet path only</StatusBadge>
 </StatusRow>
 
-The public repository also contains `reputation-registry-v3`, `agentic-commerce-v3` and
-`sbtc-commerce-v2`. These names have no public-network address and are not used by the production
-application. They add a fixed 144 Bitcoin burn-block evaluator window, a separate timeout-paid
-state, retryable reputation synchronization, source/job namespacing, per-job sBTC token pinning and
-two-step ownership.
+The public repository also contains the current source candidate `reputation-registry-v3`,
+`agentic-commerce-v4` and `sbtc-commerce-v3`. The v4/v3 escrow names have no public-network address
+and are not used by the production application. They add a fixed 12 Bitcoin burn-block evaluator
+window, a separate timeout-paid state, retryable reputation synchronization, source/job
+namespacing, per-job sBTC token pinning and two-step ownership.
+
+The earlier immutable `agentic-commerce-v3` and `sbtc-commerce-v2` contracts remain testnet-only
+at 144 blocks as historical evidence.
 
 This documentation distinguishes source availability from deployment. Do not construct a
 transaction for a candidate contract until the target network has a source-verified deployment and
