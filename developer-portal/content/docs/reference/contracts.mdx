@@ -41,8 +41,11 @@ at 144 blocks as historical evidence.
 
 Exact merge `b15544d601bd4e49610be854f7ad33a0af90c0a7` produced the current deployment.
 `agentic-commerce-v4` and `sbtc-commerce-v3` confirmed at blocks 209312 and 209314; STX complete
-passes 27/27 and official PoX-5 sBTC complete passes 30/30. The prepared real-timeout job may be
-settled only from burn block `11104`.
+passes 27/27 and official PoX-5 sBTC complete passes 30/30. The real-timeout job `u2` passes
+preparation 20/20, settlement 12/12 and public-state verification 10/10. It settled at burn `11290`
+in [tx `0x06537111…15bb9`](https://explorer.hiro.so/txid/0x06537111ef6c75d3c5d750154f97a3b4a0c233a84639583f7af18b2386915bb9?chain=testnet),
+ending in `u6` with zero escrow, one exact 1,000-atomic-unit sBTC payout and no completion,
+reputation or rating credit.
 
 This documentation distinguishes testnet evidence from production activation. Construct candidate
 transactions only against the source-verified testnet deployer and only when the integration

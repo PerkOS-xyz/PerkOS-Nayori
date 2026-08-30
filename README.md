@@ -596,11 +596,16 @@ The new v4/v3 sources are deployed **only on Stacks testnet** under
 `b15544d601bd4e49610be854f7ad33a0af90c0a7`. `agentic-commerce-v4` and `sbtc-commerce-v3`
 confirmed at blocks 209312 and 209314; PoX-5 configuration and reputation authorization confirmed
 at blocks 209316–209320. STX complete passes 27/27, official PoX-5 sBTC complete passes 30/30 and
-the real-timeout job passes preparation 20/20 with settlement allowed from burn `11104`.
+the real-timeout path passes preparation 20/20, settlement 12/12 and separate public-state
+checks 10/10. Job `u2` settled at burn `11290` in
+[`0x06537111…15bb9`](https://explorer.hiro.so/txid/0x06537111ef6c75d3c5d750154f97a3b4a0c233a84639583f7af18b2386915bb9?chain=testnet): terminal
+state `u6`, zero escrow, one exact 1,000-atomic-unit sBTC payout and no completion, reputation or
+rating credit. See [the reproducible testnet evidence](docs/TESTNET_SECURITY_EVIDENCE.md).
 
 The immutable earlier `agentic-commerce-v3` and `sbtc-commerce-v2` generation remains testnet-only
 at 144 blocks as historical evidence. Production remains pinned to the verified contracts listed
-above until the new real-timeout evidence and external-review gate are complete.
+above. The 12-block candidate is frozen for independent review; it is not approved for mainnet or
+production activation until that review and every Critical/High disposition are complete.
 
 ## Product maturity and roadmap
 
