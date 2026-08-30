@@ -71,8 +71,8 @@ an undeployed security-review candidate. Production remains on the contracts lis
 candidate deployment script has no mainnet code path and refuses to read credentials unless the
 network and confirmation are both explicit.
 
-The reviewed testnet deployer must already contain the exact local `sip-010-trait` source. Keep its
-signer file outside Git, then run only after the local test and security gates pass:
+Keep the reviewed testnet deployer's signer file outside Git, then run only after the local test and
+security gates pass:
 
 ```bash
 npm test
@@ -88,7 +88,8 @@ The script:
 
 1. derives and verifies the `ST...` deployer before spending testnet STX;
 2. requires the existing SIP-010 trait to match the reviewed local source;
-3. deploys only missing candidate contracts and rejects same-name source mismatches;
+3. deploys the local `sip-010-trait` first when absent, then only missing candidate contracts, and
+   rejects every same-name source mismatch;
 4. configures canonical testnet sBTC on `sbtc-commerce-v2`;
 5. authorizes both candidate escrow contracts on `reputation-registry-v3`;
 6. verifies ownership and writes a secret-free receipt to

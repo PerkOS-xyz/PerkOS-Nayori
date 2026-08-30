@@ -64,6 +64,11 @@ requirePattern(
   /postConditionMode:\s*PostConditionMode\.Deny/,
   "deny-mode post conditions are required",
 );
+requirePattern(
+  versionedEscrowTestnetDeploy,
+  /name:\s*["']sip-010-trait["'][\s\S]*?name:\s*["']reputation-registry-v3["']/,
+  "the local SIP-010 trait must deploy before dependent versioned contracts",
+);
 forbidPattern(
   versionedEscrowTestnetDeploy,
   /STACKS_MAINNET|PostConditionMode\.Allow/,

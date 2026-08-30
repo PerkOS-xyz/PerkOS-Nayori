@@ -29,6 +29,9 @@ const sleep = (milliseconds) =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 const CONTRACTS = [
+  // sBTC commerce statically references this local trait, so a fresh reviewed
+  // deployer must publish it before the versioned contracts.
+  { name: "sip-010-trait", file: "sip-010-trait.clar" },
   { name: "reputation-registry-v3", file: "reputation-registry-v3.clar" },
   { name: "agentic-commerce-v3", file: "agentic-commerce-v3.clar" },
   { name: "sbtc-commerce-v2", file: "sbtc-commerce-v2.clar" },
@@ -79,7 +82,6 @@ const sources = new Map(
     readFileSync(`contracts/${file}`, "utf8"),
   ])
 );
-const sip010Source = readFileSync("contracts/sip-010-trait.clar", "utf8");
 const output = {
   network: "testnet",
   deployer,
@@ -108,16 +110,11 @@ async function fetchJson(url) {
   return { response, data };
 }
 
-async function inspectSource(name, expectedSource, required = false) {
+async function inspectSource(name, expectedSource) {
   const { response, data } = await fetchJson(
     `${API}/v2/contracts/source/${deployer}/${name}`
   );
   if (response.status === 404) {
-    if (required) {
-      throw new Error(
-        `${deployer}.${name} is required before this candidate can deploy`
-      );
-    }
     return false;
   }
   if (!response.ok) {
@@ -128,7 +125,7 @@ async function inspectSource(name, expectedSource, required = false) {
       `${deployer}.${name} already exists but its source differs from the reviewed local contract`
     );
   }
-  if (!required) output.existingContracts.push(name);
+  output.existingContracts.push(name);
   return true;
 }
 
@@ -217,8 +214,6 @@ async function read(contractName, functionName, functionArgs = []) {
 console.log("Nayori versioned escrow candidate — testnet only");
 console.log("Deployer:", deployer);
 console.log("Canonical testnet sBTC:", SBTC_TESTNET);
-
-await inspectSource("sip-010-trait", sip010Source, true);
 
 const existing = new Map();
 for (const { name } of CONTRACTS) {
