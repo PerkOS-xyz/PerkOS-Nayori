@@ -591,12 +591,16 @@ pinned sBTC token before opening a settlement signature. Their trait argument an
 post-condition use that historical token. A zero-balance open job can still expire with no asset
 outflow or pinned token.
 
-The new v4/v3 sources are not deployed on any public network. The immutable earlier
-`agentic-commerce-v3` and `sbtc-commerce-v2` generation remains deployed only on testnet at 144
-blocks and retains its STX, sBTC and pending timeout evidence. The guarded v4/v3 deployer pins the
-official PoX-5 testnet sBTC `SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token` and verifies
-the 12-block constant before producing a receipt. Production remains pinned to the verified
-contracts listed above until all new testnet evidence and the external-review gate are complete.
+The new v4/v3 sources are deployed **only on Stacks testnet** under
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5` from exact merge
+`b15544d601bd4e49610be854f7ad33a0af90c0a7`. `agentic-commerce-v4` and `sbtc-commerce-v3`
+confirmed at blocks 209312 and 209314; PoX-5 configuration and reputation authorization confirmed
+at blocks 209316–209320. STX complete passes 27/27, official PoX-5 sBTC complete passes 30/30 and
+the real-timeout job passes preparation 20/20 with settlement allowed from burn `11104`.
+
+The immutable earlier `agentic-commerce-v3` and `sbtc-commerce-v2` generation remains testnet-only
+at 144 blocks as historical evidence. Production remains pinned to the verified contracts listed
+above until the new real-timeout evidence and external-review gate are complete.
 
 ## Product maturity and roadmap
 

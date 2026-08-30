@@ -37,12 +37,16 @@ return escrow according to the contract lifecycle.
 ## Reviewed candidate lifecycle
 
 <StatusRow>
-  <StatusBadge tone="planned">Source available · Not deployed</StatusBadge>
+  <StatusBadge tone="testnet">12-block candidate · Testnet</StatusBadge>
 </StatusRow>
 
 The current versioned candidate begins a fixed 12 Bitcoin burn-block review window when the provider
 submits work. The evaluator can approve or reject through the exact deadline. After the deadline,
 any caller can release escrow to the provider so an unavailable evaluator cannot trap funds.
+
+The exact v4/v3 merge is deployed only on Stacks testnet. Controlled STX and official PoX-5 sBTC
+complete paths pass 27/27 and 30/30. A real timeout job is submitted with deadline `11103`; its
+post-deadline settlement remains pending and is not production or external-adoption evidence.
 
 <Mermaid
   label="Versioned escrow review-window lifecycle"
