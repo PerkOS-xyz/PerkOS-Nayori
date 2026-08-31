@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Pc } from "@stacks/transactions";
+import { Cl, Pc } from "@stacks/transactions";
 
-const { request } = vi.hoisted(() => ({ request: vi.fn() }));
+const { readOnly, request } = vi.hoisted(() => ({
+  readOnly: vi.fn(),
+  request: vi.fn(),
+}));
+vi.mock("@stacks/transactions", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@stacks/transactions")>();
+  return { ...actual, fetchCallReadOnlyFunction: readOnly };
+});
 vi.mock("@stacks/connect", () => ({ request }));
 
 import {
@@ -14,7 +21,12 @@ import {
 import { SBTC_TOKEN } from "../constants/sbtc";
 
 describe("sBTC settlement transaction policy", () => {
-  beforeEach(() => request.mockReset());
+  beforeEach(() => {
+    const [address, name] = SBTC_TOKEN.split(".");
+    readOnly.mockReset();
+    readOnly.mockResolvedValue(Cl.ok(Cl.contractPrincipal(address, name)));
+    request.mockReset();
+  });
 
   for (const [operation, invoke] of [
     ["complete-job", completeSbtcJob],

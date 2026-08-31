@@ -17,9 +17,9 @@ const contracts = [
   { name: "agent-registry", file: "agent-registry.clar" },
   { name: "validation-registry", file: "validation-registry.clar" },
   { name: "sip-010-trait", file: "sip-010-trait.clar" },
-  { name: "reputation-registry-v2", file: "reputation-registry-v2.clar" },
-  { name: "agentic-commerce-v2", file: "agentic-commerce.clar" },
-  { name: "sbtc-commerce", file: "sbtc-commerce.clar" },
+  { name: "reputation-registry-v3", file: "reputation-registry-v3.clar" },
+  { name: "agentic-commerce-v4", file: "agentic-commerce-v4.clar" },
+  { name: "sbtc-commerce-v3", file: "sbtc-commerce-v3.clar" },
 ];
 
 if (!deployer.startsWith("SP")) {
@@ -59,9 +59,9 @@ for (const { name, file } of contracts) {
 
 for (const contractName of [
   "agent-registry",
-  "reputation-registry-v2",
-  "agentic-commerce-v2",
-  "sbtc-commerce",
+  "reputation-registry-v3",
+  "agentic-commerce-v4",
+  "sbtc-commerce-v3",
 ]) {
   const owner = cvToValue(await read(contractName, "get-owner")).value;
   if (owner !== deployer) {
@@ -71,35 +71,45 @@ for (const contractName of [
 }
 
 const paymentToken = cvToValue(
-  await read("sbtc-commerce", "get-payment-token")
+  await read("sbtc-commerce-v3", "get-payment-token")
 ).value;
 if (paymentToken !== canonicalSbtc) {
   throw new Error(
-    `sbtc-commerce token is ${paymentToken}, expected ${canonicalSbtc}`
+    `sbtc-commerce-v3 token is ${paymentToken}, expected ${canonicalSbtc}`
   );
 }
-console.log(`✓ sbtc-commerce uses canonical mainnet sBTC`);
+console.log(`✓ sbtc-commerce-v3 uses canonical mainnet sBTC`);
 
-for (const caller of ["agentic-commerce-v2", "sbtc-commerce"]) {
+for (const caller of ["agentic-commerce-v4", "sbtc-commerce-v3"]) {
   const isAllowed = cvToValue(
-    await read("reputation-registry-v2", "is-registered-caller", [
+    await read("reputation-registry-v3", "is-registered-caller", [
       Cl.contractPrincipal(deployer, caller),
     ])
   );
   if (isAllowed !== true) {
-    throw new Error(`${caller} is not authorized on reputation-registry-v2`);
+    throw new Error(`${caller} is not authorized on reputation-registry-v3`);
   }
-  console.log(`✓ ${caller} is authorized on reputation-registry-v2`);
+  console.log(`✓ ${caller} is authorized on reputation-registry-v3`);
+}
+
+for (const contractName of ["agentic-commerce-v4", "sbtc-commerce-v3"]) {
+  const reviewWindow = cvToValue(
+    await read(contractName, "get-review-window")
+  ).value;
+  if (BigInt(reviewWindow) !== 12n) {
+    throw new Error(`${contractName} review window is ${reviewWindow}, expected 12`);
+  }
+  console.log(`✓ ${contractName} uses a 12 Bitcoin-block review window`);
 }
 
 const agentCount = cvToValue(
   await read("agent-registry", "get-agent-count")
 ).value;
 const stxJobCount = cvToValue(
-  await read("agentic-commerce-v2", "get-job-count")
+  await read("agentic-commerce-v4", "get-job-count")
 ).value;
 const sbtcJobCount = cvToValue(
-  await read("sbtc-commerce", "get-job-count")
+  await read("sbtc-commerce-v3", "get-job-count")
 ).value;
 
 console.log(`✓ agent count: ${agentCount}`);

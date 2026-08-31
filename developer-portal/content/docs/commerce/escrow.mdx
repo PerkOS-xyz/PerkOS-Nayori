@@ -34,19 +34,20 @@ an explicit refund path.
 Completion pays the provider and updates job-linked reputation. Rejection and eligible expiry
 return escrow according to the contract lifecycle.
 
-## Reviewed candidate lifecycle
+## Active review-window lifecycle
 
 <StatusRow>
-  <StatusBadge tone="testnet">12-block candidate · Testnet</StatusBadge>
+  <StatusBadge tone="mainnet">12 Bitcoin blocks · Mainnet</StatusBadge>
 </StatusRow>
 
-The current versioned candidate begins a fixed 12 Bitcoin burn-block review window when the provider
+The active versioned release begins a fixed 12 Bitcoin burn-block review window when the provider
 submits work. The evaluator can approve or reject through the exact deadline. After the deadline,
 any caller can release escrow to the provider so an unavailable evaluator cannot trap funds.
 
-The exact v4/v3 merge is deployed only on Stacks testnet. Controlled STX and official PoX-5 sBTC
-complete paths pass 27/27 and 30/30. A real timeout job is submitted with deadline `11103`; its
-post-deadline settlement remains pending and is not production or external-adoption evidence.
+The exact v4/v3/v3 sources first passed controlled STX and official PoX-5 sBTC paths on testnet,
+including a real timeout payout. They were then source-verified on mainnet and a guarded internal
+100-atomic-sBTC lifecycle passed 26/26. Internal actors remain release evidence, not external
+adoption or revenue.
 
 <Mermaid
   label="Versioned escrow review-window lifecycle"

@@ -128,8 +128,9 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
     contracts: {
       deployer: MAINNET_DEPLOYER,
       agentRegistry: `${MAINNET_DEPLOYER}.agent-registry`,
-      stxEscrow: `${MAINNET_DEPLOYER}.agentic-commerce-v2`,
-      sbtcEscrow: `${MAINNET_DEPLOYER}.sbtc-commerce`,
+      reputation: `${MAINNET_DEPLOYER}.reputation-registry-v3`,
+      stxEscrow: `${MAINNET_DEPLOYER}.agentic-commerce-v4`,
+      sbtcEscrow: `${MAINNET_DEPLOYER}.sbtc-commerce-v3`,
     },
     availability: {
       webApplication: true,
@@ -196,8 +197,9 @@ Supporting browsers can discover three read-only WebMCP tools on the application
 ## Mainnet contracts
 
 - Agent registry: \`${MAINNET_DEPLOYER}.agent-registry\`
-- STX escrow: \`${MAINNET_DEPLOYER}.agentic-commerce-v2\`
-- sBTC escrow: \`${MAINNET_DEPLOYER}.sbtc-commerce\`
+- Reputation: \`${MAINNET_DEPLOYER}.reputation-registry-v3\`
+- STX escrow: \`${MAINNET_DEPLOYER}.agentic-commerce-v4\`
+- sBTC escrow: \`${MAINNET_DEPLOYER}.sbtc-commerce-v3\`
 - Network: \`${STACKS_MAINNET_ID}\`
 
 ## Payment support

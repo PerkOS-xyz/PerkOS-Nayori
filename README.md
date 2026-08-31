@@ -546,16 +546,16 @@ All current contracts are deployed by:
 | Agent identity | `agent-registry` | Register, update, discover and deactivate agents |
 | Validation | `validation-registry` | Capability and proof-hash attestations |
 | SIP-010 interface | `sip-010-trait` | Canonical fungible-token contract interface |
-| Reputation | `reputation-registry-v2` | Authorized job statistics and job-linked ratings |
-| STX escrow | `agentic-commerce-v2` | Current STX job lifecycle and settlement |
-| sBTC escrow | `sbtc-commerce` | Canonical sBTC job lifecycle and settlement |
+| Reputation | `reputation-registry-v3` | Source-namespaced outcomes, job-linked ratings and retryable synchronization |
+| STX escrow | `agentic-commerce-v4` | Current STX lifecycle with evaluator review and timeout liveness |
+| sBTC escrow | `sbtc-commerce-v3` | Current sBTC lifecycle with token pinning and timeout liveness |
 
 Canonical mainnet sBTC:
 
 `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`
 
-The product does not use a legacy STX contract. Both current commerce contracts are authorized
-callers of `reputation-registry-v2`.
+Both current commerce contracts are authorized callers of `reputation-registry-v3`. The prior
+mainnet generation remains immutable historical evidence and is not the default for new jobs.
 
 ### Escrow lifecycle
 
@@ -568,44 +568,50 @@ callers of `reputation-registry-v2`.
 | Rejected | Escrow refunded to client | Terminal |
 | Expired | Deadline passed and escrow refunded as applicable | Terminal |
 
-### Versioned escrow security candidate
+### Versioned escrow security release
 
-The repository also contains a **testnet-only review candidate**. It does not change the production
-addresses or the application defaults above.
+The active versioned generation was developed and exercised in an isolated testnet release before
+mainnet promotion.
 
-| Component | Candidate contract | Review scope |
+| Component | Active contract | Security scope |
 | --- | --- | --- |
 | Reputation | `reputation-registry-v3` | Source- and job-namespaced outcomes/ratings, idempotent writes and two-step ownership |
 | STX escrow | `agentic-commerce-v4` | Fixed 12-burn-block review liveness, durable reputation synchronization and two-step ownership |
 | sBTC escrow | `sbtc-commerce-v3` | The STX controls plus per-job SIP-010 token pinning |
 
-For submitted work, the candidate records a fixed Nayori review window of **12 Bitcoin burn
+For submitted work, the contracts record a fixed Nayori review window of **12 Bitcoin burn
 blocks**. The evaluator may complete or reject through the exact deadline. Only after that deadline
 may any principal trigger a deterministic provider payout. That liveness payout uses the separate
 terminal state `Timeout paid (u6)` and does not count as a completed job, rating eligibility or
 reputation success. Failed reputation writes never roll back economic settlement; they remain
 durable and permissionlessly retryable.
 
-When the candidate is selected, the Web and SDK read the current escrow and the funded job's
+The Web and SDK read the current escrow and the funded job's
 pinned sBTC token before opening a settlement signature. Their trait argument and exact deny-mode
 post-condition use that historical token. A zero-balance open job can still expire with no asset
 outflow or pinned token.
 
-The new v4/v3 sources are deployed **only on Stacks testnet** under
-`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5` from exact merge
-`b15544d601bd4e49610be854f7ad33a0af90c0a7`. `agentic-commerce-v4` and `sbtc-commerce-v3`
-confirmed at blocks 209312 and 209314; PoX-5 configuration and reputation authorization confirmed
-at blocks 209316–209320. STX complete passes 27/27, official PoX-5 sBTC complete passes 30/30 and
-the real-timeout path passes preparation 20/20, settlement 12/12 and separate public-state
+The same sources first passed on Stacks testnet under
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`: STX complete 27/27, official PoX-5 sBTC complete
+30/30 and the real-timeout path preparation 20/20, settlement 12/12 and separate public-state
 checks 10/10. Job `u2` settled at burn `11290` in
 [`0x06537111…15bb9`](https://explorer.hiro.so/txid/0x06537111ef6c75d3c5d750154f97a3b4a0c233a84639583f7af18b2386915bb9?chain=testnet): terminal
 state `u6`, zero escrow, one exact 1,000-atomic-unit sBTC payout and no completion, reputation or
 rating credit. See [the reproducible testnet evidence](docs/TESTNET_SECURITY_EVIDENCE.md).
 
+The frozen v4/v3/v3 sources were promoted on mainnet from exact merge `670d23a`. Deploy and wiring
+transactions confirmed in blocks 8885885–8885898 with exact source, owner, canonical sBTC,
+allowlist and review-window checks. Exact merge `8782e54` then passed the security gate, 100/100
+tests and an 11/11 signer-free preflight before one internal 100-atomic-sBTC lifecycle passed
+26/26. Job `u1` finished in state `u3` with escrow zero, exact provider payout, successful
+reputation synchronization and a persisted rating. These team-operated actions are release
+evidence, not external adoption or revenue. The independent external security review remains an
+open delivery item and this release must not be described as externally audited.
+
 The immutable earlier `agentic-commerce-v3` and `sbtc-commerce-v2` generation remains testnet-only
-at 144 blocks as historical evidence. Production remains pinned to the verified contracts listed
-above. The 12-block candidate is frozen for independent review; it is not approved for mainnet or
-production activation until that review and every Critical/High disposition are complete.
+at 144 blocks as historical evidence. The prior mainnet `agentic-commerce-v2`, `sbtc-commerce` and
+`reputation-registry-v2` generation remains accessible as historical release evidence but is not used
+for new production jobs.
 
 ## Product maturity and roadmap
 

@@ -34,7 +34,9 @@ describe("agent discovery", () => {
     expect(manifest.homepage).toBe(origin);
     expect(manifest.network).toBe("stacks:1");
     expect(manifest.authorization.custody).toContain("does not request");
-    expect(manifest.contracts.stxEscrow).toContain("agentic-commerce-v2");
+    expect(manifest.contracts.reputation).toContain("reputation-registry-v3");
+    expect(manifest.contracts.stxEscrow).toContain("agentic-commerce-v4");
+    expect(manifest.contracts.sbtcEscrow).toContain("sbtc-commerce-v3");
     expect(manifest.discovery.quoteApi.origin).toBe(NAYORI_API_ORIGIN);
     expect(manifest.discovery.quoteApi.openapi).toBe(
       `${NAYORI_API_ORIGIN}/openapi.json`
@@ -97,6 +99,9 @@ describe("agent discovery", () => {
     expect(text).toContain(`${origin}/.well-known/agent.json`);
     expect(text).toContain(`${origin}/api/v1`);
     expect(text).toContain(`${origin}/api/mpp/v1`);
+    expect(text).toContain("reputation-registry-v3");
+    expect(text).toContain("agentic-commerce-v4");
+    expect(text).toContain("sbtc-commerce-v3");
     expect(text).toContain(`${NAYORI_API_ORIGIN}/supported`);
     expect(text).toContain(`${origin}/.well-known/api-catalog`);
     expect(text).toContain(`${origin}/.well-known/ard.json`);
