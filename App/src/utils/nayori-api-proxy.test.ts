@@ -4,6 +4,7 @@ import {
   proxyNayoriMppResource,
   proxyNayoriPaidResource,
 } from "./nayori-api-proxy";
+import { NAYORI_API_ORIGIN } from "../constants/discovery";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -20,10 +21,10 @@ describe("Nayori API discovery proxy", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-location")).toBe(
-      `https://api.nayori.ai${path}`,
+      `${NAYORI_API_ORIGIN}${path}`,
     );
     expect(fetchMock).toHaveBeenCalledWith(
-      `https://api.nayori.ai${path}`,
+      `${NAYORI_API_ORIGIN}${path}`,
       expect.objectContaining({
         cache: "no-store",
         headers: { Accept: "application/json" },
@@ -63,10 +64,10 @@ describe("Nayori API discovery proxy", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-location")).toBeNull();
     expect(response.headers.get("link")).toBe(
-      '<https://api.nayori.ai/openapi.json>; rel="canonical"; type="application/openapi+json"',
+      `<${NAYORI_API_ORIGIN}/openapi.json>; rel="canonical"; type="application/openapi+json"`,
     );
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.nayori.ai/openapi.json",
+      `${NAYORI_API_ORIGIN}/openapi.json`,
       expect.objectContaining({
         cache: "no-store",
         headers: { Accept: "application/json" },
@@ -94,7 +95,7 @@ describe("Nayori same-origin MPP PaymentAuth proxy", () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(
       async (input, init) => {
         expect(String(input)).toBe(
-          "https://api.nayori.ai/mpp/v1?settlement=ns_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          `${NAYORI_API_ORIGIN}/mpp/v1?settlement=ns_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`,
         );
         const headers = new Headers(init?.headers);
         expect(headers.get("payment-authorization")).toBe("Payment encoded-credential");
@@ -170,7 +171,7 @@ describe("Nayori same-origin paid-resource proxy", () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(
       async (input, init) => {
         expect(String(input)).toBe(
-          "https://api.nayori.ai/v1?settlement=ns_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          `${NAYORI_API_ORIGIN}/v1?settlement=ns_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`,
         );
         const headers = new Headers(init?.headers);
         expect(headers.get("payment-signature")).toBe("encoded-payment");

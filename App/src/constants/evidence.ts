@@ -1,4 +1,10 @@
 import { MAINNET_DEPLOYER } from "./discovery";
+import {
+  CONTRACT_ADDRESS,
+  NAYORI_APPEAL_AUTHORITY_ADDRESS,
+  NAYORI_EVALUATOR_ADDRESS,
+} from "./contract";
+import { NETWORK_NAME } from "./network";
 
 export const EVIDENCE_VERSION = 2;
 export const EVIDENCE_UPDATED_AT = "2026-08-28T00:00:00.000Z";
@@ -12,7 +18,7 @@ export const milestone2Targets = {
   sdkPublicDistribution: true,
 } as const;
 
-export const evidenceWallets = [
+const m1EvidenceWallets = [
   {
     address: MAINNET_DEPLOYER,
     classification: "team" as const,
@@ -29,6 +35,29 @@ export const evidenceWallets = [
     roles: ["provider"],
   },
 ] as const;
+
+const qaEvidenceWallets = [
+  {
+    address: CONTRACT_ADDRESS,
+    classification: "team" as const,
+    roles: ["client", "deployer"],
+  },
+  ...(NAYORI_EVALUATOR_ADDRESS
+    ? [{ address: NAYORI_EVALUATOR_ADDRESS, classification: "team" as const, roles: ["evaluator"] }]
+    : []),
+  ...(NAYORI_APPEAL_AUTHORITY_ADDRESS
+    ? [
+        {
+          address: NAYORI_APPEAL_AUTHORITY_ADDRESS,
+          classification: "team" as const,
+          roles: ["appeal-authority"],
+        },
+      ]
+    : []),
+] as const;
+
+export const evidenceWallets =
+  NETWORK_NAME === "testnet" ? qaEvidenceWallets : m1EvidenceWallets;
 
 export type EvidenceWalletClassification =
   | "team"
@@ -121,13 +150,17 @@ export const evidenceManifest = {
   schemaVersion: EVIDENCE_VERSION,
   updatedAt: EVIDENCE_UPDATED_AT,
   product: "Nayori by PerkOS",
-  network: "stacks:1",
+  network: NETWORK_NAME === "testnet" ? "stacks:2147483648" : "stacks:1",
   explorer: "https://explorer.hiro.so",
   policy: {
     externalWalletRule:
       "A wallet counts as external only after explicit non-team attestation; address uniqueness alone is never sufficient.",
     baselineRule:
       "Approved Milestone 1 transactions are public product evidence but do not count toward Milestone 2 external-adoption requirements.",
+    qaRule:
+      NETWORK_NAME === "testnet"
+        ? "QA/testnet wallets, jobs, payments and evaluations are internal operability evidence only and never increment Milestone 2 adoption or revenue counters."
+        : "Only independently controlled, explicitly attested mainnet activity may increment Milestone 2 adoption counters.",
   },
   milestone1: {
     status: "approved",
@@ -136,7 +169,7 @@ export const evidenceManifest = {
     asset: "sBTC",
     amountSats: 10_000,
     completedJobs: 1,
-    wallets: evidenceWallets,
+    wallets: m1EvidenceWallets,
     lifecycle: m1SbtcLifecycle,
   },
   milestone2: {
@@ -177,7 +210,7 @@ export function evidenceTransactionsCsv(): string {
     "explorer",
   ];
   const walletClass = new Map(
-    evidenceWallets.map((wallet) => [wallet.address, wallet.classification]),
+    m1EvidenceWallets.map((wallet) => [wallet.address, wallet.classification]),
   );
   const rows = m1SbtcLifecycle.map((transaction) => [
     "M1-baseline",

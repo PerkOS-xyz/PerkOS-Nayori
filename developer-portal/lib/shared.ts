@@ -1,5 +1,5 @@
 export const appName = 'Nayori Developer Documentation';
-export const siteOrigin = 'https://docs.nayori.ai';
+export const siteOrigin = process.env.NAYORI_DOCS_ORIGIN ?? 'https://docs.nayori.ai';
 export const docsRoute = '/';
 export const docsImageRoute = '/og';
 export const docsContentRoute = '/llms.mdx';
@@ -12,8 +12,8 @@ export const gitConfig = {
 };
 
 export const productLinks = {
-  app: 'https://app.nayori.ai',
-  evidence: 'https://nayori.ai/evidence',
+  app: process.env.NAYORI_APP_ORIGIN ?? 'https://app.nayori.ai',
+  evidence: `${process.env.NAYORI_PRODUCT_ORIGIN ?? 'https://nayori.ai'}/evidence`,
   sdk: 'https://www.npmjs.com/package/@perkos/agent-sdk',
-  api: 'https://api.nayori.ai',
+  api: process.env.NAYORI_API_ORIGIN ?? 'https://api.nayori.ai',
 } as const;

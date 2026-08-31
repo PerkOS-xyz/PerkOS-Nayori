@@ -5,12 +5,37 @@ import {
   PRODUCT_NAME,
 } from "./brand";
 import { SITE_ORIGIN } from "./site";
+import { NETWORK_NAME } from "./network";
+import {
+  CONTRACT_ADDRESS,
+  REPUTATION_CONTRACT_NAME,
+  SBTC_COMMERCE_CONTRACT_NAME,
+  STX_COMMERCE_CONTRACT_NAME,
+} from "./contract";
 
 export const STACKS_MAINNET_ID = "stacks:1";
 export const STACKS_TESTNET_ID = "stacks:2147483648";
-export const NAYORI_API_ORIGIN = "https://api.nayori.ai";
-export const NAYORI_FACILITATOR_ORIGIN = "https://facilitator.nayori.ai";
-export const NAYORI_OAUTH_ORIGIN = "https://oauth.nayori.ai";
+export function resolveServiceOrigin(variable: string, value: string): string {
+  const url = new URL(value);
+  const isLocal = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+  if (url.protocol !== "https:" && !isLocal) {
+    throw new Error(`${variable} must use HTTPS outside local development`);
+  }
+  return url.origin;
+}
+
+export const NAYORI_API_ORIGIN = resolveServiceOrigin(
+  "NEXT_PUBLIC_NAYORI_API_ORIGIN",
+  process.env.NEXT_PUBLIC_NAYORI_API_ORIGIN || "https://api.nayori.ai"
+);
+export const NAYORI_FACILITATOR_ORIGIN = resolveServiceOrigin(
+  "NEXT_PUBLIC_NAYORI_FACILITATOR_ORIGIN",
+  process.env.NEXT_PUBLIC_NAYORI_FACILITATOR_ORIGIN || "https://facilitator.nayori.ai"
+);
+export const NAYORI_OAUTH_ORIGIN = resolveServiceOrigin(
+  "NEXT_PUBLIC_NAYORI_OAUTH_ORIGIN",
+  process.env.NEXT_PUBLIC_NAYORI_OAUTH_ORIGIN || "https://oauth.nayori.ai"
+);
 export const MAINNET_DEPLOYER =
   "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH";
 
@@ -25,9 +50,9 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       name: COMPANY_NAME,
       url: "https://perkos.xyz",
     },
-    status: "public-mainnet-web",
+    status: NETWORK_NAME === "testnet" ? "qa-testnet-web" : "public-mainnet-web",
     homepage: origin,
-    network: STACKS_MAINNET_ID,
+    network: NETWORK_NAME === "testnet" ? STACKS_TESTNET_ID : STACKS_MAINNET_ID,
     discovery: {
       llms: `${origin}/llms.txt`,
       sitemap: `${origin}/sitemap.xml`,
@@ -126,11 +151,11 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       custody: "Nayori does not request or store buyer private keys.",
     },
     contracts: {
-      deployer: MAINNET_DEPLOYER,
-      agentRegistry: `${MAINNET_DEPLOYER}.agent-registry`,
-      reputation: `${MAINNET_DEPLOYER}.reputation-registry-v3`,
-      stxEscrow: `${MAINNET_DEPLOYER}.agentic-commerce-v4`,
-      sbtcEscrow: `${MAINNET_DEPLOYER}.sbtc-commerce-v3`,
+      deployer: CONTRACT_ADDRESS,
+      agentRegistry: `${CONTRACT_ADDRESS}.agent-registry`,
+      reputation: `${CONTRACT_ADDRESS}.${REPUTATION_CONTRACT_NAME}`,
+      stxEscrow: `${CONTRACT_ADDRESS}.${STX_COMMERCE_CONTRACT_NAME}`,
+      sbtcEscrow: `${CONTRACT_ADDRESS}.${SBTC_COMMERCE_CONTRACT_NAME}`,
     },
     availability: {
       webApplication: true,
@@ -154,15 +179,17 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
 }
 
 export function buildLlmsText(origin = SITE_ORIGIN): string {
+  const environment = NETWORK_NAME === "testnet" ? "QA/testnet" : "mainnet";
+  const networkId = NETWORK_NAME === "testnet" ? STACKS_TESTNET_ID : STACKS_MAINNET_ID;
   return `# ${PRODUCT_FULL_NAME}
 
 > ${PRODUCT_DESCRIPTION}
 
-Nayori is a mainnet web application and TypeScript SDK for autonomous commerce on Stacks. Public reads do not require authentication. Every state-changing action requires authorization from a Stacks wallet; Nayori does not request or store buyer private keys.
+Nayori is a ${environment} web application and TypeScript SDK for autonomous commerce on Stacks. Public reads do not require authentication. Every state-changing action requires authorization from a Stacks wallet; Nayori does not request or store buyer private keys.
 
 ## Product
 
-- [Application](${origin}/): Mainnet application and product overview.
+- [Application](${origin}/): ${environment} application and product overview.
 - [Agents](${origin}/agents): On-chain agent directory and registration.
 - [Jobs](${origin}/jobs): STX and sBTC job escrow lifecycle.
 - [Analytics](${origin}/analytics): Currency-separated protocol activity.
@@ -194,13 +221,13 @@ Nayori is a mainnet web application and TypeScript SDK for autonomous commerce o
 
 Supporting browsers can discover three read-only WebMCP tools on the application page: capabilities, Agent Skills and the versioned public evidence manifest. These tools never sign a transaction, access wallet credentials or perform a state-changing action.
 
-## Mainnet contracts
+## ${NETWORK_NAME === "testnet" ? "QA testnet" : "Mainnet"} contracts
 
-- Agent registry: \`${MAINNET_DEPLOYER}.agent-registry\`
-- Reputation: \`${MAINNET_DEPLOYER}.reputation-registry-v3\`
-- STX escrow: \`${MAINNET_DEPLOYER}.agentic-commerce-v4\`
-- sBTC escrow: \`${MAINNET_DEPLOYER}.sbtc-commerce-v3\`
-- Network: \`${STACKS_MAINNET_ID}\`
+- Agent registry: \`${CONTRACT_ADDRESS}.agent-registry\`
+- Reputation: \`${CONTRACT_ADDRESS}.${REPUTATION_CONTRACT_NAME}\`
+- STX escrow: \`${CONTRACT_ADDRESS}.${STX_COMMERCE_CONTRACT_NAME}\`
+- sBTC escrow: \`${CONTRACT_ADDRESS}.${SBTC_COMMERCE_CONTRACT_NAME}\`
+- Network: \`${networkId}\`
 
 ## Payment support
 

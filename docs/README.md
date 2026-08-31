@@ -14,6 +14,9 @@ and historical integration records.
 
 The application has no wallet connector, payment signer, OAuth secret or facilitator credential.
 
+The fail-closed deployment and role-by-role testnet procedure for the autonomous v5/v4 escrow
+generation is documented in [AUTONOMOUS_QA_RUNBOOK.md](AUTONOMOUS_QA_RUNBOOK.md).
+
 ## Local development
 
 Use Node.js 20.9 or newer.

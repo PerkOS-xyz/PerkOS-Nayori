@@ -50,6 +50,8 @@ forbidPattern(
 
 const versionedEscrowTestnetDeploy = "scripts/deploy-versioned-escrow-testnet.mjs";
 const versionedEscrowTestnetE2e = "scripts/e2e-versioned-escrow-testnet.mjs";
+const autonomousEscrowTestnetDeploy = "scripts/deploy-autonomous-escrow-testnet.mjs";
+const autonomousEscrowTestnetE2e = "scripts/e2e-autonomous-escrow-testnet.mjs";
 const versionedEscrowMainnetDeploy = "scripts/deploy-versioned-escrow-mainnet.mjs";
 const versionedEscrowMainnetE2e = "scripts/e2e-versioned-escrow-mainnet.mjs";
 const reviewWindowCandidate = [
@@ -103,6 +105,53 @@ forbidPattern(
   /STACKS_MAINNET|PostConditionMode\.Allow/,
   "the testnet-only candidate must have no mainnet or allow-mode path",
 );
+requirePattern(
+  autonomousEscrowTestnetDeploy,
+  /process\.env\.STACKS_NETWORK\s*!==\s*["']testnet["']/,
+  "the autonomous escrow deployer must require explicit testnet",
+);
+requirePattern(
+  autonomousEscrowTestnetDeploy,
+  /CONFIRM_AUTONOMOUS_ESCROW_TESTNET_DEPLOY\s*!==\s*["']yes["']/,
+  "the autonomous escrow deployer must require its own typed confirmation",
+);
+requirePattern(
+  autonomousEscrowTestnetDeploy,
+  /name:\s*["']sip-010-trait["'][\s\S]*?name:\s*["']reputation-registry-v3["'][\s\S]*?name:\s*["']agentic-commerce-v5["'][\s\S]*?name:\s*["']sbtc-commerce-v4["']/,
+  "the autonomous deployer must use the reviewed dependency order and v5/v4 generation",
+);
+requirePattern(
+  autonomousEscrowTestnetDeploy,
+  /APPEAL_WINDOW_BURN_BLOCKS\s*=\s*3n[\s\S]*?initialize-protocol[\s\S]*?Cl\.principal\(appealAuthority\)/,
+  "the autonomous deployer must initialize the three-block QA policy with a separate authority",
+);
+requirePattern(
+  autonomousEscrowTestnetDeploy,
+  /postConditionMode:\s*PostConditionMode\.Deny/,
+  "the autonomous deployer must use deny-mode post conditions",
+);
+requirePattern(
+  autonomousEscrowTestnetDeploy,
+  /data\.source[\s\S]*?!==\s*expectedSource/,
+  "the autonomous deployer must verify existing source byte-for-byte",
+);
+forbidPattern(
+  autonomousEscrowTestnetDeploy,
+  /STACKS_MAINNET|PostConditionMode\.Allow|MAINNET_APPEAL_WINDOW_BURN_BLOCKS/,
+  "the autonomous testnet deployer must expose no mainnet or allow-mode path",
+);
+{
+  const contents = source(autonomousEscrowTestnetDeploy);
+  const confirmation = contents.indexOf(
+    "CONFIRM_AUTONOMOUS_ESCROW_TESTNET_DEPLOY !=="
+  );
+  const credentialRead = contents.indexOf("loadEnv(ENV_PATH");
+  if (confirmation < 0 || credentialRead < 0 || confirmation > credentialRead) {
+    failures.push(
+      `${autonomousEscrowTestnetDeploy}: typed confirmation must precede signer reads`
+    );
+  }
+}
 requirePattern(
   versionedEscrowMainnetDeploy,
   /process\.env\.STACKS_NETWORK\s*!==\s*["']mainnet["']/,
@@ -250,6 +299,68 @@ forbidPattern(
   /STACKS_MAINNET|PostConditionMode\.Allow|output\.(providerKey|evaluatorKey)|actors:\s*\{[^}]*Key/,
   "versioned E2E must not expose mainnet, allow mode or actor keys",
 );
+requirePattern(
+  autonomousEscrowTestnetE2e,
+  /process\.env\.STACKS_NETWORK\s*!==\s*["']testnet["']/,
+  "autonomous E2E must require explicit testnet",
+);
+requirePattern(
+  autonomousEscrowTestnetE2e,
+  /CONFIRM_AUTONOMOUS_ESCROW_TESTNET_E2E\s*!==\s*["']yes["']/,
+  "autonomous E2E must require its own typed confirmation",
+);
+requirePattern(
+  autonomousEscrowTestnetE2e,
+  /clientKey[\s\S]*?evaluatorKey[\s\S]*?appealAuthorityKey[\s\S]*?new Set\(\[client, evaluator, appealAuthority\]\)\.size\s*!==\s*3/,
+  "autonomous E2E must require separate persistent QA roles",
+);
+requirePattern(
+  autonomousEscrowTestnetE2e,
+  /approve-no-appeal[\s\S]*?reject-no-appeal[\s\S]*?approve-appeal-resolve-reject[\s\S]*?reject-appeal-resolve-approve[\s\S]*?approve-appeal-timeout[\s\S]*?review-timeout/,
+  "autonomous E2E must cover both decisions, both reversal directions and both timeout classes",
+);
+requirePattern(
+  autonomousEscrowTestnetE2e,
+  /Pc\.principal\(client\)\.willSendEq\(amount\)[\s\S]*?Pc\.principal\(escrowContract\)\.willSendEq\(amount\)/,
+  "autonomous E2E must bind exact funding and settlement outflows",
+);
+requirePattern(
+  autonomousEscrowTestnetE2e,
+  /postConditionMode:\s*PostConditionMode\.Deny/,
+  "autonomous E2E contract calls must fail closed",
+);
+requirePattern(
+  autonomousEscrowTestnetE2e,
+  /classification:\s*["']internal-team-operated-not-m2-adoption["']/,
+  "autonomous E2E receipts must exclude controlled actors from M2 adoption",
+);
+requirePattern(
+  autonomousEscrowTestnetE2e,
+  /value\?\.type\s*!==\s*ClarityType\.ResponseOk/,
+  "autonomous E2E must reject Clarity error responses instead of decoding them as success",
+);
+requirePattern(
+  autonomousEscrowTestnetE2e,
+  /review timeout does not fabricate a reputation decision[\s\S]*?ClarityType\.ResponseErr/,
+  "review-timeout verification must preserve the absence of an evaluator reputation decision",
+);
+forbidPattern(
+  autonomousEscrowTestnetE2e,
+  /STACKS_MAINNET|PostConditionMode\.Allow|output\.(clientKey|providerKey|evaluatorKey|appealAuthorityKey)|actors:\s*\{[^}]*Key/,
+  "autonomous E2E must not expose mainnet, allow mode or signer material",
+);
+{
+  const contents = source(autonomousEscrowTestnetE2e);
+  const confirmation = contents.indexOf(
+    "CONFIRM_AUTONOMOUS_ESCROW_TESTNET_E2E !=="
+  );
+  const credentialRead = contents.indexOf("parseEnv(ENV_PATH");
+  if (confirmation < 0 || credentialRead < 0 || confirmation > credentialRead) {
+    failures.push(
+      `${autonomousEscrowTestnetE2e}: typed confirmation must precede signer reads`
+    );
+  }
+}
 
 for (const path of reviewWindowCandidate) {
   requirePattern(
@@ -334,6 +445,30 @@ requirePattern(
   /STX_COMMERCE_HAS_REVIEW_TIMEOUT[\s\S]*?agentic-commerce-v4/,
   "the Web must recognize the v4 STX review-timeout interface",
 );
+for (const variable of [
+  "NEXT_PUBLIC_RELEASE_CHANNEL",
+  "NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS",
+  "NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS",
+  "NEXT_PUBLIC_NAYORI_API_ORIGIN",
+  "NEXT_PUBLIC_NAYORI_FACILITATOR_ORIGIN",
+  "NEXT_PUBLIC_NAYORI_OAUTH_ORIGIN",
+]) {
+  requirePattern(
+    "App/Dockerfile",
+    new RegExp(`ARG ${variable}=[^\\n]*[\\s\\S]*?ENV ${variable}=\\$${variable}`),
+    `${variable} must cross the Web image build boundary explicitly`,
+  );
+}
+requirePattern(
+  "App/src/services/transparency.ts",
+  /NETWORK_NAME\s*===\s*["']testnet["']\s*\?\s*\{\s*\.\.\.evidenceManifest\.milestone2\.verified\s*\}/,
+  "testnet transparency must not count controlled QA activity as verified M2 adoption",
+);
+requirePattern(
+  "App/src/constants/evidence.ts",
+  /verified:\s*\{\s*registeredAgentsMainnet:\s*0,\s*completedSbtcJobsMainnet:\s*0,\s*completedJobsFromNonTeamWallets:\s*0,\s*participatingNonTeamWallets:\s*0,\s*externalSdkAdoptions:\s*0,/,
+  "the immutable M2 evidence baseline must remain zero until external adoption is verified",
+);
 requirePattern(
   "App/src/constants/contract.ts",
   /SBTC_COMMERCE_HAS_REVIEW_TIMEOUT[\s\S]*?sbtc-commerce-v3/,
@@ -343,6 +478,8 @@ requirePattern(
 for (const path of [
   versionedEscrowTestnetDeploy,
   versionedEscrowTestnetE2e,
+  autonomousEscrowTestnetDeploy,
+  autonomousEscrowTestnetE2e,
   "App/src/constants/sbtc.ts",
   ".env.example",
 ]) {

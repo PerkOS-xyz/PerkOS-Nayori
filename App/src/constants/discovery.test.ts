@@ -5,8 +5,16 @@ import {
   NAYORI_API_ORIGIN,
   NAYORI_FACILITATOR_ORIGIN,
   NAYORI_OAUTH_ORIGIN,
+  resolveServiceOrigin,
 } from "./discovery";
 import { resolveSiteOrigin } from "./site";
+import { NETWORK_NAME } from "./network";
+import {
+  CONTRACT_ADDRESS,
+  REPUTATION_CONTRACT_NAME,
+  SBTC_COMMERCE_CONTRACT_NAME,
+  STX_COMMERCE_CONTRACT_NAME,
+} from "./contract";
 
 describe("public site origin", () => {
   it("normalizes configured origins", () => {
@@ -23,20 +31,37 @@ describe("public site origin", () => {
       "must use HTTPS"
     );
   });
+
+  it("normalizes isolated service origins and rejects insecure public origins", () => {
+    expect(resolveServiceOrigin("TEST_ORIGIN", "https://api.qa.nayori.ai/path")).toBe(
+      "https://api.qa.nayori.ai"
+    );
+    expect(() => resolveServiceOrigin("TEST_ORIGIN", "http://api.qa.nayori.ai")).toThrow(
+      "TEST_ORIGIN must use HTTPS"
+    );
+  });
 });
 
 describe("agent discovery", () => {
   const origin = "https://preview.nayori.ai";
 
-  it("publishes canonical, wallet-safe mainnet capabilities", () => {
+  it("publishes canonical, wallet-safe capabilities for the configured network", () => {
     const manifest = buildDiscoveryManifest(origin);
 
     expect(manifest.homepage).toBe(origin);
-    expect(manifest.network).toBe("stacks:1");
+    expect(manifest.network).toBe(
+      NETWORK_NAME === "testnet" ? "stacks:2147483648" : "stacks:1"
+    );
     expect(manifest.authorization.custody).toContain("does not request");
-    expect(manifest.contracts.reputation).toContain("reputation-registry-v3");
-    expect(manifest.contracts.stxEscrow).toContain("agentic-commerce-v4");
-    expect(manifest.contracts.sbtcEscrow).toContain("sbtc-commerce-v3");
+    expect(manifest.contracts.reputation).toBe(
+      `${CONTRACT_ADDRESS}.${REPUTATION_CONTRACT_NAME}`
+    );
+    expect(manifest.contracts.stxEscrow).toBe(
+      `${CONTRACT_ADDRESS}.${STX_COMMERCE_CONTRACT_NAME}`
+    );
+    expect(manifest.contracts.sbtcEscrow).toBe(
+      `${CONTRACT_ADDRESS}.${SBTC_COMMERCE_CONTRACT_NAME}`
+    );
     expect(manifest.discovery.quoteApi.origin).toBe(NAYORI_API_ORIGIN);
     expect(manifest.discovery.quoteApi.openapi).toBe(
       `${NAYORI_API_ORIGIN}/openapi.json`
@@ -100,8 +125,8 @@ describe("agent discovery", () => {
     expect(text).toContain(`${origin}/api/v1`);
     expect(text).toContain(`${origin}/api/mpp/v1`);
     expect(text).toContain("reputation-registry-v3");
-    expect(text).toContain("agentic-commerce-v4");
-    expect(text).toContain("sbtc-commerce-v3");
+    expect(text).toContain(STX_COMMERCE_CONTRACT_NAME);
+    expect(text).toContain(SBTC_COMMERCE_CONTRACT_NAME);
     expect(text).toContain(`${NAYORI_API_ORIGIN}/supported`);
     expect(text).toContain(`${origin}/.well-known/api-catalog`);
     expect(text).toContain(`${origin}/.well-known/ard.json`);

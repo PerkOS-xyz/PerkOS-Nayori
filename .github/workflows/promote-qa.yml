@@ -79,6 +79,9 @@ jobs:
           NEXT_PUBLIC_RELEASE_CHANNEL: qa
           NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS: ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5
           NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS: ST2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPJG0N53H
+          NEXT_PUBLIC_NAYORI_API_ORIGIN: https://api.qa.nayori.ai
+          NEXT_PUBLIC_NAYORI_FACILITATOR_ORIGIN: https://facilitator.qa.nayori.ai
+          NEXT_PUBLIC_NAYORI_OAUTH_ORIGIN: https://oauth.qa.nayori.ai
         run: |
           npm test
           npm run lint
