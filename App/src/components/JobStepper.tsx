@@ -1,15 +1,27 @@
 import { Check, Clock3, X } from "lucide-react";
 
-const STEPS = ["Open", "Funded", "Submitted", "Completed"];
+const STEPS = ["Open", "Funded", "Submitted", "Decision", "Completed"];
 
 // Visual lifecycle for a job: Open -> Funded -> Submitted -> Completed,
-// with Rejected (4), Expired (5), or Timeout paid (6) shown as terminal states.
+// with the autonomous decision/appeal states and terminal alternatives.
 export default function JobStepper({ status }: { status: number }) {
   const rejected = status === 4;
   const expired = status === 5;
   const timedOut = status === 6;
+  const decisionPending = status === 7;
+  const disputed = status === 8;
   const isDone = status === 3;
-  const reached = rejected || timedOut ? 2 : expired ? 0 : Math.min(status, 3);
+  const reached = isDone
+    ? 4
+    : decisionPending || disputed
+      ? 3
+      : rejected
+        ? 4
+        : timedOut
+          ? 2
+          : expired
+            ? 0
+            : Math.min(status, 2);
 
   return (
     <div className="mt-4 flex items-center">
@@ -21,7 +33,11 @@ export default function JobStepper({ status }: { status: number }) {
 
         let ring = "border-white/[0.12] text-mist-500";
         if (done) ring = "border-emerald-500/40 bg-emerald-500/10 text-emerald-300";
-        else if (current) ring = "border-brand/40 bg-brand/10 text-brand-300";
+        else if (current) ring = disputed
+          ? "border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-300"
+          : decisionPending
+            ? "border-violet-500/40 bg-violet-500/10 text-violet-300"
+            : "border-brand/40 bg-brand/10 text-brand-300";
         if (terminalHere && rejected) ring = "border-red-500/40 bg-red-500/10 text-red-300";
         if (terminalHere && expired) ring = "border-white/15 bg-white/[0.04] text-mist-400";
         if (terminalHere && timedOut) ring = "border-amber-500/40 bg-amber-500/10 text-amber-300";
@@ -32,7 +48,11 @@ export default function JobStepper({ status }: { status: number }) {
             : expired
               ? "Expired"
               : "Timeout paid"
-          : label;
+          : i === 3 && disputed
+            ? "Disputed"
+            : i === 3 && decisionPending
+              ? "Appeal open"
+              : label;
         const lit = done || current || terminalHere;
 
         return (

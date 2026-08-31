@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nayori.ai/schemas/qa-release.schema.json",
+  "title": "Nayori isolated QA release",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["releaseId", "createdAt", "network", "status", "components", "contracts"],
+  "properties": {
+    "releaseId": { "type": "string", "pattern": "^nayori-qa-[0-9]{8}-[0-9]{3}$" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "network": { "const": "testnet" },
+    "status": { "enum": ["candidate", "approved", "deployed", "rejected"] },
+    "components": {
+      "type": "array",
+      "minItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["repository", "sha"],
+        "properties": {
+          "repository": { "type": "string", "pattern": "^PerkOS-xyz/PerkOS-Nayori" },
+          "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+          "imageDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "contracts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stx", "sbtc", "reputation", "appealWindowBurnBlocks"],
+      "properties": {
+        "stx": { "type": "string", "pattern": "^ST[A-Z0-9]+\\.agentic-commerce-v5$" },
+        "sbtc": { "type": "string", "pattern": "^ST[A-Z0-9]+\\.sbtc-commerce-v4$" },
+        "reputation": { "type": "string", "pattern": "^ST[A-Z0-9]+\\.reputation-registry-v3$" },
+        "appealWindowBurnBlocks": { "const": 3 }
+      }
+    },
+    "evidenceReceiptSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

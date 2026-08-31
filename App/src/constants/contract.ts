@@ -44,10 +44,22 @@ export const AGENTIC_COMMERCE_CONTRACT =
 export const STX_COMMERCE_IS_HARDENED =
   STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v2" ||
   STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v3" ||
-  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v4";
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v4" ||
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v5";
 export const STX_COMMERCE_HAS_REVIEW_TIMEOUT =
   STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v3" ||
-  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v4";
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v4" ||
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v5";
 export const SBTC_COMMERCE_HAS_REVIEW_TIMEOUT =
   SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v2" ||
-  SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v3";
+  SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v3" ||
+  SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v4";
+export const STX_COMMERCE_HAS_AUTONOMOUS_DECISIONS =
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v5";
+export const SBTC_COMMERCE_HAS_AUTONOMOUS_DECISIONS =
+  SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v4";
+
+export const NAYORI_EVALUATOR_ADDRESS =
+  process.env.NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS || "";
+export const NAYORI_APPEAL_AUTHORITY_ADDRESS =
+  process.env.NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS || "";

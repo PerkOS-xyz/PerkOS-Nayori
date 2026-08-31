@@ -25,6 +25,8 @@ const JOB_STATUS = [
   "Rejected",
   "Expired",
   "Timeout paid",
+  "Decision pending",
+  "Disputed",
 ] as const;
 
 export interface TransparencyAgent {

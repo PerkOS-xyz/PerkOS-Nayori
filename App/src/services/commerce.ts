@@ -2,6 +2,7 @@ import {
   getJob,
   getJobCount,
   getEscrowBalance,
+  getDecision,
   getReputationSync,
   hasRatedJob as hasRatedStxJob,
   Job,
@@ -10,6 +11,7 @@ import {
   getSbtcJob,
   getSbtcJobCount,
   getSbtcEscrowBalance,
+  getSbtcDecision,
   getSbtcReputationSync,
   hasRatedJob as hasRatedSbtcJob,
   SbtcJob,
@@ -18,6 +20,8 @@ import { formatSbtcCompact, formatStx } from "../utils/format";
 import { NETWORK_NAME } from "../constants/network";
 import {
   SBTC_COMMERCE_HAS_REVIEW_TIMEOUT,
+  SBTC_COMMERCE_HAS_AUTONOMOUS_DECISIONS,
+  STX_COMMERCE_HAS_AUTONOMOUS_DECISIONS,
   STX_COMMERCE_HAS_REVIEW_TIMEOUT,
   STX_COMMERCE_IS_HARDENED,
 } from "../constants/contract";
@@ -62,6 +66,16 @@ export async function getCommerceJob(
 ): Promise<CommerceJob | null> {
   const job = currency === "sbtc" ? await getSbtcJob(jobId) : await getJob(jobId);
   if (!job) return null;
+
+  const hasAutonomousDecisions =
+    currency === "sbtc"
+      ? SBTC_COMMERCE_HAS_AUTONOMOUS_DECISIONS
+      : STX_COMMERCE_HAS_AUTONOMOUS_DECISIONS;
+  if (hasAutonomousDecisions && (job.status === 7 || job.status === 8)) {
+    const decision =
+      currency === "sbtc" ? await getSbtcDecision(jobId) : await getDecision(jobId);
+    if (decision) job.decision = decision;
+  }
 
   const hasDurableReputation =
     currency === "sbtc"
@@ -163,7 +177,12 @@ export function jobPermissions(job: CommerceJob, address?: string) {
     canFund: job.status === 0 && job.budget > 0 && isClient,
     canAssign: job.status === 1 && !job.provider && isClient,
     canSubmit: job.status === 1 && Boolean(job.provider) && isProvider,
-    canSettle: job.status === 2 && isEvaluator,
+    canSettle:
+      job.status === 2 &&
+      isEvaluator &&
+      !(job.currency === "sbtc"
+        ? SBTC_COMMERCE_HAS_AUTONOMOUS_DECISIONS
+        : STX_COMMERCE_HAS_AUTONOMOUS_DECISIONS),
     canRate:
       (job.currency === "sbtc" || STX_COMMERCE_IS_HARDENED) &&
       job.status === 3 &&
@@ -177,17 +196,58 @@ export function reviewPermissions(
   address?: string
 ) {
   const isEvaluator = sameAddress(job.evaluator, address);
+  const autonomous =
+    job.currency === "sbtc"
+      ? SBTC_COMMERCE_HAS_AUTONOMOUS_DECISIONS
+      : STX_COMMERCE_HAS_AUTONOMOUS_DECISIONS;
   const hasDeadline = Number.isSafeInteger(job.reviewDeadline);
   const reviewOpen =
     job.status === 2 &&
     (!hasDeadline || burnBlockHeight === 0 || burnBlockHeight <= job.reviewDeadline!);
   return {
-    canEvaluatorSettle: reviewOpen && isEvaluator,
+    canEvaluatorSettle: reviewOpen && isEvaluator && !autonomous,
     canTimeout:
       Boolean(address) &&
       job.status === 2 &&
       hasDeadline &&
       burnBlockHeight > job.reviewDeadline!,
+  };
+}
+
+export function autonomousPermissions(
+  job: CommerceJob,
+  burnBlockHeight: number,
+  address?: string
+) {
+  const decision = job.decision;
+  const connected = Boolean(address);
+  const isClient = sameAddress(job.client, address);
+  const isProvider = sameAddress(job.provider, address);
+  const isAppealAuthority = sameAddress(job.appealAuthority, address);
+  const appealOpen =
+    job.status === 7 &&
+    Boolean(decision) &&
+    (burnBlockHeight === 0 || burnBlockHeight <= decision!.appealDeadline);
+  const correctAppellant =
+    decision?.originalDecision === 1 ? isClient : isProvider;
+  const resolutionDeadline = decision?.resolutionDeadline;
+  const resolutionOpen =
+    job.status === 8 &&
+    Number.isSafeInteger(resolutionDeadline) &&
+    (burnBlockHeight === 0 || burnBlockHeight <= resolutionDeadline!);
+  return {
+    canAppeal: appealOpen && correctAppellant,
+    canFinalize:
+      connected &&
+      job.status === 7 &&
+      Boolean(decision) &&
+      burnBlockHeight > decision!.appealDeadline,
+    canResolve: resolutionOpen && isAppealAuthority,
+    canSettleAppealTimeout:
+      connected &&
+      job.status === 8 &&
+      Number.isSafeInteger(resolutionDeadline) &&
+      burnBlockHeight > resolutionDeadline!,
   };
 }
 
@@ -203,6 +263,8 @@ export function expiryText(expiredAt: number, currentHeight: number, status?: nu
   if (status === 4) return "Closed · rejected";
   if (status === 5) return "Expired";
   if (status === 6) return "Closed · timeout paid";
+  if (status === 7) return "Decision pending · appeal window open";
+  if (status === 8) return "Disputed · human resolution pending";
   if (!currentHeight) return `Block #${expiredAt}`;
   const remaining = expiredAt - currentHeight;
   if (remaining <= 0) return "Expired";
@@ -210,6 +272,19 @@ export function expiryText(expiredAt: number, currentHeight: number, status?: nu
   if (seconds < 3_600) return `~${Math.max(1, Math.ceil(seconds / 60))} min left`;
   if (seconds < 86_400) return `~${Math.ceil(seconds / 3_600)} hr left`;
   return `~${Math.ceil(seconds / 86_400)} days left`;
+}
+
+export function appealDeadlineText(
+  label: "Appeal" | "Resolution",
+  deadline?: number,
+  burnBlockHeight?: number
+) {
+  if (!Number.isSafeInteger(deadline)) return null;
+  if (!burnBlockHeight) return `${label} deadline · Bitcoin block #${deadline}`;
+  const remaining = deadline! - burnBlockHeight;
+  if (remaining < 0) return `${label} deadline passed · Bitcoin block #${deadline}`;
+  if (remaining === 0) return `${label} deadline · Bitcoin block #${deadline}`;
+  return `${remaining} Bitcoin block${remaining === 1 ? "" : "s"} left · #${deadline}`;
 }
 
 

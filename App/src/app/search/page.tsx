@@ -56,7 +56,7 @@ export default function SearchPage() {
             metadata: {
               protocol: currencyProtocolLabel(job.currency),
               budget: formatJobAmount(job.budget, job.currency),
-              status: ["Open", "Funded", "Submitted", "Completed", "Rejected", "Expired"][job.status] || "Unknown",
+              status: ["Open", "Funded", "Submitted", "Completed", "Rejected", "Expired", "Timeout paid", "Decision pending", "Disputed"][job.status] || "Unknown",
             },
           });
         }

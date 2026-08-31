@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { resolveNetworkName } from "../constants/network";
+import { STX_COMMERCE_HAS_AUTONOMOUS_DECISIONS } from "../constants/contract";
 import {
   isStxAddressForNetwork,
   selectStxAddressForNetwork,
 } from "./wallet";
 import {
   canOfferRating,
+  autonomousPermissions,
+  appealDeadlineText,
   CommerceJob,
   jobPermissions,
   reviewDeadlineText,
@@ -27,6 +30,60 @@ describe("network configuration", () => {
     expect(() => resolveNetworkName("test")).toThrow(
       'must be "mainnet" or "testnet"'
     );
+  });
+});
+
+describe("autonomous decision and appeal actions", () => {
+  const client = MAINNET;
+  const provider = "SP000000000000000000002Q6VF78";
+  const authority = "SP000000000000000000002Q6VF77";
+  const pending: CommerceJob = {
+    id: 11,
+    client,
+    provider,
+    evaluator: "SP000000000000000000002Q6VF79",
+    appealAuthority: authority,
+    description: "Autonomous decision test",
+    budget: 1_000_000,
+    expiredAt: 2_000,
+    status: 7,
+    currency: "stx",
+    decision: {
+      originalDecision: 1,
+      evidenceHash: "11".repeat(32),
+      explanationHash: "22".repeat(32),
+      decidedAtBurn: 900_000,
+      appealDeadline: 900_003,
+    },
+  };
+
+  it("allows only the decision-specific party to appeal through the exact boundary", () => {
+    expect(autonomousPermissions(pending, 900_003, client).canAppeal).toBe(true);
+    expect(autonomousPermissions(pending, 900_003, provider).canAppeal).toBe(false);
+    expect(autonomousPermissions(pending, 900_004, client).canAppeal).toBe(false);
+  });
+
+  it("makes unappealed finalization permissionless only after the boundary", () => {
+    expect(autonomousPermissions(pending, 900_003, MAINNET).canFinalize).toBe(false);
+    expect(autonomousPermissions(pending, 900_004, MAINNET).canFinalize).toBe(true);
+  });
+
+  it("separates human resolution from permissionless appeal-timeout settlement", () => {
+    const disputed: CommerceJob = {
+      ...pending,
+      status: 8,
+      decision: { ...pending.decision!, resolutionDeadline: 900_006 },
+    };
+    expect(autonomousPermissions(disputed, 900_006, authority).canResolve).toBe(true);
+    expect(autonomousPermissions(disputed, 900_006, client).canResolve).toBe(false);
+    expect(
+      autonomousPermissions(disputed, 900_007, MAINNET).canSettleAppealTimeout
+    ).toBe(true);
+  });
+
+  it("labels appeal and resolution deadlines in Bitcoin blocks", () => {
+    expect(appealDeadlineText("Appeal", 900_003, 900_003)).toMatch(/Appeal deadline/);
+    expect(appealDeadlineText("Resolution", 900_006, 900_007)).toMatch(/passed/);
   });
 });
 
@@ -101,10 +158,13 @@ describe("versioned review timeout actions", () => {
     currency: "stx",
   };
 
-  it("keeps evaluator actions available through the exact deadline", () => {
+  it("keeps legacy evaluator settlement only when the selected generation supports it", () => {
     expect(
       reviewPermissions(submittedJob, 900_144, submittedJob.evaluator)
-    ).toEqual({ canEvaluatorSettle: true, canTimeout: false });
+    ).toEqual({
+      canEvaluatorSettle: !STX_COMMERCE_HAS_AUTONOMOUS_DECISIONS,
+      canTimeout: false,
+    });
   });
 
   it("offers permissionless timeout only after the deadline", () => {

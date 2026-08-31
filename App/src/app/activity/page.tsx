@@ -31,6 +31,11 @@ const FN: Record<string, { label: string; cat: string; icon: any; cls: string }>
   "complete-job": { label: "Job completed", cat: "completed", icon: CheckCircle2, cls: "border-emerald-500/30 text-emerald-300" },
   "reject-job": { label: "Job rejected", cat: "rejected", icon: XCircle, cls: "border-red-500/30 text-red-300" },
   "settle-review-timeout": { label: "Review timeout paid", cat: "timeout", icon: Coins, cls: "border-amber-500/30 text-amber-300" },
+  "record-decision": { label: "Nayori decision recorded", cat: "jobs", icon: BadgeCheck, cls: "border-violet-500/30 text-violet-300" },
+  "appeal-decision": { label: "Decision appealed", cat: "jobs", icon: XCircle, cls: "border-fuchsia-500/30 text-fuchsia-300" },
+  "finalize-decision": { label: "Decision finalized", cat: "completed", icon: CheckCircle2, cls: "border-emerald-500/30 text-emerald-300" },
+  "resolve-appeal": { label: "Appeal resolved", cat: "jobs", icon: BadgeCheck, cls: "border-violet-500/30 text-violet-300" },
+  "settle-appeal-timeout": { label: "Appeal timeout finalized", cat: "timeout", icon: Coins, cls: "border-amber-500/30 text-amber-300" },
   "retry-reputation-sync": { label: "Reputation sync retried", cat: "jobs", icon: RefreshCw, cls: "border-brand/30 text-brand-300" },
 };
 

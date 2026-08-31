@@ -10,7 +10,17 @@ import { formatSbtcCompact, formatStx } from "../../utils/format";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorMessage from "../../components/ErrorMessage";
 
-const STATUS_LABELS = ["Open", "Funded", "Submitted", "Completed", "Rejected", "Expired"];
+const STATUS_LABELS = [
+  "Open",
+  "Funded",
+  "Submitted",
+  "Completed",
+  "Rejected",
+  "Expired",
+  "Timeout paid",
+  "Decision pending",
+  "Disputed",
+];
 
 interface Data {
   agents: number;
@@ -48,9 +58,9 @@ export default function AnalyticsPage() {
         getOnchainStats(),
       ]);
 
-      const byStatus = [0, 0, 0, 0, 0, 0];
+      const byStatus = Array.from({ length: STATUS_LABELS.length }, () => 0);
       for (const j of jobs) {
-        if (j.status >= 0 && j.status < 6) byStatus[j.status]++;
+        if (j.status >= 0 && j.status < STATUS_LABELS.length) byStatus[j.status]++;
       }
       const sbtc = jobs.filter((job) => job.currency === "sbtc");
       const stx = jobs.filter((job) => job.currency === "stx");

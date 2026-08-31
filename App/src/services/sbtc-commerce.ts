@@ -8,6 +8,10 @@ import {
 } from "../constants/contract";
 import { SBTC_TOKEN } from "../constants/sbtc";
 import { parseReputationSync } from "./reputation-sync";
+import {
+  parseAutonomousDecision,
+  type AutonomousDecisionState,
+} from "./autonomous-decision";
 
 const CONTRACT_NAME = SBTC_COMMERCE_CONTRACT_NAME;
 export const SBTC_COMMERCE = `${CONTRACT_ADDRESS}.${CONTRACT_NAME}` as `${string}.${string}`;
@@ -42,6 +46,7 @@ export interface SbtcJob {
   client: string;
   provider?: string;
   evaluator: string;
+  appealAuthority?: string;
   description: string;
   budget: number; // sats
   expiredAt: number;
@@ -53,6 +58,7 @@ export interface SbtcJob {
   reputationSyncLastError?: number;
   reputationSyncOutcome?: number;
   escrow?: number; // sats
+  decision?: AutonomousDecisionState;
 }
 
 async function read(functionName: string, functionArgs: any[] = []) {
@@ -76,6 +82,7 @@ export async function getSbtcJob(jobId: number): Promise<SbtcJob | null> {
       client: t.client?.value ?? "",
       provider: t.provider?.value ? t.provider.value.value : undefined,
       evaluator: t.evaluator?.value ?? "",
+      appealAuthority: t["appeal-authority"]?.value ?? undefined,
       description: t.description?.value ?? "",
       budget: Number(t.budget?.value ?? 0),
       expiredAt: Number(t["expired-at"]?.value ?? 0),
@@ -90,6 +97,16 @@ export async function getSbtcJob(jobId: number): Promise<SbtcJob | null> {
     };
   } catch (error) {
     console.error("Error getting sBTC job:", error);
+    return null;
+  }
+}
+
+export async function getSbtcDecision(
+  jobId: number
+): Promise<AutonomousDecisionState | null> {
+  try {
+    return parseAutonomousDecision(await read("get-decision", [Cl.uint(jobId)]));
+  } catch {
     return null;
   }
 }
@@ -235,7 +252,13 @@ async function settlementToken(jobId: number, sats: number) {
 }
 
 async function settleSbtcJob(
-  functionName: "complete-job" | "reject-job" | "expire-job" | "settle-review-timeout",
+  functionName:
+    | "complete-job"
+    | "reject-job"
+    | "expire-job"
+    | "settle-review-timeout"
+    | "finalize-decision"
+    | "settle-appeal-timeout",
   jobId: number,
   sats: number,
   allowZero = false
@@ -246,6 +269,40 @@ async function settleSbtcJob(
     [Cl.uint(jobId), tokenArg(token)],
     settlementOptions(sats, token, allowZero)
   );
+}
+
+export function appealSbtcDecision(jobId: number, evidenceHash: string) {
+  return call("appeal-decision", [
+    Cl.uint(jobId),
+    Cl.bufferFromHex(evidenceHash),
+  ], { postConditionMode: "deny" });
+}
+
+export function finalizeSbtcDecision(jobId: number, sats: number) {
+  return settleSbtcJob("finalize-decision", jobId, sats);
+}
+
+export async function resolveSbtcAppeal(
+  jobId: number,
+  decision: 1 | 2,
+  resolutionHash: string,
+  sats: number
+) {
+  const token = await settlementToken(jobId, sats);
+  return call(
+    "resolve-appeal",
+    [
+      Cl.uint(jobId),
+      Cl.uint(decision),
+      Cl.bufferFromHex(resolutionHash),
+      tokenArg(token),
+    ],
+    settlementOptions(sats, token, false)
+  );
+}
+
+export function settleSbtcAppealTimeout(jobId: number, sats: number) {
+  return settleSbtcJob("settle-appeal-timeout", jobId, sats);
 }
 
 export function completeSbtcJob(jobId: number, sats: number) {

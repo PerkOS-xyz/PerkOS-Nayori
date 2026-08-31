@@ -17,14 +17,18 @@ import { request, isConnected } from "@stacks/connect";
 import { Cl, Pc } from "@stacks/transactions";
 import {
   assignSbtcProvider,
+  appealSbtcDecision,
   completeSbtcJob,
   createSbtcJob,
   expireSbtcJob,
   fundSbtcJob,
+  finalizeSbtcDecision,
   rateSbtcProvider,
   rejectSbtcJob,
+  resolveSbtcAppeal,
   retrySbtcReputationSync,
   settleSbtcReviewTimeout,
+  settleSbtcAppealTimeout,
   setSbtcBudget,
   submitSbtcWork,
 } from "../../services/sbtc-commerce";
@@ -32,6 +36,8 @@ import {
   CommerceJob,
   Currency,
   canOfferRating,
+  appealDeadlineText,
+  autonomousPermissions,
   currencyDescription,
   durationToBlocks,
   expiryText,
@@ -56,14 +62,16 @@ import { useToast } from "../../components/Toast";
 import { sbtcToSats, stxToMicro } from "../../utils/format";
 import {
   AGENTIC_COMMERCE_CONTRACT,
+  NAYORI_EVALUATOR_ADDRESS,
 } from "../../constants/contract";
+import { decisionLabel } from "../../services/autonomous-decision";
 import { NETWORK_NAME } from "../../constants/network";
 import { BRANDED_RATING_MEMO } from "../../constants/brand";
 import { getConnectedStxAddress } from "../../services/wallet";
 
 const AGENTIC_COMMERCE =
   AGENTIC_COMMERCE_CONTRACT as `${string}.${string}`;
-const STATUS_OPTIONS = ["all", "open", "funded", "submitted", "completed", "rejected", "expired", "timeout-paid"] as const;
+const STATUS_OPTIONS = ["all", "open", "funded", "submitted", "decision-pending", "disputed", "completed", "rejected", "expired", "timeout-paid"] as const;
 const STATUS_INDEX: Record<string, number> = {
   open: 0,
   funded: 1,
@@ -72,6 +80,8 @@ const STATUS_INDEX: Record<string, number> = {
   rejected: 4,
   expired: 5,
   "timeout-paid": 6,
+  "decision-pending": 7,
+  disputed: 8,
 };
 const PAGE_SIZE = 20;
 
@@ -95,7 +105,9 @@ function exactEscrow(job: CommerceJob, allowZero = false) {
 type ActionForm =
   | { jobId: number; mode: "budget"; value: string }
   | { jobId: number; mode: "provider"; value: string }
-  | { jobId: number; mode: "deliverable"; value: string };
+  | { jobId: number; mode: "deliverable"; value: string }
+  | { jobId: number; mode: "appeal"; value: string }
+  | { jobId: number; mode: "resolve-approve" | "resolve-reject"; value: string };
 
 type TxProgress = {
   state: "awaiting" | "submitted" | "pending" | "confirmed" | "failed";
@@ -136,7 +148,7 @@ export default function JobsPage() {
   const [txProgress, setTxProgress] = useState<TxProgress | null>(null);
   const [formData, setFormData] = useState({
     description: "",
-    evaluator: "",
+    evaluator: NAYORI_EVALUATOR_ADDRESS,
     provider: "",
     duration: "24",
     durationUnit: "hours" as "hours" | "days",
@@ -450,6 +462,80 @@ export default function JobsPage() {
       "Pay provider after review timeout"
     );
 
+  async function handleAppealDecision(job: CommerceJob) {
+    if (!actionForm || actionForm.mode !== "appeal" || !actionForm.value.trim()) {
+      toast.error("Add an appeal evidence URL, CID or concise reference.");
+      return;
+    }
+    const digest = await sha256Ascii(actionForm.value.trim());
+    await run(
+      () =>
+        isSbtc
+          ? appealSbtcDecision(job.id, digest)
+          : stxCall("appeal-decision", [
+              Cl.uint(job.id),
+              Cl.bufferFromHex(digest),
+            ], { postConditionMode: "deny" }),
+      `appealing-${job.id}`,
+      "Appeal Nayori decision",
+      () => setActionForm(null)
+    );
+  }
+
+  const handleFinalizeDecision = (job: CommerceJob) =>
+    run(
+      () =>
+        isSbtc
+          ? finalizeSbtcDecision(job.id, exactEscrow(job))
+          : stxCall(
+              "finalize-decision",
+              [Cl.uint(job.id)],
+              settlementOptions(job)
+            ),
+      `finalizing-decision-${job.id}`,
+      "Finalize unappealed decision"
+    );
+
+  async function handleResolveAppeal(job: CommerceJob) {
+    if (
+      !actionForm ||
+      (actionForm.mode !== "resolve-approve" && actionForm.mode !== "resolve-reject") ||
+      !actionForm.value.trim()
+    ) {
+      toast.error("Add the human resolution evidence reference.");
+      return;
+    }
+    const decision = actionForm.mode === "resolve-approve" ? 1 : 2;
+    const digest = await sha256Ascii(actionForm.value.trim());
+    await run(
+      () =>
+        isSbtc
+          ? resolveSbtcAppeal(job.id, decision, digest, exactEscrow(job))
+          : stxCall(
+              "resolve-appeal",
+              [Cl.uint(job.id), Cl.uint(decision), Cl.bufferFromHex(digest)],
+              settlementOptions(job)
+            ),
+      `resolving-appeal-${job.id}`,
+      `Resolve appeal: ${decision === 1 ? "approve" : "reject"}`,
+      () => setActionForm(null)
+    );
+  }
+
+  const handleSettleAppealTimeout = (job: CommerceJob) =>
+    run(
+      () =>
+        isSbtc
+          ? settleSbtcAppealTimeout(job.id, exactEscrow(job))
+          : stxCall(
+              "settle-appeal-timeout",
+              [Cl.uint(job.id)],
+              settlementOptions(job)
+            ),
+      `settling-appeal-timeout-${job.id}`,
+      "Finalize original decision after appeal timeout"
+    );
+
   const handleRetryReputation = (job: CommerceJob) =>
     run(
       () =>
@@ -604,8 +690,14 @@ export default function JobsPage() {
                 onChange={(e) => setFormData({ ...formData, evaluator: e.target.value.trim() })}
                 className="field font-mono"
                 placeholder={NETWORK_NAME === "mainnet" ? "SP…" : "ST…"}
+                readOnly={Boolean(NAYORI_EVALUATOR_ADDRESS)}
                 required
               />
+              {NAYORI_EVALUATOR_ADDRESS && (
+                <p className="mt-1 text-xs text-violet-300">
+                  QA pins Nayori as the autonomous evaluator for controlled lifecycle tests.
+                </p>
+              )}
             </div>
             <div>
               <label className="label">Provider (optional)</label>
@@ -673,6 +765,7 @@ export default function JobsPage() {
           {filteredJobs.map((job) => {
             const permissions = jobPermissions(job, address);
             const review = reviewPermissions(job, burnHeight, address);
+            const autonomous = autonomousPermissions(job, burnHeight, address);
             const ratingState = ratingStates[`${job.currency}:${job.id}`];
             const canRate = canOfferRating(
               permissions.canRate,
@@ -688,6 +781,10 @@ export default function JobsPage() {
               permissions.canSubmit ||
               review.canEvaluatorSettle ||
               review.canTimeout ||
+              autonomous.canAppeal ||
+              autonomous.canFinalize ||
+              autonomous.canResolve ||
+              autonomous.canSettleAppealTimeout ||
               canRetryReputation ||
               permissions.canRate ||
               canExpire;
@@ -730,6 +827,39 @@ export default function JobsPage() {
                 {Boolean(job.escrow) && (
                   <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-bitcoin/25 bg-bitcoin/10 px-2.5 py-1 text-xs text-bitcoin-400">
                     <Bitcoin className="h-3.5 w-3.5" /> Escrow locked: <span className="font-mono">{formatJobAmount(job.escrow!, currency)}</span>
+                  </div>
+                )}
+
+                {job.decision && (
+                  <div className="mt-3 rounded-lg border border-violet-500/25 bg-violet-500/[0.06] p-3 text-xs text-mist-300">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                      <span>
+                        Nayori decision: <strong className="text-violet-200">
+                          {decisionLabel(job.decision.originalDecision)}
+                        </strong>
+                      </span>
+                      <span>
+                        Evidence <code className="text-mist-200">{job.decision.evidenceHash.slice(0, 12)}…</code>
+                      </span>
+                      <span>
+                        Explanation <code className="text-mist-200">{job.decision.explanationHash.slice(0, 12)}…</code>
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-mist-400">
+                      {job.status === 7 && (
+                        <span>{appealDeadlineText("Appeal", job.decision.appealDeadline, burnHeight)}</span>
+                      )}
+                      {job.status === 8 && (
+                        <span>{appealDeadlineText("Resolution", job.decision.resolutionDeadline, burnHeight)}</span>
+                      )}
+                      {job.appealAuthority && (
+                        <span>Human authority: <Addr value={job.appealAuthority} /></span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-mist-500">
+                      Recording the decision did not move escrow. Settlement occurs only after the
+                      appeal path reaches a terminal action.
+                    </p>
                   </div>
                 )}
 
@@ -777,6 +907,36 @@ export default function JobsPage() {
                         <p className="mt-2 text-xs text-mist-500">A SHA-256 commitment of this reference will be stored on-chain.</p>
                       </>
                     )}
+                    {actionForm.mode === "appeal" && (
+                      <>
+                        <InlineAction
+                          placeholder="Appeal evidence URL, CID or concise reference"
+                          value={actionForm.value}
+                          onChange={(value) => setActionForm({ ...actionForm, value })}
+                          onSubmit={() => void handleAppealDecision(job)}
+                          onCancel={() => setActionForm(null)}
+                        />
+                        <p className="mt-2 text-xs text-mist-500">
+                          Only its SHA-256 commitment is submitted on-chain.
+                        </p>
+                      </>
+                    )}
+                    {(actionForm.mode === "resolve-approve" ||
+                      actionForm.mode === "resolve-reject") && (
+                      <>
+                        <InlineAction
+                          placeholder="Human resolution evidence URL, CID or reference"
+                          value={actionForm.value}
+                          onChange={(value) => setActionForm({ ...actionForm, value })}
+                          onSubmit={() => void handleResolveAppeal(job)}
+                          onCancel={() => setActionForm(null)}
+                        />
+                        <p className="mt-2 text-xs text-mist-500">
+                          Final direction: {actionForm.mode === "resolve-approve" ? "approve" : "reject"}.
+                          Settlement uses the exact live escrow and pinned recipients.
+                        </p>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -816,6 +976,46 @@ export default function JobsPage() {
                   {review.canTimeout && (
                     <button onClick={() => void handleReviewTimeout(job)} className="btn-sm border border-amber-500/30 text-amber-300 hover:bg-amber-500/10">
                       <Clock3 className="h-3.5 w-3.5" /> Pay provider after timeout
+                    </button>
+                  )}
+                  {autonomous.canAppeal && (
+                    <button
+                      onClick={() => setActionForm({ jobId: job.id, mode: "appeal", value: "" })}
+                      className="btn-sm border border-fuchsia-500/30 text-fuchsia-300 hover:bg-fuchsia-500/10"
+                    >
+                      Appeal decision
+                    </button>
+                  )}
+                  {autonomous.canFinalize && (
+                    <button
+                      onClick={() => void handleFinalizeDecision(job)}
+                      className="btn-sm border border-violet-500/30 text-violet-300 hover:bg-violet-500/10"
+                    >
+                      Finalize decision
+                    </button>
+                  )}
+                  {autonomous.canResolve && (
+                    <>
+                      <button
+                        onClick={() => setActionForm({ jobId: job.id, mode: "resolve-approve", value: "" })}
+                        className="btn-sm border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
+                      >
+                        Resolve: approve
+                      </button>
+                      <button
+                        onClick={() => setActionForm({ jobId: job.id, mode: "resolve-reject", value: "" })}
+                        className="btn-sm border border-red-500/30 text-red-300 hover:bg-red-500/10"
+                      >
+                        Resolve: reject
+                      </button>
+                    </>
+                  )}
+                  {autonomous.canSettleAppealTimeout && (
+                    <button
+                      onClick={() => void handleSettleAppealTimeout(job)}
+                      className="btn-sm border border-amber-500/30 text-amber-300 hover:bg-amber-500/10"
+                    >
+                      <Clock3 className="h-3.5 w-3.5" /> Finalize after appeal timeout
                     </button>
                   )}
                   {canRetryReputation && (

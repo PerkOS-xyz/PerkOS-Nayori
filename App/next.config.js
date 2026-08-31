@@ -6,6 +6,17 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   // This repository intentionally has separate lockfiles for contracts and the app.
   outputFileTracingRoot: __dirname,
+  async headers() {
+    if (process.env.NEXT_PUBLIC_RELEASE_CHANNEL !== "qa") return [];
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+        ],
+      },
+    ];
+  },
   webpack: (config) => {
     // @stacks/connect pulls in WalletConnect/pino, which optionally requires
     // pino-pretty (and others) that aren't needed in the browser bundle.
