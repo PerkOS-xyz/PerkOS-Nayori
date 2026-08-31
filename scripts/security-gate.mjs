@@ -50,6 +50,7 @@ forbidPattern(
 
 const versionedEscrowTestnetDeploy = "scripts/deploy-versioned-escrow-testnet.mjs";
 const versionedEscrowTestnetE2e = "scripts/e2e-versioned-escrow-testnet.mjs";
+const versionedEscrowMainnetDeploy = "scripts/deploy-versioned-escrow-mainnet.mjs";
 const reviewWindowCandidate = [
   "contracts/agentic-commerce-v4.clar",
   "contracts/sbtc-commerce-v3.clar",
@@ -95,6 +96,62 @@ forbidPattern(
   /STACKS_MAINNET|PostConditionMode\.Allow/,
   "the testnet-only candidate must have no mainnet or allow-mode path",
 );
+requirePattern(
+  versionedEscrowMainnetDeploy,
+  /process\.env\.STACKS_NETWORK\s*!==\s*["']mainnet["']/,
+  "the mainnet promoter must require an explicit mainnet network",
+);
+requirePattern(
+  versionedEscrowMainnetDeploy,
+  /VERSIONED_ESCROW_MAINNET_ACTION\s*\|\|\s*["']preflight["']/,
+  "the mainnet promoter must default to signer-free preflight",
+);
+requirePattern(
+  versionedEscrowMainnetDeploy,
+  /CONFIRM_VERSIONED_ESCROW_MAINNET_DEPLOY\s*!==[\s\S]*?["']deploy-v4-v3-mainnet["']/,
+  "the mainnet promoter requires its release-specific typed confirmation",
+);
+requirePattern(
+  versionedEscrowMainnetDeploy,
+  /CONFIRM_VERSIONED_ESCROW_MAINNET_DEPLOYER\s*!==\s*EXPECTED_DEPLOYER/,
+  "the mainnet promoter requires the exact deployer confirmation",
+);
+requirePattern(
+  versionedEscrowMainnetDeploy,
+  /EXPECTED_SOURCE_HASHES[\s\S]*?createHash\(["']sha256["']\)[\s\S]*?digest\(["']hex["']\)/,
+  "the mainnet promoter must verify frozen source hashes before signing",
+);
+requirePattern(
+  versionedEscrowMainnetDeploy,
+  /postConditionMode:\s*PostConditionMode\.Deny/,
+  "the mainnet promoter must use deny-mode post conditions",
+);
+requirePattern(
+  versionedEscrowMainnetDeploy,
+  /name:\s*["']sip-010-trait["'][\s\S]*?name:\s*["']reputation-registry-v3["'][\s\S]*?name:\s*["']agentic-commerce-v4["'][\s\S]*?name:\s*["']sbtc-commerce-v3["']/,
+  "the mainnet promoter must select only the frozen v4/v3 dependency order",
+);
+forbidPattern(
+  versionedEscrowMainnetDeploy,
+  /STACKS_TESTNET|PostConditionMode\.Allow|randomPrivateKey/,
+  "the mainnet promoter may not expose testnet, allow mode or ephemeral signers",
+);
+{
+  const contents = source(versionedEscrowMainnetDeploy);
+  const confirmation = contents.indexOf(
+    "CONFIRM_VERSIONED_ESCROW_MAINNET_DEPLOY !=="
+  );
+  const credentialRead = contents.indexOf("readFileSync(ENV_PATH");
+  if (
+    confirmation < 0 ||
+    credentialRead < 0 ||
+    confirmation > credentialRead
+  ) {
+    failures.push(
+      `${versionedEscrowMainnetDeploy}: typed confirmation must precede credential reads`
+    );
+  }
+}
 requirePattern(
   versionedEscrowTestnetE2e,
   /process\.env\.STACKS_NETWORK\s*!==\s*["']testnet["']/,
