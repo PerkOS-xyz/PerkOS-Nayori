@@ -51,6 +51,7 @@ forbidPattern(
 const versionedEscrowTestnetDeploy = "scripts/deploy-versioned-escrow-testnet.mjs";
 const versionedEscrowTestnetE2e = "scripts/e2e-versioned-escrow-testnet.mjs";
 const versionedEscrowMainnetDeploy = "scripts/deploy-versioned-escrow-mainnet.mjs";
+const versionedEscrowMainnetE2e = "scripts/e2e-versioned-escrow-mainnet.mjs";
 const reviewWindowCandidate = [
   "contracts/agentic-commerce-v4.clar",
   "contracts/sbtc-commerce-v3.clar",
@@ -149,6 +150,67 @@ forbidPattern(
   ) {
     failures.push(
       `${versionedEscrowMainnetDeploy}: typed confirmation must precede credential reads`
+    );
+  }
+}
+requirePattern(
+  versionedEscrowMainnetE2e,
+  /process\.env\.STACKS_NETWORK\s*!==\s*["']mainnet["']/,
+  "the mainnet E2E must require explicit mainnet",
+);
+requirePattern(
+  versionedEscrowMainnetE2e,
+  /VERSIONED_ESCROW_MAINNET_E2E_ACTION\s*\|\|\s*["']preflight["']/,
+  "the mainnet E2E must default to signer-free preflight",
+);
+requirePattern(
+  versionedEscrowMainnetE2e,
+  /CONFIRM_VERSIONED_ESCROW_MAINNET_E2E\s*!==[\s\S]*?["']execute-100-sats-mainnet["']/,
+  "the mainnet E2E requires its amount-specific typed confirmation",
+);
+requirePattern(
+  versionedEscrowMainnetE2e,
+  /const BUDGET = 100n/,
+  "the mainnet smoke amount must remain fixed at 100 atomic sBTC units",
+);
+requirePattern(
+  versionedEscrowMainnetE2e,
+  /Pc\.principal\(CLIENT\)\.willSendEq\(BUDGET\)\.ft\(SBTC, SBTC_ASSET_NAME\)[\s\S]*?Pc\.principal\(ESCROW_CONTRACT\)[\s\S]*?willSendEq\(BUDGET\)[\s\S]*?\.ft\(SBTC, SBTC_ASSET_NAME\)/,
+  "the mainnet E2E must bind exact client funding and escrow payout",
+);
+requirePattern(
+  versionedEscrowMainnetE2e,
+  /postConditionMode:\s*PostConditionMode\.Deny/,
+  "the mainnet E2E must fail closed",
+);
+requirePattern(
+  versionedEscrowMainnetE2e,
+  /VERSIONED_ESCROW_MAINNET_ACTOR_ENV_PATH[\s\S]*?mode:\s*0o600[\s\S]*?flag:\s*["']wx["']/,
+  "mainnet actor recovery keys must use an exclusive external 0600 file",
+);
+requirePattern(
+  versionedEscrowMainnetE2e,
+  /classification:\s*["']internal-team-operated-not-m2-adoption["']/,
+  "the receipt must classify the smoke test as internal and ineligible for M2 adoption",
+);
+forbidPattern(
+  versionedEscrowMainnetE2e,
+  /STACKS_TESTNET|PostConditionMode\.Allow|output\.(providerKey|evaluatorKey)|actors:\s*\{[^}]*Key/,
+  "the mainnet E2E may not expose testnet, allow mode or actor secrets",
+);
+{
+  const contents = source(versionedEscrowMainnetE2e);
+  const confirmation = contents.indexOf(
+    "CONFIRM_VERSIONED_ESCROW_MAINNET_E2E !=="
+  );
+  const credentialRead = contents.indexOf("parseEnv(ENV_PATH");
+  if (
+    confirmation < 0 ||
+    credentialRead < 0 ||
+    confirmation > credentialRead
+  ) {
+    failures.push(
+      `${versionedEscrowMainnetE2e}: typed confirmation must precede signer reads`
     );
   }
 }
