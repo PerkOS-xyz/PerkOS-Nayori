@@ -20,6 +20,6 @@ describe('versioned public references', () => {
       'utf8',
     );
     expect(overview).not.toMatch(/\b(?:M1|M2|Milestone\s*[12])\b/i);
-    expect(overview).toContain('SDK 0.5.1 · Public');
+    expect(overview).toContain('SDK 0.6.0 · Public');
   });
 });

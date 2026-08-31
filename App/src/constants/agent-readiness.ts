@@ -109,7 +109,7 @@ Use this skill when a PaymentAuth-compatible agent needs Nayori's paid capabilit
 
 1. Send GET to [the MPP resource](${SITE_ORIGIN}/api/mpp/v1) and parse its WWW-Authenticate: Payment challenge plus the body extension containing the signed Nayori quote.
 2. Confirm method=usdc, intent=charge, methodDetails.type=stacks, the Stacks testnet network, USDCx asset, amount, recipient and expiry.
-3. Use @perkos/agent-sdk 0.5.0 or later to construct the unsigned transaction. Have Leather or the approved custody signer review and sign it without broadcasting from the wallet.
+3. Use @perkos/agent-sdk 0.6.0 or later to construct the unsigned transaction. Have Leather or the approved custody signer review and sign it without broadcasting from the wallet.
 4. Encode the credential and retry GET with Payment-Authorization: Payment ... plus X-NAYORI-SIGNED-QUOTE. Do not replace an unrelated OAuth Authorization: Bearer header.
 5. Treat 202 as pending. Follow Location after Retry-After until a 200 response includes Payment-Receipt.
 
