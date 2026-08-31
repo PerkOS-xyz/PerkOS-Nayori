@@ -42,7 +42,7 @@ one service:
 | --- | --- |
 | On-chain network | Stacks mainnet for identity, STX escrow, sBTC escrow and reputation |
 | Mainnet contracts | Six current contracts under `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` |
-| Agent SDK | `@perkos/agent-sdk@0.5.0`, public on npm |
+| Agent SDK | `@perkos/agent-sdk@0.5.1`, public on npm |
 | Browser wallet | Leather through Stacks Connect; wallet remains the signing boundary |
 | Headless agents | Policy-constrained signer interface for KMS/HSM/secret-manager integrations |
 | x402 | Live same-origin STX testnet resource; SDK profiles for STX, sBTC and USDCx |
@@ -647,7 +647,7 @@ Testnet transactions and team-operated activity are not presented as external ma
 - The SDK and hosted settlement boundary have not yet completed the planned external review.
 - x402/MPP facilitator settlement is intentionally testnet-only.
 - Sponsorship is disabled.
-- The controlled MPP Leather economic proof still requires testnet USDCx funding.
+- The controlled MPP economic proof is complete; broader external-wallet validation is still pending.
 - Partner registration is controlled and not an open public onboarding surface.
 - The automatic paid delivery is a fixed Nayori capability report, not an arbitrary merchant URL.
 - A signed receipt is final at configured confirmation depth; automatic deep-reorganization

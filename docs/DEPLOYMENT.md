@@ -307,7 +307,7 @@ The web route `nayori.ai/api/mpp/v1` is an independent GET/OPTIONS proxy to
 Enable `MPP_RESOURCE_ENABLED=true` only on the API resource-server runtime after provisioning the
 `MPP_RESOURCE_ROUTE_ID` merchant route as USDCx on Stacks testnet. Keep the flag false on the
 facilitator runtime. The resource server fails closed if that route returns any asset other than
-USDCx. Both runtime roles pin the public `@perkos/agent-sdk@0.5.0` verifier.
+USDCx. Both runtime roles pin the public `@perkos/agent-sdk@0.5.1` verifier.
 
 Promotion order remains facilitator, API resource server, then web. Validate that:
 

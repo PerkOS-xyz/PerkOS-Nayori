@@ -6,8 +6,12 @@ import manifest from '../openapi/manifest.json';
 describe('versioned public references', () => {
   it('pins the canonical Nayori API origin and schema version', () => {
     expect(schema.openapi).toBe('3.1.0');
+    expect(schema.info.version).toBe('0.7.2');
     expect(schema.info.version).toBe(manifest.apiVersion);
     expect(schema.servers[0]?.url).toBe('https://api.nayori.ai');
+    expect(
+      schema.paths['/mpp/v1']?.get['x-payment-info'].offers[0]?.currency,
+    ).toBe('ST2WK9SGBJ15RHZ33KK0KYVSXBEBHM1XDM8C96EC4.usdcx::usdcx-token');
   });
 
   it('keeps public milestone language out of the developer overview', () => {
@@ -16,5 +20,6 @@ describe('versioned public references', () => {
       'utf8',
     );
     expect(overview).not.toMatch(/\b(?:M1|M2|Milestone\s*[12])\b/i);
+    expect(overview).toContain('SDK 0.5.1 · Public');
   });
 });
