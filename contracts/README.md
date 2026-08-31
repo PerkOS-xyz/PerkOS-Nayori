@@ -4,14 +4,15 @@ Clarity smart contracts for PerkOS Stacks Agentic Commerce.
 
 ## Overview
 
-Four core contracts providing agent identity, job escrow, reputation, and validation on Stacks.
+Contracts providing agent identity, job escrow, reputation, validation and SIP-010 settlement on
+Stacks. Clarity contracts are immutable, so historical generations remain queryable alongside the
+active versioned release.
 
-## Versioned escrow security candidate — not deployed
+## Active versioned escrow release
 
-The current mainnet contracts and historical evidence below remain authoritative. Three additional
-contracts are present for local review and a controlled testnet release candidate:
+The current production generation is:
 
-| Candidate | Purpose |
+| Contract | Purpose |
 | --- | --- |
 | `reputation-registry-v3.clar` | Idempotent outcomes and ratings namespaced by protocol source and job ID |
 | `agentic-commerce-v4.clar` | STX escrow with a fixed 12-burn-block review window and durable reputation retry |
@@ -28,12 +29,20 @@ commerce contract and can be retried by any principal after the registry authori
 Ownership changes use propose/accept, and sBTC jobs retain the token principal pinned at funding
 even if the default token for future jobs changes.
 
-The 12-block candidate has **no public-network address yet**. The earlier immutable
-`agentic-commerce-v3` and `sbtc-commerce-v2` testnet generation remains in the repository at 144
-blocks as historical evidence. Run the full local suite with `npm test`. A
-future testnet deployment must use the guarded, source-aware
-`npm run deploy:versioned:testnet` command documented in `docs/DEPLOYMENT.md`; the script contains
-no mainnet path.
+The active generation is deployed under mainnet principal
+`SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`: `reputation-registry-v3` at block 8885885,
+`agentic-commerce-v4` at block 8885887 and `sbtc-commerce-v3` at block 8885890. Canonical sBTC and
+both reputation allowlists confirmed in blocks 8885893–8885898. All sources match the repository.
+
+One guarded internal mainnet sBTC job then passed 26/26 checks for exactly 100 atomic units. Job
+`u1` ended completed (`u3`) with escrow zero, exact payout, synchronized reputation and persisted
+rating. This is team-operated release evidence, not external M2 adoption or revenue.
+
+The same source generation is deployed on testnet under
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`. The earlier immutable `agentic-commerce-v3` and
+`sbtc-commerce-v2` testnet generation remains at 144 blocks as historical evidence. Run the full
+local suite with `npm test`; use only the guarded, source-aware commands documented in
+`docs/DEPLOYMENT.md`.
 
 ## Contract Addresses
 
@@ -71,7 +80,7 @@ Reputation protocol-caller wiring: [`0118385d…`](https://explorer.hiro.so/txid
 Deployed with [`scripts/deploy-testnet.mjs`](../scripts/deploy-testnet.mjs) (Stacks.js, reads the
 gitignored `.env`).
 
-### Mainnet — deployed ✅
+### Mainnet — historical original generation
 
 Deployer `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` (PerkOS wallet). All four contracts are live on
 Stacks mainnet; the commerce contract is registered as a reputation protocol-caller.
@@ -112,7 +121,7 @@ canonical sBTC contract for the network, and every escrow call validates the tok
 
 `mock-sbtc-token.clar` exists only for simnet tests and is never deployed to a public network.
 
-### sBTC stack on mainnet — deployed ✅
+### sBTC stack on mainnet — historical M1 generation
 
 Deployer `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` (PerkOS wallet), which is also the contract owner.
 

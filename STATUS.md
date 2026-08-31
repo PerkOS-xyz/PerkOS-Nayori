@@ -1,15 +1,14 @@
 # PerkOS Stacks Agentic Commerce — Project Status
 
-Last verified: 2026-08-30
+Last verified: 2026-08-31
 
 ## Current status
 
 **Live on Stacks mainnet.**
 
 - Production app: [nayori.ai](https://nayori.ai)
-- Developer portal candidate: independent `developer-portal/` application with self-hosted search, generated
-  OpenAPI reference and complete SDK/commerce onboarding. It replaces the temporary
-  `docs.nayori.ai` Web alias only after merge and VPS preview validation.
+- Developer portal: [docs.nayori.ai](https://docs.nayori.ai), an independent application with
+  self-hosted search, generated OpenAPI reference and complete SDK/commerce onboarding.
 - Partner API: [api.nayori.ai](https://api.nayori.ai) (invite-only testnet settlement)
 - Public x402 resource and confirmed testnet proof: [nayori.ai/api/v1](https://nayori.ai/api/v1)
 - Public MPP PaymentAuth USDCx resource:
@@ -23,36 +22,34 @@ Last verified: 2026-08-30
 - Contract sources: exact match with the reviewed repository sources
 - Contract tests: 100 passing (77 current-contract regressions plus 23 versioned-candidate tests)
 
-### Testnet security candidate
+### Active versioned escrow release
 
-`reputation-registry-v3`, `agentic-commerce-v4` and `sbtc-commerce-v3` are the current source-level
-review candidate. The v4/v3 escrow contracts use a fixed 12 Bitcoin burn-block review window and
-are deployed **only on Stacks testnet** under
-`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`. Production and the application defaults are
-unchanged.
+`reputation-registry-v3`, `agentic-commerce-v4` and `sbtc-commerce-v3` are the active mainnet
+generation. The escrow contracts use a fixed 12 Bitcoin burn-block review window, terminal timeout
+payout, durable reputation retry and two-step ownership. sBTC funding pins the exact SIP-010 token
+to each job.
 
-The exact PR #95 merge `b15544d601bd4e49610be854f7ad33a0af90c0a7` passed the security gate
-and 100/100 tests before the testnet deployment. `agentic-commerce-v4` and `sbtc-commerce-v3`
-confirmed at blocks 209312 and 209314; official PoX-5 sBTC configuration and reputation caller
-authorization confirmed at blocks 209316–209320. Controlled complete paths pass 27/27 for STX and
+The generation first passed on Stacks testnet under
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`: controlled complete paths pass 27/27 for STX and
 30/30 for sBTC. The real-timeout sBTC job `u2` passed preparation 20/20, settlement 12/12 and
 separate public-state verification 10/10. It settled after the deadline at burn `11290` in tx
 `0x06537111ef6c75d3c5d750154f97a3b4a0c233a84639583f7af18b2386915bb9`, block `214365`, with
 terminal state `u6`, zero escrow, one exact 1,000-atomic-unit sBTC payout and no completion,
 reputation or rating credit. The public evidence is in `docs/TESTNET_SECURITY_EVIDENCE.md`.
 
-The earlier immutable `agentic-commerce-v3` and `sbtc-commerce-v2` generation remains deployed
-only on testnet under `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`. Its STX and official PoX-5
-sBTC complete paths passed their controlled assertions; its 144-block timeout job remains
-historical evidence and is not M2 adoption.
+The frozen sources were promoted to mainnet from exact merge `670d23a`; deployment and wiring
+confirmed in blocks 8885885–8885898. Exact merge `8782e54` then passed the security gate, 100/100
+tests and signer-free preflight before a guarded internal 100-atomic-sBTC job passed 26/26. Job
+`u1` is completed (`u3`), escrow is zero, payout is exact, reputation synchronization succeeded
+and the client rating is persisted. A later signer-free read independently reconfirmed the final
+state. Team-operated deployment/smoke actors are not M2 adoption, non-team wallets or revenue.
 
-The current candidate preserves evaluator authority through the exact deadline, permissionless
-provider payout after the deadline, a
-non-completion `u6` timeout state, durable retryable reputation synchronization, protocol/job
-namespacing, sBTC token pinning per funded job and two-step ownership transfer. The web can select
-the candidate only through explicit testnet preview variables. Candidate Web settlement reads the
-live escrow and job-pinned sBTC token before opening the wallet, while zero-balance open expiry
-uses no transfer post-condition.
+The release preserves evaluator authority through the exact deadline, permissionless provider
+payout after the deadline, a non-completion `u6` timeout state, durable retryable reputation
+synchronization, protocol/job namespacing, sBTC token pinning per funded job and two-step ownership
+transfer. Web settlement reads the live escrow and job-pinned sBTC token before opening the wallet,
+while zero-balance open expiry uses no transfer post-condition. The earlier immutable v3/v2
+testnet generation and the prior mainnet generation remain historical evidence.
 
 ## Mainnet contracts
 
@@ -61,22 +58,21 @@ uses no transfer post-condition.
 | Agent identity | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agent-registry` |
 | Validation | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.validation-registry` |
 | SIP-010 trait | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sip-010-trait` |
-| Reputation | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.reputation-registry-v2` |
-| STX escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v2` |
-| sBTC escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce` |
+| Reputation | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.reputation-registry-v3` |
+| STX escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v4` |
+| sBTC escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v3` |
 
-The production application uses `agentic-commerce-v2` for STX jobs. No legacy STX
-contract is part of the current product deployment.
+The prior v2/v2 generation remains immutable M1 evidence but is not the default for new jobs.
 
 ## Verified wiring
 
-- `sbtc-commerce` accepts only canonical mainnet sBTC:
+- `sbtc-commerce-v3` accepts only canonical mainnet sBTC:
   `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`.
-- `agentic-commerce-v2` and `sbtc-commerce` are authorized callers of
-  `reputation-registry-v2`.
+- `agentic-commerce-v4` and `sbtc-commerce-v3` are authorized callers of
+  `reputation-registry-v3`.
 - The four stateful contracts that expose `get-owner` are owned by the mainnet deployer.
-- Production hosting configuration explicitly selects mainnet, the deployer address and
-  `agentic-commerce-v2`; the existing Vercel deployment remains available as a rollback path.
+- Production build configuration explicitly selects mainnet, the deployer address and the
+  versioned v4/v3/v3 generation; the existing Vercel deployment remains a rollback path.
 - The public API validates wallet-linked OAuth tokens issued independently by `oauth.nayori.ai`,
   plus short-lived scopes, MCP, quotes,
   payment verification, one testnet broadcast, confirmation reconciliation and a delivery ledger
@@ -119,15 +115,16 @@ npm run verify:mainnet
 
 ## Milestone status
 
-- Milestone 1 is approved and complete. The current STX and sBTC contracts remain unchanged.
+- Milestone 1 is approved and complete. Its contracts and transaction evidence remain unchanged;
+  the active generation is documented as a later security and liveness improvement.
 - Milestone 2 is in progress in the independent `PerkOS-Nayori-Agent-SDK` repository. The public
-  `@perkos/agent-sdk@0.5.0` package, signer adapters, testnet lifecycle, x402 v2 foundation and MPP
+  `@perkos/agent-sdk@0.5.1` package, signer adapters, testnet lifecycle, x402 v2 foundation and MPP
   PaymentAuth USDCx profile are available.
 - The invite-only API adds wallet-linked OAuth and authenticated MCP to the testnet confirmation
   and delivery-ledger path. OAuth authorizes API access but cannot sign a payment.
 - The live x402 route supports the confirmed STX testnet proof. The distinct live MPP
-  `usdc/charge/stacks` route accepts USDCx without changing M1 contracts; its controlled Leather
-  economic proof remains pending testnet USDCx funding.
+  `usdc/charge/stacks` route accepts USDCx without changing escrow contracts; its controlled
+  economic proof is complete and remains internal release evidence rather than adoption/revenue.
 - The current production agent-readiness score is **100/100, Level 5 (Agent-Native)**. DNSSEC,
   DNS-AID, external OAuth, MCP, agent discovery and x402 are live; MPP is an interoperability and
   revenue expansion rather than a score workaround.
@@ -138,8 +135,8 @@ npm run verify:mainnet
 
 ## Next product work
 
-1. Complete the independent external review against the frozen testnet anchors and resolve or
-   formally mitigate every Critical/High finding before any mainnet contract activation.
+1. Complete the independent external review against the frozen source anchors and resolve or
+   formally mitigate every Critical/High finding before broad public onboarding.
 2. Complete the recorded SDK demo and mainnet/non-team adoption requirements for M2.
 3. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.
 4. Add operational alerts for failed Chainhook delivery and unusual escrow activity.

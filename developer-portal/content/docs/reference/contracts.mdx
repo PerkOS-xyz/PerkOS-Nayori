@@ -15,41 +15,40 @@ Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 | Agent identity | `agent-registry` |
 | Capability validation | `validation-registry` |
 | SIP-010 interface | `sip-010-trait` |
-| Job-linked reputation | `reputation-registry-v2` |
-| STX escrow | `agentic-commerce-v2` |
-| sBTC escrow | `sbtc-commerce` |
+| Job-linked reputation | `reputation-registry-v3` |
+| STX escrow | `agentic-commerce-v4` |
+| sBTC escrow | `sbtc-commerce-v3` |
 
-The STX product path uses only `agentic-commerce-v2`. The sBTC contract accepts the canonical
-mainnet token `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`.
+The active sBTC contract accepts the canonical mainnet token
+`SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`. Both commerce contracts use a fixed
+12 Bitcoin burn-block review window and write source-namespaced outcomes to reputation v3.
 
-## Versioned review candidate
+## Versioned security release
 
 <StatusRow>
-  <StatusBadge tone="testnet">Deployed on testnet</StatusBadge>
+  <StatusBadge tone="mainnet">Active on mainnet</StatusBadge>
   <StatusBadge tone="public">Source verified</StatusBadge>
 </StatusRow>
 
-The public repository also contains the current source candidate `reputation-registry-v3`,
-`agentic-commerce-v4` and `sbtc-commerce-v3`. The v4/v3 escrow names are deployed only on testnet
-under `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5` and are not used by the production application.
-They add a fixed 12 Bitcoin burn-block evaluator
-window, a separate timeout-paid state, retryable reputation synchronization, source/job
+`reputation-registry-v3`, `agentic-commerce-v4` and `sbtc-commerce-v3` are deployed under the
+mainnet deployer above and selected by the application. They add a fixed 12 Bitcoin burn-block
+evaluator window, a separate timeout-paid state, retryable reputation synchronization, source/job
 namespacing, per-job sBTC token pinning and two-step ownership.
 
-The earlier immutable `agentic-commerce-v3` and `sbtc-commerce-v2` contracts remain testnet-only
-at 144 blocks as historical evidence.
+All reviewed sources match on-chain byte-for-byte. The mainnet deploy/configuration transactions
+confirmed in blocks 8885885–8885898. A guarded internal smoke then exercised one complete
+100-atomic-sBTC job: 26/26 checks passed, with terminal state `u3`, zero escrow, exact payout,
+successful reputation synchronization and a persisted rating.
 
-Exact merge `b15544d601bd4e49610be854f7ad33a0af90c0a7` produced the current deployment.
-`agentic-commerce-v4` and `sbtc-commerce-v3` confirmed at blocks 209312 and 209314; STX complete
-passes 27/27 and official PoX-5 sBTC complete passes 30/30. The real-timeout job `u2` passes
-preparation 20/20, settlement 12/12 and public-state verification 10/10. It settled at burn `11290`
-in [tx `0x06537111…15bb9`](https://explorer.hiro.so/txid/0x06537111ef6c75d3c5d750154f97a3b4a0c233a84639583f7af18b2386915bb9?chain=testnet),
-ending in `u6` with zero escrow, one exact 1,000-atomic-unit sBTC payout and no completion,
-reputation or rating credit.
+The same source generation remains verifiable on testnet under
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`. Its STX and official PoX-5 sBTC complete paths pass,
+and the real-timeout job `u2` settled in state `u6` with zero escrow, one exact payout and no
+completion, reputation or rating credit. The earlier immutable `agentic-commerce-v3` and
+`sbtc-commerce-v2` contracts remain testnet-only at 144 blocks as historical evidence.
 
-This documentation distinguishes testnet evidence from production activation. Construct candidate
-transactions only against the source-verified testnet deployer and only when the integration
-environment explicitly selects the v4/v3 names.
+The prior `agentic-commerce-v2`, `sbtc-commerce` and `reputation-registry-v2` mainnet generation is
+preserved as historical release evidence. It is not the default for new jobs. Internal deployment and
+smoke actors are release evidence, not external adoption, non-team usage or revenue.
 
 ## Verification
 
@@ -69,4 +68,4 @@ reputation callers. It requires no wallet or deployer key.
 
 [Inspect the deployer and contracts on Hiro Explorer](https://explorer.hiro.so/address/SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH?chain=mainnet).
 
-[Inspect the 12-block candidate on Hiro Explorer](https://explorer.hiro.so/address/ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5?chain=testnet).
+[Inspect the testnet deployment on Hiro Explorer](https://explorer.hiro.so/address/ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5?chain=testnet).

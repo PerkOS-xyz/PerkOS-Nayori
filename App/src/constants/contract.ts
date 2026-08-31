@@ -7,11 +7,11 @@ export const CONTRACT_ADDRESS =
   process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
   (NETWORK_NAME === "mainnet" ? MAINNET_DEPLOYER : TESTNET_DEPLOYER);
 export const STX_COMMERCE_CONTRACT_NAME =
-  process.env.NEXT_PUBLIC_STX_COMMERCE_CONTRACT || "agentic-commerce-v2";
+  process.env.NEXT_PUBLIC_STX_COMMERCE_CONTRACT || "agentic-commerce-v4";
 export const SBTC_COMMERCE_CONTRACT_NAME =
-  process.env.NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT || "sbtc-commerce";
+  process.env.NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT || "sbtc-commerce-v3";
 export const REPUTATION_CONTRACT_NAME =
-  process.env.NEXT_PUBLIC_REPUTATION_CONTRACT || "reputation-registry-v2";
+  process.env.NEXT_PUBLIC_REPUTATION_CONTRACT || "reputation-registry-v3";
 
 const prefixMatches =
   (NETWORK_NAME === "mainnet" && CONTRACT_ADDRESS.startsWith("SP")) ||

@@ -14,15 +14,15 @@ The current product stack contains:
 - `agent-registry`
 - `validation-registry`
 - `sip-010-trait`
-- `reputation-registry-v2`
-- `agentic-commerce-v2` for STX escrow
-- `sbtc-commerce` for sBTC escrow
+- `reputation-registry-v3`
+- `agentic-commerce-v4` for STX escrow
+- `sbtc-commerce-v3` for sBTC escrow
 
-Legacy STX contract names are intentionally excluded.
+The prior v2/v2 generation remains immutable historical evidence and is not selected for new jobs.
 
-## Mainnet deployment
+## Historical bootstrap deployment
 
-The deployment command is guarded, source-aware and resumable. It skips an existing
+The original bootstrap command is guarded, source-aware and resumable. It skips an existing
 contract only when its on-chain source exactly matches the reviewed local source. It
 aborts if a contract name already contains different code.
 
@@ -48,7 +48,7 @@ The script:
 3. checks the available STX balance and maximum configured fees;
 4. deploys only missing current contracts, one confirmation at a time;
 5. configures canonical mainnet sBTC; and
-6. authorizes both escrow contracts on `reputation-registry-v2`.
+6. authorizes both historical escrow contracts on `reputation-registry-v2`.
 
 A secret-free receipt is written to `/tmp/perkos-mainnet-promotion.json`.
 
@@ -64,15 +64,15 @@ This compares all deployed source code, verifies exposed owners, confirms the ca
 sBTC token and both reputation allowlist entries, and reads the current agent and job
 counts.
 
-## Versioned escrow candidate — testnet only
+## Active versioned escrow release
 
 The repository includes `reputation-registry-v3`, `agentic-commerce-v4` and `sbtc-commerce-v3` as
-the current isolated 12-block security-review candidate. v4/v3 are deployed only on Stacks testnet
-under `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5` from exact merge
-`b15544d601bd4e49610be854f7ad33a0af90c0a7`.
+the active 12-block generation. It was first deployed on Stacks testnet under
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5` from exact merge
+`b15544d601bd4e49610be854f7ad33a0af90c0a7`, then promoted on mainnet from exact merge
+`670d23abe78051cfb3963228650fed5089d6827c`.
 The earlier immutable v3/v2 generation remains deployed only on testnet at 144 blocks as
-historical evidence. Production remains on the contracts listed above. The
-candidate deployment script has no mainnet code path and refuses to read credentials unless the
+historical evidence. The testnet deployment script has no mainnet code path and refuses to read credentials unless the
 network and confirmation are both explicit.
 
 The active PoX-5 testnet sBTC principal is
@@ -95,8 +95,8 @@ Verified v4/v3 testnet evidence on 2026-08-30:
 
 These controlled testnet identities never count as external M2 adoption.
 The complete frozen anchor and digest set is documented in
-[`TESTNET_SECURITY_EVIDENCE.md`](TESTNET_SECURITY_EVIDENCE.md). It is test evidence awaiting an
-independent review, not an audit opinion or mainnet release approval.
+[`TESTNET_SECURITY_EVIDENCE.md`](TESTNET_SECURITY_EVIDENCE.md). It is reproducible security
+evidence, not an independent audit opinion.
 
 Keep the reviewed testnet deployer's signer file outside Git, then run only after the local test and
 security gates pass:
@@ -160,7 +160,7 @@ timeout settlement checks the current Bitcoin height before signing, binds the e
 outflow, requires terminal state `u6` and verifies that escrow is zero. Never count these internal
 testnet actors or jobs toward M2 adoption.
 
-Only after that receipt and independent source checks exist may a branch-scoped preview select:
+The corresponding testnet preview selects:
 
 ```env
 NEXT_PUBLIC_STACKS_NETWORK=testnet
@@ -169,9 +169,8 @@ NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v3
 NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3
 ```
 
-Do not copy these names into production before the phased promotion completes. The separately
-guarded mainnet promoter defaults to a signer-free preflight and leaves all Web/SDK/API production
-variables unchanged:
+The separately guarded mainnet promoter defaults to a signer-free preflight and leaves all
+Web/SDK/API variables unchanged:
 
 ```bash
 npm run preflight:versioned:mainnet
@@ -193,7 +192,7 @@ npm run deploy:versioned:mainnet
 The promoter refuses source drift and pending deployer transactions, submits one deny-mode
 transaction at a time, verifies every `(ok ...)` result, configures canonical mainnet sBTC,
 authorizes both commerce contracts in `reputation-registry-v3`, and verifies initial zero job
-counts. It writes a secret-free receipt outside Git. Deployment alone does not switch production;
+counts. It writes a secret-free receipt outside Git. Deployment alone does not switch consumers;
 Web, SDK and API configuration are promoted separately after independent verification and a
 minimal-value mainnet smoke test.
 
@@ -225,8 +224,9 @@ npm run e2e:versioned:mainnet
 ```
 
 The required terminal invariants are status `u3`, escrow zero, an exact 100-unit provider payout,
-successful reputation synchronization and one persisted client rating. This controlled workflow
-is internal operational evidence and is never external M2 adoption or revenue.
+successful reputation synchronization and one persisted client rating. This workflow passed
+26/26 on 2026-08-31 for job `u1`; an independent signer-free read reconfirmed the terminal state.
+It is internal operational evidence and is never external M2 adoption or revenue.
 
 ## Frontend production variables
 
@@ -235,7 +235,9 @@ Configure these values in the target production build environment:
 ```env
 NEXT_PUBLIC_STACKS_NETWORK=mainnet
 NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
-NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v2
+NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v4
+NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v3
+NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3
 NEXT_PUBLIC_SITE_URL=https://nayori.ai
 ```
 
