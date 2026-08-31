@@ -8,6 +8,7 @@ import {
   buildTransparencySnapshot,
   buildUnavailableTransparencySnapshot,
 } from "./transparency";
+import { NETWORK_NAME } from "../constants/network";
 
 const TEAM = "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH";
 const EXTERNAL_A = "SP000000000000000000002Q6VF78";
@@ -76,12 +77,21 @@ describe("transparency snapshot", () => {
       settledStxMicrostx: 1_500_000,
       successfulContractCalls: 24,
     });
-    expect(snapshot.milestone2.verified).toMatchObject({
-      registeredAgentsMainnet: 2,
-      completedSbtcJobsMainnet: 1,
-      completedJobsFromNonTeamWallets: 2,
-      participatingNonTeamWallets: 2,
-    });
+    expect(snapshot.milestone2.verified).toMatchObject(
+      NETWORK_NAME === "testnet"
+        ? {
+            registeredAgentsMainnet: 0,
+            completedSbtcJobsMainnet: 0,
+            completedJobsFromNonTeamWallets: 0,
+            participatingNonTeamWallets: 0,
+          }
+        : {
+            registeredAgentsMainnet: 2,
+            completedSbtcJobsMainnet: 1,
+            completedJobsFromNonTeamWallets: 2,
+            participatingNonTeamWallets: 2,
+          },
+    );
     expect(snapshot.transactions[0]).toMatchObject({
       senderClassification: "external-attested",
       blockHeight: 1,

@@ -5,6 +5,7 @@ import {
   buildProtectedResourceMetadata,
   NAYORI_OAUTH_ORIGIN,
 } from "./oauth-discovery";
+import { NAYORI_API_ORIGIN } from "./discovery";
 
 const origin = "https://preview.nayori.ai";
 
@@ -31,7 +32,7 @@ describe("canonical OAuth and MCP discovery", () => {
   it("publishes MCP server identity and canonical OAuth metadata", () => {
     expect(buildMcpServerCard(origin)).toMatchObject({
       serverInfo: { name: "nayori-x402", version: "0.7.0" },
-      server: { url: "https://api.nayori.ai/mcp" },
+      server: { url: `${NAYORI_API_ORIGIN}/mcp` },
       authentication: {
         protectedResourceMetadata: `${origin}/.well-known/oauth-protected-resource`,
       },

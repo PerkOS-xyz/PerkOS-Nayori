@@ -15,7 +15,13 @@ import {
   SBTC_COMMERCE_CONTRACT_NAME,
   STX_COMMERCE_CONTRACT_NAME,
 } from "../constants/contract";
-import { NETWORK } from "../constants/network";
+import { NETWORK, NETWORK_NAME } from "../constants/network";
+
+const CHAIN_SOURCE =
+  NETWORK_NAME === "testnet"
+    ? "Stacks testnet contracts + Hiro API"
+    : "Stacks mainnet contracts + Hiro API";
+const CHAIN_PARAM = NETWORK_NAME === "testnet" ? "testnet" : "mainnet";
 
 const JOB_STATUS = [
   "Open",
@@ -93,7 +99,7 @@ export interface TransparencySnapshot {
   policy: typeof evidenceManifest.policy;
   dataStatus: {
     chain: "live" | "unavailable";
-    source: "Stacks mainnet contracts + Hiro API";
+    source: string;
     code?: "chain_source_unavailable";
   };
   milestone1: typeof evidenceManifest.milestone1;
@@ -191,20 +197,23 @@ export function buildTransparencySnapshot({
     truncated: stats.truncated,
   };
 
-  const verified = {
-    registeredAgentsMainnet: Math.max(
-      0,
-      observed.registeredAgentsMainnet - m2Baseline.registeredAgentsMainnet,
-    ),
-    completedSbtcJobsMainnet: Math.max(
-      0,
-      observed.completedSbtcJobsMainnet - m2Baseline.completedSbtcJobsMainnet,
-    ),
-    completedJobsFromNonTeamWallets: completedExternalJobs.length,
-    participatingNonTeamWallets: externalParticipants.size,
-    externalSdkAdoptions: externalSdkAdoptions.length,
-    sdkPublicDistribution: evidenceManifest.milestone2.verified.sdkPublicDistribution,
-  };
+  const verified =
+    NETWORK_NAME === "testnet"
+      ? { ...evidenceManifest.milestone2.verified }
+      : {
+          registeredAgentsMainnet: Math.max(
+            0,
+            observed.registeredAgentsMainnet - m2Baseline.registeredAgentsMainnet,
+          ),
+          completedSbtcJobsMainnet: Math.max(
+            0,
+            observed.completedSbtcJobsMainnet - m2Baseline.completedSbtcJobsMainnet,
+          ),
+          completedJobsFromNonTeamWallets: completedExternalJobs.length,
+          participatingNonTeamWallets: externalParticipants.size,
+          externalSdkAdoptions: externalSdkAdoptions.length,
+          sdkPublicDistribution: evidenceManifest.milestone2.verified.sdkPublicDistribution,
+        };
 
   return {
     schemaVersion: evidenceManifest.schemaVersion,
@@ -215,7 +224,7 @@ export function buildTransparencySnapshot({
     policy: evidenceManifest.policy,
     dataStatus: {
       chain: "live",
-      source: "Stacks mainnet contracts + Hiro API",
+      source: CHAIN_SOURCE,
     },
     milestone1: evidenceManifest.milestone1,
     milestone2: {
@@ -256,7 +265,7 @@ export function buildTransparencySnapshot({
       status: transaction.status,
       time: transaction.time,
       blockHeight: transaction.blockHeight,
-      explorer: `https://explorer.hiro.so/txid/${transaction.txId}?chain=mainnet`,
+      explorer: `https://explorer.hiro.so/txid/${transaction.txId}?chain=${CHAIN_PARAM}`,
     })),
   };
 }
@@ -273,7 +282,7 @@ export function buildUnavailableTransparencySnapshot(
     policy: evidenceManifest.policy,
     dataStatus: {
       chain: "unavailable",
-      source: "Stacks mainnet contracts + Hiro API",
+      source: CHAIN_SOURCE,
       code: "chain_source_unavailable",
     },
     milestone1: evidenceManifest.milestone1,
