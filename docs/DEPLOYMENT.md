@@ -79,6 +79,19 @@ The active PoX-5 testnet sBTC principal is
 `SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token`. The older `ST1F7...` principal is retained
 only in frozen historical sources/evidence. Mainnet remains `SM3VD...` and is unaffected.
 
+### Autonomous evaluator/appeal candidate: no deployment yet
+
+`agentic-commerce-v5` and `sbtc-commerce-v4` are source and simnet-test candidates. This change
+does not add them to either versioned deployment runner, does not authorize them in the live
+reputation registry, and does not select them in the Web or SDK. Never substitute these names into
+the v4/v3 deployment commands below.
+
+Before any testnet deployment path is introduced, the exact merged candidate must pass the full
+contract suite and security gate. A future testnet-only runner must initialize `u3`, use dedicated
+QA evaluator and appeal-authority principals, configure official PoX-5 sBTC and produce secret-free
+evidence. A separate later mainnet promotion must require reviewed frozen hashes, initialize
+`u144`, and leave production consumers on the prior generation until controlled E2E passes.
+
 Verified v4/v3 testnet evidence on 2026-08-30:
 
 - `agentic-commerce-v4` deployment: `e487f4f5…dd9b8`, block 209312, `success (ok true)`;

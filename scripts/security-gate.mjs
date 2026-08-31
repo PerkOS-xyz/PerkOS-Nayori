@@ -55,6 +55,12 @@ const versionedEscrowMainnetE2e = "scripts/e2e-versioned-escrow-mainnet.mjs";
 const reviewWindowCandidate = [
   "contracts/agentic-commerce-v4.clar",
   "contracts/sbtc-commerce-v3.clar",
+  "contracts/agentic-commerce-v5.clar",
+  "contracts/sbtc-commerce-v4.clar",
+];
+const autonomousAppealCandidate = [
+  "contracts/agentic-commerce-v5.clar",
+  "contracts/sbtc-commerce-v4.clar",
 ];
 const historicalReviewWindow = [
   "contracts/agentic-commerce-v3.clar",
@@ -263,6 +269,63 @@ for (const path of historicalReviewWindow) {
     path,
     /\(define-constant REVIEW_WINDOW_BURN_BLOCKS u144\)/,
     "the deployed historical candidate must remain immutable at 144 blocks",
+  );
+}
+
+for (const path of autonomousAppealCandidate) {
+  requirePattern(
+    path,
+    /\(define-constant QA_APPEAL_WINDOW_BURN_BLOCKS u3\)[\s\S]*?\(define-constant MAINNET_APPEAL_WINDOW_BURN_BLOCKS u144\)/,
+    "the appeal candidate must expose only the approved QA and mainnet policies",
+  );
+  requirePattern(
+    path,
+    /\(define-public \(initialize-protocol[\s\S]*?\(var-set protocol-configured true\)/,
+    "appeal policy must be initialized explicitly before use",
+  );
+  requirePattern(
+    path,
+    /\(define-public \(record-decision[\s\S]*?\(asserts! \(is-eq \(get evaluator job\) tx-sender\) ERR_NOT_EVALUATOR\)[\s\S]*?STATUS_DECISION_PENDING/,
+    "only the pinned evaluator may enter the non-settling decision state",
+  );
+  requirePattern(
+    path,
+    /\(define-public \(appeal-decision[\s\S]*?\(<= burn-block-height \(get appeal-deadline decision-state\)\)[\s\S]*?STATUS_DISPUTED/,
+    "appeals must be bounded by Bitcoin burn height",
+  );
+  requirePattern(
+    path,
+    /\(define-public \(resolve-appeal[\s\S]*?\(is-eq tx-sender \(get appeal-authority job\)\)[\s\S]*?\(<= burn-block-height resolution-deadline\)/,
+    "only the job-pinned authority may resolve an appeal before its deadline",
+  );
+  requirePattern(
+    path,
+    /\(define-public \(settle-appeal-timeout[\s\S]*?\(> burn-block-height resolution-deadline\)/,
+    "a permissionless liveness settlement is required after appeal timeout",
+  );
+  forbidPattern(
+    path,
+    /\(define-public \((?:complete-job|reject-job)\b/,
+    "the appeal generation must not retain immediate evaluator settlement entrypoints",
+  );
+}
+
+requirePattern(
+  "contracts/sbtc-commerce-v4.clar",
+  /\(define-private \(check-job-token[\s\S]*?job-payment-tokens[\s\S]*?ERR_INVALID_TOKEN/,
+  "sBTC settlement must validate the immutable per-job token",
+);
+for (const entrypoint of [
+  "finalize-decision",
+  "resolve-appeal",
+  "settle-appeal-timeout",
+  "settle-review-timeout",
+  "expire-job",
+]) {
+  requirePattern(
+    "contracts/sbtc-commerce-v4.clar",
+    new RegExp(`\\(define-public \\(\\b${entrypoint}\\b[\\s\\S]*?\\(try! \\(check-job-token job-id token\\)\\)`),
+    `${entrypoint} must bind settlement to the job-pinned SIP-010 token`,
   );
 }
 
