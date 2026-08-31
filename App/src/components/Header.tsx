@@ -15,6 +15,7 @@ const NAV = [
   { href: "/activity", label: "Activity" },
   { href: "/evidence", label: "Transparency" },
 ];
+const RELEASE_CHANNEL = process.env.NEXT_PUBLIC_RELEASE_CHANNEL;
 
 export default function Header() {
   const path = usePathname();
@@ -32,6 +33,11 @@ export default function Header() {
           <span className="rounded-full border border-brand/25 bg-brand/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-300">
             {NETWORK_NAME}
           </span>
+          {RELEASE_CHANNEL === "qa" && (
+            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+              QA
+            </span>
+          )}
           <span className="hidden items-center gap-1 rounded-full border border-bitcoin/25 bg-bitcoin/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-bitcoin-400 lg:inline-flex">
             <Bitcoin className="h-3 w-3" /> sBTC
           </span>

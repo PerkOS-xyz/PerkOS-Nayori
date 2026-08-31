@@ -5,12 +5,17 @@ import {
   STX_COMMERCE_CONTRACT_NAME,
 } from "../constants/contract";
 import { parseReputationSync, type ReputationSyncState } from "./reputation-sync";
+import {
+  parseAutonomousDecision,
+  type AutonomousDecisionState,
+} from "./autonomous-decision";
 
 export interface Job {
   id: number;
   client: string;
   provider?: string;
   evaluator: string;
+  appealAuthority?: string;
   description: string;
   budget: number;
   expiredAt: number;
@@ -22,6 +27,7 @@ export interface Job {
   reputationSyncLastError?: number;
   reputationSyncOutcome?: number;
   escrow?: number;
+  decision?: AutonomousDecisionState;
 }
 
 export async function getJob(jobId: number): Promise<Job | null> {
@@ -44,6 +50,7 @@ export async function getJob(jobId: number): Promise<Job | null> {
       // provider is (optional principal): value is the inner principal CV or null
       provider: t.provider?.value ? t.provider.value.value : undefined,
       evaluator: t.evaluator?.value ?? "",
+      appealAuthority: t["appeal-authority"]?.value ?? undefined,
       description: t.description?.value ?? "",
       budget: Number(t.budget?.value ?? 0),
       expiredAt: Number(t["expired-at"]?.value ?? 0),
@@ -58,6 +65,22 @@ export async function getJob(jobId: number): Promise<Job | null> {
     };
   } catch (error) {
     console.error("Error getting job:", error);
+    return null;
+  }
+}
+
+export async function getDecision(jobId: number): Promise<AutonomousDecisionState | null> {
+  try {
+    const cv = await fetchCallReadOnlyFunction({
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: STX_COMMERCE_CONTRACT_NAME,
+      functionName: "get-decision",
+      functionArgs: [Cl.uint(jobId)],
+      network: NETWORK,
+      senderAddress: CONTRACT_ADDRESS,
+    });
+    return parseAutonomousDecision(cv);
+  } catch {
     return null;
   }
 }

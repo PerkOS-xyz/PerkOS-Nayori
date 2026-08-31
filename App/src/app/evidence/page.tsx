@@ -50,7 +50,7 @@ const classificationLabel = (classification: string) => {
 const statusClass = (status: number) => {
   if (status === 3) return "border-emerald-500/30 text-emerald-300";
   if (status === 4 || status === 5) return "border-red-500/30 text-red-300";
-  if (status === 1 || status === 2) return "border-brand/30 text-brand-300";
+  if (status === 1 || status === 2 || status === 7 || status === 8) return "border-brand/30 text-brand-300";
   return "border-white/10 text-mist-300";
 };
 
