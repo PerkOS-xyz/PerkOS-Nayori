@@ -169,8 +169,33 @@ NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v3
 NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3
 ```
 
-Do not copy these names into production. A later mainnet activation requires a separately reviewed
-deployment path, external-review closure and an explicit release decision.
+Do not copy these names into production before the phased promotion completes. The separately
+guarded mainnet promoter defaults to a signer-free preflight and leaves all Web/SDK/API production
+variables unchanged:
+
+```bash
+npm run preflight:versioned:mainnet
+```
+
+After reviewing the preflight receipt, exact source digests, deployer balance, nonce, empty mempool
+and maximum fees, the authorized mainnet release uses both typed confirmations and an external
+signer file:
+
+```bash
+STACKS_NETWORK=mainnet \
+VERSIONED_ESCROW_MAINNET_ACTION=deploy \
+CONFIRM_VERSIONED_ESCROW_MAINNET_DEPLOY=deploy-v4-v3-mainnet \
+CONFIRM_VERSIONED_ESCROW_MAINNET_DEPLOYER=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH \
+VERSIONED_ESCROW_MAINNET_ENV_PATH=/absolute/path/to/.env.mainnet \
+npm run deploy:versioned:mainnet
+```
+
+The promoter refuses source drift and pending deployer transactions, submits one deny-mode
+transaction at a time, verifies every `(ok ...)` result, configures canonical mainnet sBTC,
+authorizes both commerce contracts in `reputation-registry-v3`, and verifies initial zero job
+counts. It writes a secret-free receipt outside Git. Deployment alone does not switch production;
+Web, SDK and API configuration are promoted separately after independent verification and a
+minimal-value mainnet smoke test.
 
 ## Frontend production variables
 
