@@ -93,3 +93,30 @@ The sBTC contract additionally exposes `get-payment-token` and `get-job-payment-
 
 The prior mainnet generation remains immutable historical M1 evidence and is not the default for
 new jobs. Internal deployment and smoke actors do not count as external adoption or revenue.
+
+## Autonomous evaluator and appeal candidate
+
+`agentic-commerce-v5` and `sbtc-commerce-v4` are review candidates only. They are not deployed,
+selected by the Web or presented as active mainnet contracts. They retain the current 12-burn-block
+evaluator response window and add these non-terminal states without changing historical codes:
+
+| Code | State | Meaning |
+| ---: | --- | --- |
+| `u7` | Decision pending | Nayori recorded approve/reject evidence; escrow has not moved |
+| `u8` | Disputed | The eligible economic party appealed; escrow remains locked for resolution |
+
+The contract owner must initialize the generation before the first job. The accepted immutable
+policy values are three Bitcoin burn blocks for isolated QA/testnet or 144 for mainnet. Every job
+pins the active appeal authority, so later two-step rotation cannot change who resolves an existing
+appeal.
+
+The evaluator records a decision, evidence digest and public-explanation digest but cannot settle
+immediately. For approval, only the client may appeal; for rejection, only the assigned provider
+may appeal. Unappealed decisions are permissionlessly finalizable only after the exact deadline.
+The pinned human authority may uphold or reverse an appealed decision through its resolution
+deadline. If that authority becomes unavailable, a permissionless liveness path finalizes the
+original decision only after the second deadline.
+
+Only final settlement moves funds or writes completed/disputed reputation. Approvals pay exactly
+the pinned provider, rejections refund exactly the pinned client, and sBTC uses the per-job pinned
+SIP-010 token. The candidate removes the immediate `complete-job` and `reject-job` entrypoints.

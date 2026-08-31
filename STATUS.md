@@ -20,7 +20,7 @@ Last verified: 2026-08-31
 - Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 - Settlement assets: STX and canonical mainnet sBTC
 - Contract sources: exact match with the reviewed repository sources
-- Contract tests: 100 passing (77 current-contract regressions plus 23 versioned-candidate tests)
+- Contract tests: 120 passing (100 existing regressions plus 20 autonomous-evaluator/appeal tests)
 
 ### Active versioned escrow release
 
@@ -50,6 +50,19 @@ synchronization, protocol/job namespacing, sBTC token pinning per funded job and
 transfer. Web settlement reads the live escrow and job-pinned sBTC token before opening the wallet,
 while zero-balance open expiry uses no transfer post-condition. The earlier immutable v3/v2
 testnet generation and the prior mainnet generation remain historical evidence.
+
+### Non-deployed autonomous evaluation candidate
+
+`agentic-commerce-v5` and `sbtc-commerce-v4` are implemented locally and remain review-only. They
+add decision-pending and disputed states, verifiable decision/explanation hashes, role-specific
+appeals, a job-pinned human authority, permissionless unappealed finalization and a second
+resolution-timeout liveness path. The same source accepts only a 3-burn-block QA policy or a
+144-burn-block mainnet policy at one-time initialization.
+
+Twenty focused tests cover authorization, exact boundaries, approval/rejection reversal,
+single-settlement conservation, STX and sBTC payouts, per-job token pinning, token-confusion
+rejection, reputation retry and unavailable-authority fallback. No current mainnet contract,
+production consumer, deployment script or environment selection changed in this candidate.
 
 ## Mainnet contracts
 
@@ -135,9 +148,13 @@ npm run verify:mainnet
 
 ## Next product work
 
-1. Complete the independent external review against the frozen source anchors and resolve or
+1. Review and merge the autonomous-evaluator contract candidate; do not deploy it yet.
+2. Implement the SDK, Web and dedicated evaluator service against the merged candidate in the
+   fully isolated QA environment.
+3. Complete full-role STX and official sBTC testnet E2E evidence before any mainnet rollout.
+4. Complete the independent external review against the frozen source anchors and resolve or
    formally mitigate every Critical/High finding before broad public onboarding.
-2. Complete the recorded SDK demo and mainnet/non-team adoption requirements for M2.
-3. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.
-4. Add operational alerts for failed Chainhook delivery and unusual escrow activity.
-5. Complete a controlled Leather USDCx testnet lifecycle before inviting external developers.
+5. Complete the recorded SDK demo and mainnet/non-team adoption requirements for M2.
+6. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.
+7. Add operational alerts for failed Chainhook delivery and unusual escrow activity.
+8. Complete a controlled Leather USDCx testnet lifecycle before inviting external developers.

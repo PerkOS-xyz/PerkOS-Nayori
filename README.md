@@ -608,6 +608,20 @@ reputation synchronization and a persisted rating. These team-operated actions a
 evidence, not external adoption or revenue. The independent external security review remains an
 open delivery item and this release must not be described as externally audited.
 
+### Autonomous evaluation candidate
+
+The repository also contains the non-deployed `agentic-commerce-v5` and `sbtc-commerce-v4`
+candidates for Nayori's autonomous evaluation and human appeal workflow. A decision enters a
+pending state without moving escrow, the affected client or provider receives a Bitcoin-burn-block
+appeal window, and only then can settlement become final. The human appeal authority is pinned per
+job and cannot redirect either payout destination. A second timeout prevents an unavailable appeal
+authority from locking funds indefinitely while preserving the original decision.
+
+The same reviewed source accepts only the explicit policy values `u3` for isolated QA/testnet or
+`u144` for mainnet during one-time initialization. These contracts are not selected by current
+production consumers and have no production deployment path in this change. See the
+[approved architecture and threat model](docs/plans/2026-08-31-autonomous-evaluator-and-qa-design.md).
+
 The immutable earlier `agentic-commerce-v3` and `sbtc-commerce-v2` generation remains testnet-only
 at 144 blocks as historical evidence. The prior mainnet `agentic-commerce-v2`, `sbtc-commerce` and
 `reputation-registry-v2` generation remains accessible as historical release evidence but is not used

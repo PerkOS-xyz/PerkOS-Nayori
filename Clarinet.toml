@@ -30,6 +30,11 @@ epoch = "2.5"
 path = "contracts/mock-sbtc-token.clar"
 epoch = "2.5"
 
+# Second test-only SIP-010 instance for token-confusion and pinning tests.
+[contracts.mock-sbtc-token-alt]
+path = "contracts/mock-sbtc-token.clar"
+epoch = "2.5"
+
 [contracts.reputation-registry-v2]
 path = "contracts/reputation-registry-v2.clar"
 epoch = "2.5"
@@ -58,6 +63,15 @@ epoch = "2.5"
 
 [contracts.sbtc-commerce-v3]
 path = "contracts/sbtc-commerce-v3.clar"
+epoch = "2.5"
+
+# --- Autonomous evaluator + appeal candidate (not deployed) ---
+[contracts.agentic-commerce-v5]
+path = "contracts/agentic-commerce-v5.clar"
+epoch = "2.5"
+
+[contracts.sbtc-commerce-v4]
+path = "contracts/sbtc-commerce-v4.clar"
 epoch = "2.5"
 
 [repl]

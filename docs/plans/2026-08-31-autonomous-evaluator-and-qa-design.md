@@ -1,7 +1,7 @@
 # Nayori autonomous evaluator and isolated QA design
 
 Date: 2026-08-31  
-Status: Approved product design; implementation not started  
+Status: Approved product design; versioned contract candidate implemented and under review
 Scope: autonomous evaluation, appeal lifecycle, full QA environment and controlled E2E promotion
 
 ## Decision summary
@@ -11,7 +11,7 @@ Nayori will operate as the autonomous evaluator for escrowed agent work. A dedic
 model gateway. Model inference will never own a wallet, construct an arbitrary transfer or submit a
 settlement directly.
 
-The next versioned STX and sBTC commerce contracts will add an on-chain pending-decision and appeal
+The versioned `agentic-commerce-v5` and `sbtc-commerce-v4` candidates add an on-chain pending-decision and appeal
 lifecycle. A Nayori decision will not move escrow immediately. The client or provider may appeal
 before the deadline; otherwise the decision becomes permissionlessly finalizable. Mainnet uses a
 fixed **144 Bitcoin burn-block appeal window**. The isolated QA/testnet generation uses **3 Bitcoin
@@ -77,6 +77,8 @@ stateDiagram-v2
   DecisionPending --> Rejected: Finalize unappealed rejection
   Disputed --> Completed: Appeal authority resolves approve
   Disputed --> Rejected: Appeal authority resolves reject
+  Disputed --> Completed: Resolution timeout preserves original approval
+  Disputed --> Rejected: Resolution timeout preserves original rejection
   Completed --> [*]
   Rejected --> [*]
   TimeoutPaid --> [*]
@@ -87,6 +89,11 @@ If Nayori has not recorded a decision by the existing deadline, the provider tim
 available. Recording a decision moves the job out of `Submitted`, disables timeout settlement and
 starts the appeal deadline.
 
+An appeal starts a second deadline of the same configured length. The pinned human authority may
+resolve it through the exact deadline. If that authority is unavailable, any caller may finalize
+the original evaluator decision only after the resolution deadline. This liveness fallback cannot
+reverse the original result or change either economic recipient.
+
 The new commerce generation should preserve existing terminal meanings where practical and append
 new states for `Decision pending` and `Disputed`. It must not reinterpret historical state codes.
 Because deployed Clarity contracts are immutable, implementation requires new versioned STX and
@@ -95,16 +102,21 @@ idempotency and caller authorization remain sufficient; otherwise it must also b
 
 ## Proposed contract interface
 
-Exact names remain subject to implementation review, but the public behavior is fixed:
+The implemented STX interface is:
 
 ```clarity
 (record-decision job-id decision evidence-hash explanation-hash)
 (appeal-decision job-id appeal-evidence-hash)
 (finalize-decision job-id)
 (resolve-appeal job-id final-decision resolution-hash)
+(settle-appeal-timeout job-id)
 (get-decision job-id)
 (get-appeal-window)
 ```
+
+The sBTC economic functions additionally receive the SIP-010 trait argument and verify it against
+the token pinned when that job was funded. A one-time owner-only initializer accepts only `u3`
+(QA/testnet) or `u144` (mainnet) and pins the initial appeal authority before any job can exist.
 
 Required invariants:
 
@@ -113,6 +125,8 @@ Required invariants:
 - only the client or assigned provider can appeal, at most once per job;
 - appeal is valid through the exact deadline and finalization only after it;
 - the appeal authority can act only on a disputed job;
+- if the appeal authority misses its second deadline, permissionless settlement preserves the
+  original decision;
 - an unappealed finalizer cannot change the recorded decision;
 - approve pays exactly the pinned provider; reject refunds exactly the pinned client;
 - sBTC settlement uses the token pinned when the job was funded;
