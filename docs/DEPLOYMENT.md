@@ -197,6 +197,37 @@ counts. It writes a secret-free receipt outside Git. Deployment alone does not s
 Web, SDK and API configuration are promoted separately after independent verification and a
 minimal-value mainnet smoke test.
 
+### Mainnet sBTC v3 smoke test
+
+Before changing production consumers, run the signer-free smoke preflight from the exact merged
+release. Its receipt and actor recovery paths must be absolute and outside Git:
+
+```bash
+STACKS_NETWORK=mainnet \
+VERSIONED_ESCROW_MAINNET_E2E_ACTION=preflight \
+VERSIONED_ESCROW_MAINNET_E2E_RESULT_PATH=/external/evidence/mainnet-smoke.json \
+npm run e2e:versioned:mainnet
+```
+
+Execution creates one internal team-operated job for exactly 100 atomic sBTC units. It persists
+provider/evaluator recovery keys only in a required external mode-`0600` file and never includes
+them in the receipt:
+
+```bash
+STACKS_NETWORK=mainnet \
+VERSIONED_ESCROW_MAINNET_E2E_ACTION=execute \
+CONFIRM_VERSIONED_ESCROW_MAINNET_E2E=execute-100-sats-mainnet \
+CONFIRM_VERSIONED_ESCROW_MAINNET_DEPLOYER=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH \
+VERSIONED_ESCROW_MAINNET_ENV_PATH=/external/secrets/.env.mainnet \
+VERSIONED_ESCROW_MAINNET_ACTOR_ENV_PATH=/external/secrets/.env.mainnet-smoke-actors \
+VERSIONED_ESCROW_MAINNET_E2E_RESULT_PATH=/external/evidence/mainnet-smoke.json \
+npm run e2e:versioned:mainnet
+```
+
+The required terminal invariants are status `u3`, escrow zero, an exact 100-unit provider payout,
+successful reputation synchronization and one persisted client rating. This controlled workflow
+is internal operational evidence and is never external M2 adoption or revenue.
+
 ## Frontend production variables
 
 Configure these values in the target production build environment:

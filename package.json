@@ -15,6 +15,8 @@
     "deploy:mainnet": "node scripts/deploy-current-mainnet.mjs",
     "preflight:versioned:mainnet": "STACKS_NETWORK=mainnet VERSIONED_ESCROW_MAINNET_ACTION=preflight node scripts/deploy-versioned-escrow-mainnet.mjs",
     "deploy:versioned:mainnet": "node scripts/deploy-versioned-escrow-mainnet.mjs",
+    "preflight:e2e:versioned:mainnet": "STACKS_NETWORK=mainnet VERSIONED_ESCROW_MAINNET_E2E_ACTION=preflight node scripts/e2e-versioned-escrow-mainnet.mjs",
+    "e2e:versioned:mainnet": "node scripts/e2e-versioned-escrow-mainnet.mjs",
     "deploy:stx-v2": "node scripts/deploy-stx-v2.mjs",
     "deploy:versioned:testnet": "node scripts/deploy-versioned-escrow-testnet.mjs",
     "e2e:versioned:testnet": "node scripts/e2e-versioned-escrow-testnet.mjs",
