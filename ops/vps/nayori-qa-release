@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+
+BASE=/opt/perkos-nayori-qa
+AUTOMATION="$BASE/automation"
+INCOMING="$AUTOMATION/incoming"
+RELEASES="$AUTOMATION/releases"
+RECEIPTS="$AUTOMATION/receipts"
+COMPOSE="$BASE/ops/compose.qa.yaml"
+
+ACTION=${1:-}
+REPOSITORY=${2:-}
+SHA=${3:-}
+DIGEST=${4:-}
+
+case "$REPOSITORY" in
+  PerkOS-Nayori|PerkOS-Nayori-Agent-SDK|PerkOS-Nayori-Platform|PerkOS-Nayori-OAuth|PerkOS-Nayori-Evaluator) ;;
+  *) echo "unsupported repository" >&2; exit 64 ;;
+esac
+[[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "invalid commit SHA" >&2; exit 64; }
+mkdir -p "$RELEASES" "$RECEIPTS" "$BASE/backups"
+
+receipt_path() { printf '%s/%s-%s.json' "$RECEIPTS" "$REPOSITORY" "$SHA"; }
+
+if [[ "$ACTION" == "verify" ]]; then
+  RECEIPT=$(receipt_path)
+  [[ -f "$RECEIPT" ]] || { echo "no QA receipt for $REPOSITORY $SHA" >&2; exit 66; }
+  grep -Fq '"result":"passed"' "$RECEIPT"
+  grep -Fq "\"commit\":\"$SHA\"" "$RECEIPT"
+  echo "verified $REPOSITORY $SHA"
+  exit 0
+fi
+
+[[ "$ACTION" == "deploy" ]] || { echo "unsupported action" >&2; exit 64; }
+[[ "$DIGEST" =~ ^[0-9a-f]{64}$ ]] || { echo "invalid archive digest" >&2; exit 64; }
+ARCHIVE="$INCOMING/$REPOSITORY-$SHA-$DIGEST.tar.gz"
+[[ -f "$ARCHIVE" ]] || { echo "staged archive missing" >&2; exit 66; }
+[[ "$(sha256sum "$ARCHIVE" | cut -d' ' -f1)" == "$DIGEST" ]] || { echo "staged digest mismatch" >&2; exit 65; }
+
+RELEASE="$RELEASES/$REPOSITORY-$SHA"
+if [[ ! -d "$RELEASE" ]]; then
+  TEMP=$(mktemp -d "$RELEASES/.extract.XXXXXX")
+  trap 'rm -rf "$TEMP"' EXIT
+  tar --no-same-owner --no-same-permissions -xzf "$ARCHIVE" -C "$TEMP"
+  mv "$TEMP" "$RELEASE"
+  trap - EXIT
+fi
+
+STARTED=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+SHORT=${SHA:0:16}
+COMPOSE_BACKUP="$BASE/backups/compose.qa.before-$REPOSITORY-$SHA.yaml"
+cp "$COMPOSE" "$COMPOSE_BACKUP"
+COMPOSE_CHANGED=false
+
+replace_image() {
+  local service=$1 image=$2
+  sed -i "/^  ${service}:$/,/^  [A-Za-z0-9_-]*:$/ s|^    image: .*|    image: ${image}|" "$COMPOSE"
+}
+
+wait_healthy() {
+  local container=$1
+  for _ in $(seq 1 40); do
+    status=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container" 2>/dev/null || true)
+    [[ "$status" == "healthy" || "$status" == "running" ]] && return 0
+    [[ "$status" == "unhealthy" || "$status" == "exited" || "$status" == "dead" ]] && return 1
+    sleep 3
+  done
+  return 1
+}
+
+rollback() {
+  if [[ "$COMPOSE_CHANGED" == true ]]; then
+    cp "$COMPOSE_BACKUP" "$COMPOSE"
+    docker compose -f "$COMPOSE" --profile evaluator up -d >/dev/null 2>&1 || true
+  fi
+}
+trap rollback ERR
+
+case "$REPOSITORY" in
+  PerkOS-Nayori)
+    WEB_IMAGE="perkos-nayori-web-qa:$SHA"
+    DOCS_IMAGE="perkos-nayori-docs-qa:$SHA"
+    docker build --pull=false -f "$RELEASE/App/Dockerfile" -t "$WEB_IMAGE" \
+      --build-arg NEXT_PUBLIC_STACKS_NETWORK=testnet \
+      --build-arg NEXT_PUBLIC_CONTRACT_ADDRESS=ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5 \
+      --build-arg NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v5 \
+      --build-arg NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v4 \
+      --build-arg NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3 \
+      --build-arg NEXT_PUBLIC_SITE_URL=https://qa.nayori.ai \
+      --build-arg NEXT_PUBLIC_RELEASE_CHANNEL=qa \
+      --build-arg NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS=STBTXHXFXFGMNPXST7A6XQ1WNGC0V6TB6CDDQZB4 \
+      --build-arg NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS=ST256E5DAXM7RDFZ76ECCTPTBYHRXXJQ29H16DN69 \
+      --build-arg NEXT_PUBLIC_NAYORI_API_ORIGIN=https://api.qa.nayori.ai \
+      --build-arg NEXT_PUBLIC_NAYORI_FACILITATOR_ORIGIN=https://facilitator.qa.nayori.ai \
+      --build-arg NEXT_PUBLIC_NAYORI_OAUTH_ORIGIN=https://oauth.qa.nayori.ai "$RELEASE/App"
+    docker build --pull=false -f "$RELEASE/developer-portal/Dockerfile" -t "$DOCS_IMAGE" \
+      --build-arg NAYORI_DOCS_RELEASE="$SHA" \
+      --build-arg NAYORI_DOCS_ORIGIN=https://docs.qa.nayori.ai \
+      --build-arg NAYORI_APP_ORIGIN=https://qa.nayori.ai \
+      --build-arg NAYORI_PRODUCT_ORIGIN=https://qa.nayori.ai \
+      --build-arg NAYORI_API_ORIGIN=https://api.qa.nayori.ai "$RELEASE/developer-portal"
+    replace_image web "$WEB_IMAGE"
+    replace_image docs "$DOCS_IMAGE"
+    COMPOSE_CHANGED=true
+    docker compose -f "$COMPOSE" config >/dev/null
+    docker compose -f "$COMPOSE" up -d web docs
+    wait_healthy nayori-qa-web
+    wait_healthy nayori-qa-docs
+    ;;
+  PerkOS-Nayori-Agent-SDK)
+    docker run --rm --network bridge -v "$RELEASE:/work" -w /work node:22-alpine \
+      sh -lc 'npm ci && npm run verify && npm pack --dry-run'
+    ;;
+  PerkOS-Nayori-Platform)
+    IMAGE="perkos-nayori-platform-qa:$SHA"
+    docker build --pull=false -t "$IMAGE" "$RELEASE"
+    replace_image api "$IMAGE"
+    replace_image facilitator "$IMAGE"
+    replace_image facilitator-worker "$IMAGE"
+    COMPOSE_CHANGED=true
+    docker compose -f "$COMPOSE" config >/dev/null
+    docker compose -f "$COMPOSE" run --rm api npm run db:migrate:production
+    docker compose -f "$COMPOSE" run --rm facilitator npm run db:migrate:production
+    docker compose -f "$COMPOSE" up -d api facilitator facilitator-worker
+    wait_healthy nayori-qa-api
+    wait_healthy nayori-qa-facilitator
+    ;;
+  PerkOS-Nayori-OAuth)
+    IMAGE="perkos-nayori-oauth-qa:$SHA"
+    docker build --pull=false -t "$IMAGE" "$RELEASE"
+    replace_image oauth "$IMAGE"
+    COMPOSE_CHANGED=true
+    docker compose -f "$COMPOSE" config >/dev/null
+    docker compose -f "$COMPOSE" run --rm oauth npm run db:migrate:production
+    docker compose -f "$COMPOSE" up -d oauth
+    wait_healthy nayori-qa-oauth
+    ;;
+  PerkOS-Nayori-Evaluator)
+    IMAGE="perkos-nayori-evaluator-qa:$SHA"
+    docker build --pull=false -t "$IMAGE" "$RELEASE"
+    replace_image evaluator "$IMAGE"
+    sed -i -E "s|/opt/perkos-nayori-qa/releases/evaluator-[0-9a-f-]+/migrations/001_initial.sql|$RELEASE/migrations/001_initial.sql|" "$COMPOSE"
+    COMPOSE_CHANGED=true
+    docker compose -f "$COMPOSE" config >/dev/null
+    docker compose -f "$COMPOSE" --profile evaluator up -d evaluator-postgres
+    wait_healthy nayori-qa-evaluator-postgres
+    docker exec -i nayori-qa-evaluator-postgres sh -lc 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$RELEASE/migrations/001_initial.sql"
+    docker compose -f "$COMPOSE" --profile evaluator up -d evaluator
+    wait_healthy nayori-qa-evaluator
+    ;;
+esac
+
+trap - ERR
+COMPLETED=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+printf '{"schemaVersion":1,"environment":"qa","repository":"%s","commit":"%s","archiveSha256":"%s","startedAt":"%s","completedAt":"%s","result":"passed"}\n' \
+  "$REPOSITORY" "$SHA" "$DIGEST" "$STARTED" "$COMPLETED" > "$(receipt_path)"
+chmod 600 "$(receipt_path)"
+echo "deployed $REPOSITORY $SHA"
+

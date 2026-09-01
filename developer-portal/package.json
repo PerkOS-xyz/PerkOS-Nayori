@@ -7,7 +7,7 @@
     "node": ">=24.15.0"
   },
   "scripts": {
-    "build": "npm run check:content && next build",
+    "build": "npm run check:content && next build --webpack",
     "dev": "next dev",
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
