@@ -16,6 +16,7 @@ The public package is `@perkos/agent-sdk`. The complete source and release histo
 | `HeadlessSigner` | Controlled key-provider integration for server-side automation |
 | `SpendingPolicy` | Asset, per-transaction and per-session limits |
 | `TransactionTracker` | Pending/success/abort/drop/timeout normalization |
+| Autonomous decision methods | Read, record, appeal, resolve and permissionlessly finalize evaluator decisions |
 | x402 adapters | Challenge codecs, intent binding, Stacks payment construction and verification |
 | MPP adapters | PaymentAuth challenge, credential and USDCx receipt handling |
 | `NayoriPartnerClient` | Wallet-linked partner OAuth and MCP access |
@@ -40,3 +41,11 @@ if (receipt.confirmation.status !== "success") {
 ```
 
 See the package README for the full exported API and exact release-specific signatures.
+
+## Autonomous decision methods
+
+The explicit testnet contract override exposes `getAppealWindow`, `getDecision`, `recordDecision`,
+`appealDecision`, `finalizeDecision`, `resolveAppeal` and `settleAppealTimeout`. High-level
+settlement methods read the job, live escrow, decision and job-pinned sBTC token before creating
+deny-mode post-conditions. See the [lifecycle guide](/commerce/autonomous-evaluation) before
+enabling a signer.
