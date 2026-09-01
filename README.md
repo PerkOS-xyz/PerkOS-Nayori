@@ -42,7 +42,7 @@ one service:
 | --- | --- |
 | On-chain network | Stacks mainnet for identity, STX escrow, sBTC escrow and reputation |
 | Mainnet contracts | Six current contracts under `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` |
-| Agent SDK | `@perkos/agent-sdk@0.6.0`, public on npm |
+| Agent SDK | `@perkos/agent-sdk@0.7.0`, public on npm |
 | Browser wallet | Leather through Stacks Connect; wallet remains the signing boundary |
 | Headless agents | Policy-constrained signer interface for KMS/HSM/secret-manager integrations |
 | x402 | Live same-origin STX testnet resource; SDK profiles for STX, sBTC and USDCx |
@@ -107,8 +107,8 @@ idempotent delivery record.
 
 ## Repository ownership
 
-Nayori is one product composed of four repositories. The separation follows security and release
-boundaries, not four independent products.
+Nayori is one product composed of five repositories. The separation follows security and release
+boundaries, not five independent products.
 
 | Repository | Visibility today | Owns | Explicitly does not own |
 | --- | --- | --- | --- |
@@ -116,6 +116,7 @@ boundaries, not four independent products.
 | [`PerkOS-Nayori-Agent-SDK`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK) | Public | TypeScript read clients, transaction plans, signer adapters, confirmation tracking, spending policy, x402 and MPP encoding/verification | Private keys, hosted replay state, merchant authentication or production settlement state |
 | [`PerkOS-Nayori-Platform`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Platform) | Private operational repository | Resource API, facilitator, merchant routes, signed quotes, verification, testnet broadcast, reconciliation, receipts and delivery ledger | OAuth identity database, wallet keys or changes to the on-chain contracts |
 | [`PerkOS-Nayori-OAuth`](https://github.com/PerkOS-xyz/PerkOS-Nayori-OAuth) | Private operational repository | OAuth issuer, anonymous agent identity, wallet claims, partner invitations, client credentials, access tokens and JWKS | Payment signing, settlement, sponsorship or merchant delivery |
+| [`PerkOS-Nayori-Evaluator`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Evaluator) | Private operational repository | Deterministic evaluation intake, policy-constrained LLM analysis, public decision artifacts and testnet decision submission | Escrow custody, appeal authority, arbitrary wallet signing or production contract activation |
 
 The two private repository links resolve for authorized maintainers today. Their responsibilities
 are documented here so enterprise reviewers can evaluate the complete topology; making their
@@ -512,8 +513,10 @@ custody, exact-value validation and public settlement evidence.
 
 ## Deployment and operations
 
-Production releases use an exact merged commit and are built on the PerkOS VPS. Runtime Compose,
-Caddy configuration, database backups and secret files remain outside GitHub.
+Nayori releases flow from a protected `qa` integration branch to a protected `main` production
+branch. Every participating repository deploys and verifies an exact QA commit on the PerkOS VPS
+before a release branch can open a production pull request. Runtime Compose, Caddy configuration,
+database backups and secret files remain outside GitHub.
 
 ### Promotion order
 

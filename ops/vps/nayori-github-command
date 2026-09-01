@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+
+BASE=/opt/perkos-nayori-qa/automation
+INCOMING="$BASE/incoming"
+COMMAND=${SSH_ORIGINAL_COMMAND:-}
+
+set -- $COMMAND
+ACTION=${1:-}
+REPOSITORY=${2:-}
+ENVIRONMENT=${3:-}
+SHA=${4:-}
+DIGEST=${5:-}
+
+case "$REPOSITORY" in
+  PerkOS-Nayori|PerkOS-Nayori-Agent-SDK|PerkOS-Nayori-Platform|PerkOS-Nayori-OAuth|PerkOS-Nayori-Evaluator) ;;
+  *) echo "unsupported repository" >&2; exit 64 ;;
+esac
+[[ "$ENVIRONMENT" == "qa" ]] || { echo "unsupported environment" >&2; exit 64; }
+[[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "invalid commit SHA" >&2; exit 64; }
+
+case "$ACTION" in
+  stage)
+    [[ "$DIGEST" =~ ^[0-9a-f]{64}$ ]] || { echo "invalid archive digest" >&2; exit 64; }
+    mkdir -p "$INCOMING"
+    ulimit -f 524288
+    TEMP=$(mktemp "$INCOMING/.upload.XXXXXX")
+    trap 'rm -f "$TEMP"' EXIT
+    cat > "$TEMP"
+    ACTUAL=$(sha256sum "$TEMP" | cut -d' ' -f1)
+    [[ "$ACTUAL" == "$DIGEST" ]] || { echo "archive digest mismatch" >&2; exit 65; }
+    tar -tzf "$TEMP" | awk '
+      /^\// || /(^|\/)\.\.($|\/)/ { bad=1 }
+      END { exit bad }
+    '
+    if tar -tvzf "$TEMP" | awk '$1 ~ /^[lh]/ { found=1 } END { exit !found }'; then
+      echo "archive links are not permitted" >&2
+      exit 65
+    fi
+    install -m 600 "$TEMP" "$INCOMING/$REPOSITORY-$SHA-$DIGEST.tar.gz"
+    echo "staged $REPOSITORY $SHA $DIGEST"
+    ;;
+  deploy)
+    [[ "$DIGEST" =~ ^[0-9a-f]{64}$ ]] || { echo "invalid archive digest" >&2; exit 64; }
+    exec sudo -n /usr/local/sbin/nayori-qa-release deploy "$REPOSITORY" "$SHA" "$DIGEST"
+    ;;
+  verify)
+    [[ $# -eq 4 ]] || { echo "verify accepts repository, environment and SHA" >&2; exit 64; }
+    exec sudo -n /usr/local/sbin/nayori-qa-release verify "$REPOSITORY" "$SHA"
+    ;;
+  *) echo "unsupported command" >&2; exit 64 ;;
+esac
+

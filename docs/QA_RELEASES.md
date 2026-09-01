@@ -1,39 +1,53 @@
-# QA release promotion
+# Nayori QA-first releases
 
-Nayori uses `qa` as a protected promotion pointer, not as a long-lived development branch.
+## Branch contract
 
-```text
-feature/* -> pull request -> main -> reviewed promotion -> qa -> isolated testnet deploy
-```
+- `qa` is the protected integration branch and the source of every QA deployment.
+- `main` is the protected production branch.
+- Feature work targets `qa`; direct pushes remain blocked by repository rules.
+- A release branch is created from an exact QA SHA only after the VPS receipt passes.
+- Production pull requests target `main` from `release/<release-id>-<component>`.
 
-Every deploy must use one immutable release manifest containing the exact 40-character commit for
-each component. Images are built only on the VPS from those commits and recorded by digest. SDK QA
-consumers use a commit/tarball; the promotion does not publish an npm release.
+This policy applies to Web/contracts/docs, Agent SDK, Platform, OAuth and Evaluator. A
+multi-repository release records only participating repositories and one immutable SHA for each.
 
-The public contracts/Web and SDK repositories use GitHub branch protection on `qa`: PR required,
-linear history, resolved conversations, no force-push and no deletion, including administrators.
-Their reviewed manual workflow is designed to be the only actor allowed to bypass the PR
-requirement. It proves the requested SHA belongs to `main`, is a fast-forward from `qa`, reruns all
-release gates and pushes that exact commit without force. The first promotion remains blocked
-until the repository owner explicitly grants that narrow bypass to the official GitHub Actions
-app; do not disable administrator enforcement or substitute a human direct push.
-GitHub's current plan does not provide native branch protection for the private Platform, OAuth or
-Evaluator repositories. They remain private and must be promoted only by the reviewed manual
-workflow; direct pushes are an operational policy violation. Enabling GitHub Pro/Team is the
-remaining control needed to make that restriction server-enforced.
+## Automated QA deployment
 
-## Release gate
+A push to `qa` or an explicit dispatch of `Deploy exact QA commit` performs:
 
-1. Every manifest SHA is reachable from the corresponding repository's `main`.
-2. All component CI/security gates pass at those exact SHAs.
-3. Contracts are Stacks testnet `agentic-commerce-v5` and `sbtc-commerce-v4`; the appeal window is
-   exactly 3 Bitcoin burn blocks and all principals are dedicated QA identities.
-4. Web, API, facilitator, OAuth, evaluator, database and wallets are isolated from production.
-5. `qa.nayori.ai` is visibly marked `QA / TESTNET` and returns `noindex` headers.
-6. The full client, provider, evaluator, appeal and exact-settlement E2E passes for STX and sBTC.
-7. Receipts are archived outside GitHub without secrets. Internal actors never count as external
-   adoption, non-team usage or revenue.
+1. validation that the requested 40-character SHA is contained in `qa`;
+2. the complete repository test, type, build, audit and security gate;
+3. creation of a Git archive for that exact commit;
+4. SHA-256 verification by the restricted VPS upload command;
+5. build on `perkos-cloud-02` using external mode-`0600` environment files;
+6. idempotent database migrations where applicable;
+7. replacement of only the affected QA services;
+8. container and public-origin health checks; and
+9. a secret-free passed/failed receipt tied to repository, commit and archive digest.
 
-`deployments/qa-release.schema.json` is the machine-readable contract. A concrete manifest is
-created only after all referenced PRs are merged, avoiding mutable branch names or circular
-self-references.
+The Agent SDK is staged as a package tarball and tested from a clean consumer on the VPS. It is
+not published to npm by this workflow.
+
+## Production candidate
+
+Run `Prepare production candidate from QA` with the exact deployed SHA and a stable release ID.
+The workflow checks the VPS receipt before creating the release branch and pull request. Merging
+the pull request is the human production approval boundary.
+
+Service rollout promotes the tested source/image through the existing production Compose and
+rollback process. Contract broadcast is never part of a branch workflow or service deployment.
+
+## Contract boundary
+
+Testnet contract deployment and E2E runners remain explicitly confirmed commands. Mainnet runners
+default to signer-free preflight and read no signer until every release-specific typed confirmation
+has passed. A contract deployment does not switch Web, SDK, API or evaluator consumers.
+
+## Rollback and evidence
+
+The deploy controller retains the previous Compose file and images. If migration, startup or
+health validation fails, it restores the previous service definition. Receipts contain no keys,
+tokens, database URLs or private operational payloads.
+
+Internal/team-operated QA activity is classified as operational evidence and never counted as
+external adoption, external-wallet usage or revenue.
