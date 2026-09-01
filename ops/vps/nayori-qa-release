@@ -52,10 +52,32 @@ SHORT=${SHA:0:16}
 COMPOSE_BACKUP="$BASE/backups/compose.qa.before-$REPOSITORY-$SHA.yaml"
 cp "$COMPOSE" "$COMPOSE_BACKUP"
 COMPOSE_CHANGED=false
+ENV_BACKUPS=()
 
 replace_image() {
   local service=$1 image=$2
   sed -i "/^  ${service}:$/,/^  [A-Za-z0-9_-]*:$/ s|^    image: .*|    image: ${image}|" "$COMPOSE"
+}
+
+replace_compose_environment() {
+  local key=$1 value=$2
+  grep -Eq "^      ${key}:" "$COMPOSE" || { echo "missing compose environment key: $key" >&2; exit 66; }
+  sed -i "s|^      ${key}:.*|      ${key}: ${value}|" "$COMPOSE"
+}
+
+replace_env_file_release() {
+  local file=$1
+  [[ -f "$file" ]] || { echo "missing environment file: $file" >&2; exit 66; }
+  local backup="$BASE/backups/$(basename "$file").before-$REPOSITORY-$SHA"
+  cp "$file" "$backup"
+  chmod 600 "$backup"
+  ENV_BACKUPS+=("$file|$backup")
+  if grep -q '^RELEASE_SHA=' "$file"; then
+    sed -i "s|^RELEASE_SHA=.*|RELEASE_SHA=$SHA|" "$file"
+  else
+    printf '\nRELEASE_SHA=%s\n' "$SHA" >> "$file"
+  fi
+  chmod 600 "$file"
 }
 
 wait_healthy() {
@@ -70,6 +92,12 @@ wait_healthy() {
 }
 
 rollback() {
+  local item file backup
+  for item in "${ENV_BACKUPS[@]}"; do
+    file=${item%%|*}
+    backup=${item#*|}
+    cp "$backup" "$file"
+  done
   if [[ "$COMPOSE_CHANGED" == true ]]; then
     cp "$COMPOSE_BACKUP" "$COMPOSE"
     docker compose -f "$COMPOSE" --profile evaluator up -d >/dev/null 2>&1 || true
@@ -102,6 +130,8 @@ case "$REPOSITORY" in
       --build-arg NAYORI_API_ORIGIN=https://api.qa.nayori.ai "$RELEASE/developer-portal"
     replace_image web "$WEB_IMAGE"
     replace_image docs "$DOCS_IMAGE"
+    replace_compose_environment NAYORI_RELEASE_SHA "$SHA"
+    replace_compose_environment NAYORI_DOCS_RELEASE "$SHA"
     COMPOSE_CHANGED=true
     docker compose -f "$COMPOSE" config >/dev/null
     docker compose -f "$COMPOSE" up -d web docs
@@ -119,6 +149,8 @@ case "$REPOSITORY" in
     replace_image facilitator "$IMAGE"
     replace_image facilitator-worker "$IMAGE"
     COMPOSE_CHANGED=true
+    replace_env_file_release "$BASE/secrets/platform.env"
+    replace_env_file_release "$BASE/secrets/facilitator.env"
     docker compose -f "$COMPOSE" config >/dev/null
     docker compose -f "$COMPOSE" run --rm api npm run db:migrate:production
     docker compose -f "$COMPOSE" run --rm facilitator npm run db:migrate:production
@@ -131,6 +163,7 @@ case "$REPOSITORY" in
     docker build --pull=false -t "$IMAGE" "$RELEASE"
     replace_image oauth "$IMAGE"
     COMPOSE_CHANGED=true
+    replace_env_file_release "$BASE/secrets/oauth.env"
     docker compose -f "$COMPOSE" config >/dev/null
     docker compose -f "$COMPOSE" run --rm oauth npm run db:migrate:production
     docker compose -f "$COMPOSE" up -d oauth
@@ -142,6 +175,7 @@ case "$REPOSITORY" in
     replace_image evaluator "$IMAGE"
     sed -i -E "s|/opt/perkos-nayori-qa/releases/evaluator-[0-9a-f-]+/migrations/001_initial.sql|$RELEASE/migrations/001_initial.sql|" "$COMPOSE"
     COMPOSE_CHANGED=true
+    replace_env_file_release "$BASE/secrets/evaluator.env"
     docker compose -f "$COMPOSE" config >/dev/null
     docker compose -f "$COMPOSE" --profile evaluator up -d evaluator-postgres
     wait_healthy nayori-qa-evaluator-postgres
@@ -157,4 +191,3 @@ printf '{"schemaVersion":1,"environment":"qa","repository":"%s","commit":"%s","a
   "$REPOSITORY" "$SHA" "$DIGEST" "$STARTED" "$COMPLETED" > "$(receipt_path)"
 chmod 600 "$(receipt_path)"
 echo "deployed $REPOSITORY $SHA"
-

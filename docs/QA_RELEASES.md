@@ -46,8 +46,10 @@ has passed. A contract deployment does not switch Web, SDK, API or evaluator con
 ## Rollback and evidence
 
 The deploy controller retains the previous Compose file and images. If migration, startup or
-health validation fails, it restores the previous service definition. Receipts contain no keys,
-tokens, database URLs or private operational payloads.
+health validation fails, it restores the previous service definition and any release-identity
+environment files it changed. Web, Docs, API, facilitator, OAuth and evaluator must report or retain
+the exact deployed SHA; an image update with a stale runtime release identifier fails the rollout
+gate. Receipts contain no keys, tokens, database URLs or private operational payloads.
 
 Internal/team-operated QA activity is classified as operational evidence and never counted as
 external adoption, external-wallet usage or revenue.
