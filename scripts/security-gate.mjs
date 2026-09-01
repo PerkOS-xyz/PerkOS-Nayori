@@ -598,6 +598,21 @@ requirePattern(
   /const amount = exactEscrow\(job, allowZero\)[\s\S]*?Pc\.principal\(AGENTIC_COMMERCE\)\.willSendEq\(amount\)\.ustx\(\)[\s\S]*?postConditionMode:\s*["']deny["']/,
   "STX settlement must constrain the exact escrow outflow",
 );
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /replace_compose_environment NAYORI_RELEASE_SHA "\$SHA"[\s\S]*?replace_compose_environment NAYORI_DOCS_RELEASE "\$SHA"/,
+  "QA Web and Docs rollout must publish the exact runtime release SHA",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /replace_env_file_release "\$BASE\/secrets\/platform\.env"[\s\S]*?replace_env_file_release "\$BASE\/secrets\/facilitator\.env"[\s\S]*?replace_env_file_release "\$BASE\/secrets\/oauth\.env"[\s\S]*?replace_env_file_release "\$BASE\/secrets\/evaluator\.env"/,
+  "QA services must update their runtime release identity before restart",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /for item in "\$\{ENV_BACKUPS\[@\]\}"; do[\s\S]*?cp "\$backup" "\$file"/,
+  "QA rollback must restore release identity environment files",
+);
 
 if (failures.length > 0) {
   console.error("Nayori security gate failed:\n- " + failures.join("\n- "));
