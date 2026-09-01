@@ -1,4 +1,4 @@
 {
   "title": "Commerce",
-  "pages": ["escrow", "x402", "mpp", "settlement"]
+  "pages": ["escrow", "autonomous-evaluation", "x402", "mpp", "settlement"]
 }

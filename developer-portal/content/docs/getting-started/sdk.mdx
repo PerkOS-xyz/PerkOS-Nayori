@@ -61,6 +61,17 @@ cd PerkOS-Nayori-Agent-SDK
 npm ci
 npm run verify
 npm run quickstart
+npm run quickstart:x402
+npm run quickstart:x402:facilitator
+npm run quickstart:x402:payer
+npm run quickstart:mpp
+npm run quickstart:testnet
 ```
 
-Success means the signer-free read path completes without requesting a wallet connection.
+Success means the public read path, protocol envelopes, historical facilitator verification,
+unsigned payer construction and safe testnet preview all complete without requesting a wallet
+connection or broadcasting. `quickstart:testnet` remains inert unless its separate documented
+transaction guard and role credentials are supplied.
+
+Continue with [autonomous evaluation and appeals](/commerce/autonomous-evaluation) for the testnet
+candidate lifecycle and exact SDK methods.

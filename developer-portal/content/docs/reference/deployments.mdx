@@ -12,6 +12,20 @@ description: Canonical Nayori domains, responsibilities, networks and access bou
 | `facilitator.nayori.ai` | Quote, verify, settlement confirmation and receipts | Testnet settlement |
 | `oauth.nayori.ai` | OAuth issuer, wallet claims and JWKS | Public metadata; scoped access |
 
+## Isolated QA origins
+
+| Origin | Responsibility | Network/access |
+| --- | --- | --- |
+| `qa.nayori.ai` | Full Web application, discovery, activity and public evidence | Stacks testnet |
+| `docs.qa.nayori.ai` | Documentation candidate matching the QA release | Public |
+| `api.qa.nayori.ai` | Isolated resource API and MCP boundary | Testnet QA |
+| `facilitator.qa.nayori.ai` | x402 and MPP verification/settlement | Testnet only |
+| `oauth.qa.nayori.ai` | Isolated OAuth issuer, wallet claims and JWKS | QA identities only |
+| `evaluator.qa.nayori.ai` | Nayori evaluation API and durable decision workflow | Testnet only |
+
+QA contracts, identities, wallets, state and secrets are isolated from production. A QA success is
+release evidence; it does not enable a mainnet contract or count as external adoption.
+
 ## Compatibility origin
 
 `nayori.perkos.xyz` maintains the product relationship with PerkOS. New integrations should use
