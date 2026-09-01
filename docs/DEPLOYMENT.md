@@ -1,5 +1,18 @@
 # PerkOS deployment guide
 
+## Branch and release model
+
+Every Nayori repository uses `qa` as its protected integration branch and `main` as its protected
+production branch. Feature pull requests target `qa`. A push to `qa` runs the complete repository
+gate, uploads a Git archive through the restricted Nayori deploy identity and builds the exact SHA
+on `perkos-cloud-02`. Only a SHA with a passed VPS receipt may create a `release/<release-id>`
+branch and pull request to `main`.
+
+Contract transactions are excluded from both branch workflows. Contract promotion always begins
+with a signer-free preflight and requires a separately authorized, typed-confirmation command.
+See [`QA_RELEASES.md`](QA_RELEASES.md) for the operational sequence and
+[`the release design`](plans/2026-09-01-qa-first-multi-repo-release-design.md) for trust boundaries.
+
 ## Production
 
 PerkOS is deployed on Stacks mainnet under:
@@ -79,18 +92,28 @@ The active PoX-5 testnet sBTC principal is
 `SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token`. The older `ST1F7...` principal is retained
 only in frozen historical sources/evidence. Mainnet remains `SM3VD...` and is unaffected.
 
-### Autonomous evaluator/appeal candidate: no deployment yet
+### Autonomous evaluator/appeal generation
 
-`agentic-commerce-v5` and `sbtc-commerce-v4` are source and simnet-test candidates. This change
-does not add them to either versioned deployment runner, does not authorize them in the live
-reputation registry, and does not select them in the Web or SDK. Never substitute these names into
-the v4/v3 deployment commands below.
+`agentic-commerce-v5` and `sbtc-commerce-v4` are deployed and fully exercised in isolated Stacks
+testnet QA with a three-burn-block appeal policy. They are selected only by the QA Web and SDK
+configuration. Production consumers remain on v4/v3.
 
-Before any testnet deployment path is introduced, the exact merged candidate must pass the full
-contract suite and security gate. A future testnet-only runner must initialize `u3`, use dedicated
-QA evaluator and appeal-authority principals, configure official PoX-5 sBTC and produce secret-free
-evidence. A separate later mainnet promotion must require reviewed frozen hashes, initialize
-`u144`, and leave production consumers on the prior generation until controlled E2E passes.
+The dedicated v5/v4 mainnet runner defaults to a signer-free preflight. It freezes the reviewed
+source hashes, requires an explicit appeal-authority principal separate from the deployer, checks
+mainnet source occupancy, nonce, mempool and maximum fees, and creates no transaction:
+
+```bash
+STACKS_NETWORK=mainnet \
+AUTONOMOUS_ESCROW_MAINNET_APPEAL_AUTHORITY=SP... \
+npm run preflight:autonomous:mainnet
+```
+
+The deploy action additionally requires the exact strings
+`CONFIRM_AUTONOMOUS_ESCROW_MAINNET_DEPLOY=deploy-v5-v4-mainnet`, the exact deployer confirmation,
+the exact appeal-authority confirmation and an external signer file. It initializes the mainnet
+appeal policy to `u144`. The command is deliberately excluded from GitHub branch workflows.
+Production remains on v4/v3 until deployment, independent verification and a controlled
+minimal-value mainnet lifecycle all pass.
 
 Verified v4/v3 testnet evidence on 2026-08-30:
 

@@ -51,6 +51,7 @@ forbidPattern(
 const versionedEscrowTestnetDeploy = "scripts/deploy-versioned-escrow-testnet.mjs";
 const versionedEscrowTestnetE2e = "scripts/e2e-versioned-escrow-testnet.mjs";
 const autonomousEscrowTestnetDeploy = "scripts/deploy-autonomous-escrow-testnet.mjs";
+const autonomousEscrowMainnetDeploy = "scripts/deploy-autonomous-escrow-mainnet.mjs";
 const autonomousEscrowTestnetE2e = "scripts/e2e-autonomous-escrow-testnet.mjs";
 const versionedEscrowMainnetDeploy = "scripts/deploy-versioned-escrow-mainnet.mjs";
 const versionedEscrowMainnetE2e = "scripts/e2e-versioned-escrow-mainnet.mjs";
@@ -149,6 +150,68 @@ forbidPattern(
   if (confirmation < 0 || credentialRead < 0 || confirmation > credentialRead) {
     failures.push(
       `${autonomousEscrowTestnetDeploy}: typed confirmation must precede signer reads`
+    );
+  }
+}
+requirePattern(
+  autonomousEscrowMainnetDeploy,
+  /process\.env\.STACKS_NETWORK\s*!==\s*["']mainnet["']/,
+  "the autonomous mainnet promoter must require explicit mainnet",
+);
+requirePattern(
+  autonomousEscrowMainnetDeploy,
+  /AUTONOMOUS_ESCROW_MAINNET_ACTION\s*\|\|\s*["']preflight["']/,
+  "the autonomous mainnet promoter must default to signer-free preflight",
+);
+requirePattern(
+  autonomousEscrowMainnetDeploy,
+  /CONFIRM_AUTONOMOUS_ESCROW_MAINNET_DEPLOY\s*!==[\s\S]*?["']deploy-v5-v4-mainnet["']/,
+  "the autonomous mainnet promoter requires its release-specific typed confirmation",
+);
+requirePattern(
+  autonomousEscrowMainnetDeploy,
+  /CONFIRM_AUTONOMOUS_ESCROW_MAINNET_DEPLOYER\s*!==\s*EXPECTED_DEPLOYER/,
+  "the autonomous mainnet promoter requires the exact deployer confirmation",
+);
+requirePattern(
+  autonomousEscrowMainnetDeploy,
+  /CONFIRM_AUTONOMOUS_ESCROW_MAINNET_APPEAL_AUTHORITY\s*!==\s*APPEAL_AUTHORITY/,
+  "the autonomous mainnet promoter requires the exact appeal-authority confirmation",
+);
+requirePattern(
+  autonomousEscrowMainnetDeploy,
+  /APPEAL_WINDOW_BURN_BLOCKS\s*=\s*144n[\s\S]*?initialize-protocol[\s\S]*?Cl\.principal\(APPEAL_AUTHORITY\)/,
+  "the autonomous mainnet promoter must initialize the reviewed 144-block policy",
+);
+requirePattern(
+  autonomousEscrowMainnetDeploy,
+  /EXPECTED_SOURCE_HASHES[\s\S]*?createHash\(["']sha256["']\)[\s\S]*?digest\(["']hex["']\)/,
+  "the autonomous mainnet promoter must freeze source hashes",
+);
+requirePattern(
+  autonomousEscrowMainnetDeploy,
+  /postConditionMode:\s*PostConditionMode\.Deny/,
+  "the autonomous mainnet promoter must use deny-mode post conditions",
+);
+requirePattern(
+  autonomousEscrowMainnetDeploy,
+  /name:\s*["']sip-010-trait["'][\s\S]*?name:\s*["']reputation-registry-v3["'][\s\S]*?name:\s*["']agentic-commerce-v5["'][\s\S]*?name:\s*["']sbtc-commerce-v4["']/,
+  "the autonomous mainnet promoter must use the reviewed v5/v4 dependency order",
+);
+forbidPattern(
+  autonomousEscrowMainnetDeploy,
+  /STACKS_TESTNET|PostConditionMode\.Allow|randomPrivateKey/,
+  "the autonomous mainnet promoter may not expose testnet, allow mode or ephemeral signers",
+);
+{
+  const contents = source(autonomousEscrowMainnetDeploy);
+  const confirmation = contents.indexOf(
+    "CONFIRM_AUTONOMOUS_ESCROW_MAINNET_DEPLOY !=="
+  );
+  const credentialRead = contents.indexOf("readFileSync(ENV_PATH");
+  if (confirmation < 0 || credentialRead < 0 || confirmation > credentialRead) {
+    failures.push(
+      `${autonomousEscrowMainnetDeploy}: typed confirmation must precede credential reads`
     );
   }
 }
