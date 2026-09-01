@@ -1,37 +1,43 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { getOnchainStats } from "../services/onchain-stats";
-import { getAgentCount } from "../services/agent-registry";
+import { homeStatsFromSnapshot, type HomeTransparencyStat } from "../services/home-stats";
+import type { TransparencySnapshot } from "../services/transparency";
 
-// Live, real on-chain figures for the home stats band (no fabricated numbers).
+// The landing and /evidence intentionally consume the same public snapshot.
 export default function HomeStats() {
-  const [s, setS] = useState<{ agents: number; tx: number; wallets: number } | null>(null);
+  const [stats, setStats] = useState<HomeTransparencyStat[] | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const [chain, agents] = await Promise.all([getOnchainStats(), getAgentCount()]);
-        setS({ agents, tx: chain.totalTx, wallets: chain.distinctWallets });
+        const response = await fetch("/api/evidence.json", {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        if (!response.ok) throw new Error(`Evidence endpoint returned ${response.status}.`);
+        setStats(homeStatsFromSnapshot((await response.json()) as TransparencySnapshot));
       } catch {
-        // leave placeholders
+        setStats(null);
       }
     })();
   }, []);
 
-  const items = [
-    { value: s ? String(s.agents) : "…", label: "Agents on-chain" },
-    { value: s ? String(s.tx) : "…", label: "On-chain transactions" },
-    { value: "77", label: "Contract tests passing" },
-    { value: "4", label: "Smart contracts" },
+  const items = stats ?? [
+    { value: NaN, label: "Registered agents" },
+    { value: NaN, label: "All jobs" },
+    { value: NaN, label: "Successful contract calls" },
+    { value: NaN, label: "Distinct on-chain wallets" },
   ];
 
   return (
     <div className="card grid grid-cols-2 divide-white/[0.06] px-2 py-8 sm:grid-cols-4 sm:divide-x">
-      {items.map((s) => (
-        <div key={s.label} className="px-6 py-2 text-center">
-          <div className="font-mono text-3xl font-semibold tracking-tight text-white">{s.value}</div>
-          <div className="mt-1 text-sm text-mist-500">{s.label}</div>
+      {items.map((stat) => (
+        <div key={stat.label} className="px-6 py-2 text-center">
+          <div className="font-mono text-3xl font-semibold tracking-tight text-white">
+            {Number.isFinite(stat.value) ? stat.value.toLocaleString() : "…"}
+          </div>
+          <div className="mt-1 text-sm text-mist-500">{stat.label}</div>
         </div>
       ))}
     </div>

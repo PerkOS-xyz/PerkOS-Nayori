@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { evidenceManifest } from "../../constants/evidence";
+import { NETWORK_NAME } from "../../constants/network";
 import type {
   ObservedTransparencyMetrics,
   TransparencySnapshot,
@@ -85,6 +86,8 @@ export default function EvidencePage() {
   const milestone1 = snapshot?.milestone1 ?? evidenceManifest.milestone1;
   const milestone2 = snapshot?.milestone2 ?? evidenceManifest.milestone2;
   const chainUnavailable = snapshot?.dataStatus.chain === "unavailable";
+  const networkLabel = NETWORK_NAME === "mainnet" ? "Stacks mainnet" : "Stacks testnet";
+  const networkId = NETWORK_NAME === "mainnet" ? "stacks:1" : "stacks:2147483648";
 
   const overview = [
     [Fingerprint, "Registered agents", observed?.registeredAgentsMainnet],
@@ -101,7 +104,7 @@ export default function EvidencePage() {
         <div className="max-w-3xl">
           <span className="kicker">
             <span className={`h-1.5 w-1.5 rounded-full ${chainUnavailable ? "bg-amber-400" : "bg-emerald-400"}`} />
-            Public evidence · Stacks mainnet
+            Public evidence · {networkLabel}
           </span>
           <h1 className="mt-4 text-3xl font-bold tracking-tight">Nayori Transparency Dashboard</h1>
           <p className="mt-2 text-mist-300">
@@ -109,7 +112,7 @@ export default function EvidencePage() {
             progress. Unknown wallets are never classified as external automatically.
           </p>
           <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-mist-500">
-            <span>Network <strong className="font-mono font-medium text-mist-300">stacks:1</strong></span>
+            <span>Network <strong className="font-mono font-medium text-mist-300">{networkId}</strong></span>
             <span>
               Data status <strong className="font-medium text-mist-300">
                 {loading ? "refreshing" : snapshot?.dataStatus.chain ?? "unavailable"}
@@ -173,9 +176,11 @@ export default function EvidencePage() {
       <section className="mt-12" aria-labelledby="grant-progress">
         <h2 id="grant-progress" className="text-xl font-semibold">Milestone 2 verified progress</h2>
         <p className="mt-1 text-sm text-mist-500">
-          Qualifying counts exclude the approved baseline of {milestone2.baseline.registeredAgentsMainnet}
-          {" agent and "}{milestone2.baseline.completedSbtcJobsMainnet} completed sBTC job. External
-          participation requires explicit non-team attestation.
+          {NETWORK_NAME === "testnet"
+            ? "QA activity is internal operability evidence and never increments the mainnet adoption counters below."
+            : <>Qualifying counts exclude the approved baseline of {milestone2.baseline.registeredAgentsMainnet}
+                {" agent and "}{milestone2.baseline.completedSbtcJobsMainnet} completed sBTC job. External
+                participation requires explicit non-team attestation.</>}
         </p>
         <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {progress.map(({ label, key, ...definition }) => {
