@@ -18,7 +18,6 @@ import {
   PRODUCT_DESCRIPTOR,
   PRODUCT_NAME,
 } from "../constants/brand";
-import { NETWORK_NAME } from "../constants/network";
 
 const FEATURES = [
   {
@@ -106,7 +105,7 @@ export default function Home() {
                 </div>
                 <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-mist-300">
                   <span className="inline-flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-emerald-400" /> Configured for Stacks {NETWORK_NAME}
+                    <ShieldCheck className="h-4 w-4 text-emerald-400" /> Configured for Stacks
                   </span>
                   <span className="inline-flex items-center gap-2">
                     <Bitcoin className="h-4 w-4 text-bitcoin" /> Bitcoin-final settlement
