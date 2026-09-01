@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "suiteId": "nayori-qa-full-system-v1",
+  "network": "testnet",
+  "chainId": 2147483648,
+  "classification": "internal-team-operated-not-m2-adoption",
+  "contracts": {
+    "stx": "ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.agentic-commerce-v5",
+    "sbtc": "ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.sbtc-commerce-v4"
+  },
+  "origins": {
+    "web": "https://qa.nayori.ai",
+    "docs": "https://docs.qa.nayori.ai",
+    "api": "https://api.qa.nayori.ai",
+    "facilitator": "https://facilitator.qa.nayori.ai",
+    "oauth": "https://oauth.qa.nayori.ai",
+    "evaluator": "https://evaluator.qa.nayori.ai"
+  },
+  "cases": [
+    { "id": "C01", "group": "contract", "asset": "stx", "scenario": "approve-no-appeal", "driver": "autonomous-contract", "delayed": true },
+    { "id": "C02", "group": "contract", "asset": "sbtc", "scenario": "approve-no-appeal", "driver": "autonomous-contract", "delayed": true },
+    { "id": "C03", "group": "contract", "asset": "stx", "scenario": "reject-no-appeal", "driver": "autonomous-contract", "delayed": true },
+    { "id": "C04", "group": "contract", "asset": "sbtc", "scenario": "reject-no-appeal", "driver": "autonomous-contract", "delayed": true },
+    { "id": "C05", "group": "contract", "asset": "stx", "scenario": "approve-appeal-resolve-reject", "driver": "autonomous-contract", "delayed": false },
+    { "id": "C06", "group": "contract", "asset": "sbtc", "scenario": "approve-appeal-resolve-reject", "driver": "autonomous-contract", "delayed": false },
+    { "id": "C07", "group": "contract", "asset": "stx", "scenario": "reject-appeal-resolve-approve", "driver": "autonomous-contract", "delayed": false },
+    { "id": "C08", "group": "contract", "asset": "sbtc", "scenario": "reject-appeal-resolve-approve", "driver": "autonomous-contract", "delayed": false },
+    { "id": "C09", "group": "contract", "asset": "stx", "scenario": "approve-appeal-timeout", "driver": "autonomous-contract", "delayed": true },
+    { "id": "C10", "group": "contract", "asset": "sbtc", "scenario": "approve-appeal-timeout", "driver": "autonomous-contract", "delayed": true },
+    { "id": "C11", "group": "contract", "asset": "stx", "scenario": "review-timeout", "driver": "autonomous-contract", "delayed": true },
+    { "id": "C12", "group": "contract", "asset": "sbtc", "scenario": "review-timeout", "driver": "autonomous-contract", "delayed": true },
+    { "id": "I13", "group": "identity", "scenario": "anonymous-wallet-claim", "driver": "oauth-identity", "delayed": false },
+    { "id": "I14", "group": "identity", "scenario": "partner-enrollment-token", "driver": "oauth-partner", "delayed": false },
+    { "id": "I15", "group": "sdk", "asset": "sbtc", "scenario": "published-sdk-lifecycle", "driver": "sdk-lifecycle", "delayed": false },
+    { "id": "I16", "group": "identity", "scenario": "oauth-mcp-boundaries", "driver": "oauth-mcp", "delayed": false },
+    { "id": "P17", "group": "payment", "asset": "stx", "scenario": "x402-public-resource", "driver": "x402-payment", "delayed": true },
+    { "id": "P18", "group": "payment", "asset": "sbtc", "scenario": "x402-merchant-resource", "driver": "x402-payment", "delayed": true },
+    { "id": "P19", "group": "payment", "asset": "usdcx", "scenario": "x402-merchant-resource", "driver": "x402-payment", "delayed": true },
+    { "id": "P20", "group": "payment", "asset": "usdcx", "scenario": "mpp-public-resource", "driver": "mpp-payment", "delayed": true }
+  ]
+}

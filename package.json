@@ -25,7 +25,11 @@
     "e2e:versioned:testnet": "node scripts/e2e-versioned-escrow-testnet.mjs",
     "e2e:autonomous:testnet": "node scripts/e2e-autonomous-escrow-testnet.mjs",
     "e2e:stx-v2:testnet": "node scripts/e2e-stx-v2-testnet.mjs",
-    "verify:mainnet": "node scripts/verify-current-mainnet.mjs"
+    "verify:mainnet": "node scripts/verify-current-mainnet.mjs",
+    "e2e:qa:plan": "node scripts/e2e-qa-suite.mjs plan",
+    "e2e:qa:preflight": "node scripts/e2e-qa-suite.mjs preflight",
+    "e2e:qa:run": "node scripts/e2e-qa-suite.mjs run",
+    "e2e:qa:resume": "node scripts/e2e-qa-suite.mjs resume"
   },
   "devDependencies": {
     "@stacks/clarinet-sdk": "^3.8.1",
