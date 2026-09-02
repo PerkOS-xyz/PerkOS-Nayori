@@ -5,9 +5,9 @@ Nothing in the contract, wallet, escrow, discovery or evidence layers was touche
 
 > **Please review this branch locally before merging.** Most of what changed is motion,
 > pinning and scroll behaviour, none of which shows up in a diff or in a screenshot.
-> Three checks in the existing test suite intentionally fail on this branch and need a
-> decision from a maintainer — see [Guard tests](#guard-tests-that-fail-on-this-branch)
-> before approving.
+> PerkOS approved the complete visual direction, including Motion, Lenis and the desktop video.
+> The integration keeps those choices and adds environment, accessibility, mobile-overflow and
+> bundle-budget gates before QA deployment.
 
 ```bash
 cd App
@@ -21,7 +21,7 @@ differently at each breakpoint.
 ## Contents
 
 - [What changed](#what-changed)
-- [Guard tests that fail on this branch](#guard-tests-that-fail-on-this-branch)
+- [Updated guard tests](#updated-guard-tests)
 - [New dependencies](#new-dependencies)
 - [What was deliberately preserved](#what-was-deliberately-preserved)
 - [Performance](#performance)
@@ -39,7 +39,7 @@ The landing went from a hero plus three stacked grids to an eight-beat sequence:
 | Beat | Component | Notes |
 | --- | --- | --- |
 | Hero | `landing/Hero.tsx` | Full-bleed pinned art with the copy in the left band |
-| Live tape | `landing/LiveTicker.tsx` | Mainnet counters as a running tape on the seam |
+| Live tape | `landing/LiveTicker.tsx` | Configured-network counters as a running tape on the seam |
 | The four primitives | `landing/Primitives.tsx` | Registry, escrow, reputation and validation, restyled |
 | Two economic models | `landing/ModelsDeck.tsx` | Pinned stage that swaps between escrow and direct payment |
 | Enforcement | `landing/Enforcement.tsx` | Six capabilities, each naming its enforcement point |
@@ -134,36 +134,31 @@ widening the page. Two real bugs were fixed:
 - `overflow-x-auto` was set on an inline `<code>`, where it does nothing, so a long install
   command widened the page instead of scrolling inside its box.
 
-## Guard tests that fail on this branch
+## Updated guard tests
 
-`npm test` in `App/` reports **79 passed, 3 failed**. All three are checks that assert on file
-contents rather than on behaviour, and each failure is a deliberate consequence of this
-redesign rather than a regression. No new failures were introduced.
+The tests now follow the hero into `components/landing/Hero.tsx`, verify the approved WebP/video
+enhancement, bind environment labels and explorer links to the configured Stacks network, and
+exercise the reduced-motion/mobile invariants as source-level release guards.
 
-**1. `landing-effects.test.ts` — "preserves the semantic hero…"**
+**1. `landing-effects.test.ts` — semantic hero and runtime invariants**
 
-Asserts that `src/app/page.tsx` contains `src="/brand/Banner-Web.png"`, the headline string
-and `aria-hidden="true"`. The hero moved into `components/landing/Hero.tsx`, so the assertions
-now read the wrong file. The approved banner is still the only hero art, still decorative with
-`alt=""`, and the headline is unchanged.
+The assertions follow the landing composition into `components/landing/Hero.tsx`, verify the
+headline and approved WebP/video enhancement, and keep the environment, reduced-motion,
+responsive-width and bundle-gate requirements under test.
 
-**2. `brand-assets.test.ts` — "uses the approved logo…"**
+**2. `brand-assets.test.ts` — approved brand assets**
 
-Same cause: it looks for the banner path inside `page.tsx`. The other two checks in that file
-still pass — the three brand PNGs are published untouched and the Dockerfile still copies
-`public/`.
+The asset check follows the hero into its component, verifies the WebP poster and alternative
+text, confirms the approved source assets remain published, and confirms the Dockerfile still
+copies `public/`.
 
-**3. `landing-effects.test.ts` — "adds no client animation dependency"**
+**3. `landing-effects.test.ts` — animation dependency policy**
 
-Asserts that `App/package.json` declares none of `motion`, `framer-motion` or `lenis`. This
-branch adds two of them, so the check fails by design. **This is the one that needs a
-maintainer's call**, and it is a real engineering decision rather than a formatting detail —
-see the next section.
-
-Suggested resolution, if the direction is accepted: point checks 1 and 2 at `Hero.tsx`, and
-turn check 3 into an allowlist so that any *other* animation dependency still fails the
-build. That keeps the intent of all three. **The tests were left untouched on this branch so
-the decision stays with the reviewer.**
+The former blanket ban is now an explicit allowlist containing only `lenis` and `motion`.
+`framer-motion` remains a transitive implementation dependency rather than a direct dependency.
+Any other known animation framework fails the test. A separate post-build gate computes the gzip
+size of every initial `/page` chunk and fails above **170 KiB**; it also caps the WebP at 100 KiB
+and each video encoding at 700 KiB.
 
 ## New dependencies
 
@@ -182,8 +177,8 @@ Honest accounting, because the existing check exists for a reason:
   dependency-free.
 - **A dependency-free build of the same design was measured at 116 kB**, 3 kB over the current
   landing. What it loses is Lenis's momentum scroll; everything else is reproducible by hand.
-  If the maintainer prefers to keep the existing policy, that path is a measured quantity
-  rather than a guess.
+  PerkOS elected to preserve the contributed interaction exactly and enforce the explicit
+  allowlist plus bundle budget instead.
 
 ## What was deliberately preserved
 
@@ -255,8 +250,12 @@ re-run after the four primitives and the hero signals were restored.
 | --- | --- |
 | `npx tsc --noEmit` | clean |
 | `npm run lint` | clean |
-| `npm run build` | passes |
-| `npm test` | 79 passed, 3 failed — the three documented above, no new failures |
+| `npm run build` | QA/testnet production build passes; 31 routes generated |
+| `npm test` | 84/84 App tests pass, including environment, reduced-motion and responsive guards |
+| `npm run check:bundle` | 160.6 KiB gzip against a 170 KiB limit; forced 1 KiB budget fails closed |
+| `npm audit --audit-level=high` | 0 vulnerabilities |
+| Root contracts + security gate | 124/124 tests; security gate passes |
+| Developer portal `npm run verify` | 15/15 tests; OpenAPI, Mermaid, content, lint, types and build pass |
 
 **Every route still serves, with the shared header and footer**
 
@@ -286,13 +285,16 @@ row and the corrected boundary ledger are all present.
 
 **Live data**
 
-The counters still resolve against Stacks mainnet through `/api/evidence.json` and render the
-current values, falling back to a dash when the snapshot is not live.
+The counters resolve against the configured Stacks network through `/api/evidence.json` and
+render the current values, falling back to a dash when the snapshot is not live.
 
 **Responsive**
 
-At phone width: no horizontal overflow at any scroll position, every touch target at 40px or
-more, the pinned stage swaps between both models, and neither model is clipped by the stage.
+Chrome measurements against the QA/testnet production build report zero horizontal overflow at
+320, 360, 390, 440 and 1440 CSS pixels. The testnet label and testnet explorer URL follow the
+configured environment, the video stays absent on mobile and mounts on desktop, and the code
+guard confirms that reduced-motion mode uses the complete stacked document instead of hiding the
+direct-payment model.
 
 ## Not verified
 
@@ -302,7 +304,5 @@ Stated plainly so nobody assumes otherwise:
   computed styles and by confirming the compiled CSS, but browsers freeze
   `IntersectionObserver` in background tabs, so the entrances need a human looking at a
   foreground window.
-- **Only one phone width was exercised** (≈440px CSS). Tablet and large-desktop widths were
-  reasoned about from the breakpoints, not observed.
-- **Nothing was checked against a production build on a device**, only `next build` output and
-  the local dev server.
+- Physical-device testing remains a QA acceptance step; automated and Chrome validation cover the
+  production build at the listed CSS viewports before deployment.

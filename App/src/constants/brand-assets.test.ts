@@ -17,13 +17,16 @@ describe("Nayori Web brand assets", () => {
 
   it("uses the approved logo in the header and Web-specific hero background", () => {
     const logo = readFileSync(resolve(process.cwd(), "src/components/Logo.tsx"), "utf8");
-    const home = readFileSync(resolve(process.cwd(), "src/app/page.tsx"), "utf8");
+    const hero = readFileSync(
+      resolve(process.cwd(), "src/components/landing/Hero.tsx"),
+      "utf8",
+    );
 
     expect(logo).toContain('/brand/Logo.png');
     expect(logo).toContain('/brand/PerkOS.png');
-    expect(home).toContain('/brand/Banner-Web.png');
-    expect(home).not.toContain('/brand/Banner.png');
-    expect(home).toContain('alt=""');
+    expect(hero).toContain('/brand/Banner-Web.webp');
+    expect(hero).not.toContain('/brand/Banner.png');
+    expect(hero).toContain('alt=""');
   });
 
   it("copies public assets into the standalone VPS image", () => {

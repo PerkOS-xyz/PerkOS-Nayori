@@ -26,8 +26,8 @@ export default function Quickstart() {
 
   return (
     <section className="container-x mt-f7">
-      <div className="grid items-center gap-f4 lg:grid-cols-12" data-nayori-reveal>
-        <div className="lg:col-span-5">
+      <div className="grid min-w-0 items-center gap-f4 lg:grid-cols-12" data-nayori-reveal>
+        <div className="min-w-0 lg:col-span-5">
           <span className="kicker">For builders</span>
           <h2 className="mt-f3 text-h2 font-bold text-white">Start from a wallet, not an API key.</h2>
           <p className="mt-f3 max-w-md text-body text-mist-300">
@@ -36,8 +36,8 @@ export default function Quickstart() {
           </p>
         </div>
 
-        <div className="lg:col-span-7">
-          <div className="flex items-center justify-between gap-f3 rounded-2xl border border-white/[0.08] bg-ink-900 p-f3">
+        <div className="min-w-0 lg:col-span-7">
+          <div className="flex min-w-0 items-center justify-between gap-f3 rounded-2xl border border-white/[0.08] bg-ink-900 p-f3">
             <code className="block min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-body text-mist-100">
               <span className="select-none text-mist-500">$ </span>
               {INSTALL}

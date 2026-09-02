@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { MODELS } from "./landingData";
 import { useLgUp } from "./useMdUp";
 import { useMounted } from "./useMounted";
+import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 import { useSectionProgress } from "./useSectionProgress";
 
 // The first swap fires early on purpose: with an even split the opening third
@@ -26,6 +27,7 @@ export default function ModelsDeck() {
   const sectionRef = useRef<HTMLElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const mounted = useMounted();
+  const reduced = usePrefersReducedMotion();
   const lgUp = useLgUp();
   const [active, setActive] = useState(0);
 
@@ -39,7 +41,9 @@ export default function ModelsDeck() {
     }
   });
 
-  const staged = mounted;
+  // Reduced-motion users receive the complete stacked document. Keeping the
+  // pinned stage active while progress is fixed at zero would hide model two.
+  const staged = mounted && !reduced;
 
   return (
     <section
@@ -119,6 +123,7 @@ export default function ModelsDeck() {
                 <article
                   key={model.id}
                   data-active={staged ? index === active : true}
+                  aria-hidden={staged ? index !== active : undefined}
                   className={
                     staged
                       ? "absolute inset-0 transition-opacity duration-300 ease-signature"
