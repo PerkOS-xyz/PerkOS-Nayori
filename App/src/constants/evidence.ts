@@ -149,7 +149,7 @@ export const m1SbtcLifecycle = [
 export const evidenceManifest = {
   schemaVersion: EVIDENCE_VERSION,
   updatedAt: EVIDENCE_UPDATED_AT,
-  product: "Nayori by PerkOS",
+  product: "Nayori — PerkOS Stacks Agentic Commerce",
   network: NETWORK_NAME === "testnet" ? "stacks:2147483648" : "stacks:1",
   explorer: "https://explorer.hiro.so",
   policy: {

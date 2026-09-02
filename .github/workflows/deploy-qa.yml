@@ -69,6 +69,7 @@ jobs:
           npm test
           npm run lint
           npm run build
+          npm run check:bundle
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -100,4 +101,3 @@ jobs:
             "stage PerkOS-Nayori qa $RELEASE_SHA $ARCHIVE_SHA" < /tmp/nayori-release.tar.gz
           ssh -i ~/.ssh/nayori_qa -o BatchMode=yes nayori-deploy@"$SSH_HOST" \
             "deploy PerkOS-Nayori qa $RELEASE_SHA $ARCHIVE_SHA"
-

@@ -1,4 +1,4 @@
-# PerkOS Stacks Agentic Commerce - Frontend Configuration
+# Nayori — PerkOS Stacks Agentic Commerce: Frontend Configuration
 
 ## Environment Variables
 

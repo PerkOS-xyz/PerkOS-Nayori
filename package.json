@@ -1,12 +1,12 @@
 {
-  "name": "stacks-agentic-commerce-contracts",
+  "name": "perkos-nayori-contracts",
   "version": "1.0.0",
   "private": true,
   "engines": {
     "node": ">=20"
   },
   "type": "module",
-  "description": "Clarity contract tests for PerkOS Stacks Agentic Commerce",
+  "description": "Clarity contracts and tests for Nayori — PerkOS Stacks Agentic Commerce",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",

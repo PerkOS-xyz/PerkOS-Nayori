@@ -1,4 +1,4 @@
-# PerkOS Stacks Agentic Commerce - Clarinet Validation
+# Nayori — PerkOS Stacks Agentic Commerce: Clarinet Validation
 
 ## Validate Contracts
 

@@ -1,4 +1,4 @@
-# PerkOS Stacks Agentic Commerce - Clarinet Test Results
+# Nayori — PerkOS Stacks Agentic Commerce: Clarinet Test Results
 
 ## Run clarinet test
 
