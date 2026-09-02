@@ -29,7 +29,9 @@
     "e2e:qa:plan": "node scripts/e2e-qa-suite.mjs plan",
     "e2e:qa:preflight": "node scripts/e2e-qa-suite.mjs preflight",
     "e2e:qa:run": "node scripts/e2e-qa-suite.mjs run",
-    "e2e:qa:resume": "node scripts/e2e-qa-suite.mjs resume"
+    "e2e:qa:resume": "node scripts/e2e-qa-suite.mjs resume",
+    "preflight:identity:testnet": "STACKS_NETWORK=testnet QA_IDENTITY_DEPLOY_ACTION=preflight node scripts/deploy-qa-identity-testnet.mjs",
+    "deploy:identity:testnet": "node scripts/deploy-qa-identity-testnet.mjs"
   },
   "devDependencies": {
     "@stacks/clarinet-sdk": "^3.8.1",
