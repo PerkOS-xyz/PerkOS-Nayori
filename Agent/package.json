@@ -1,7 +1,7 @@
 {
   "name": "agent-scripts",
   "version": "1.0.0",
-  "description": "Agent scripts used to build PerkOS Stacks Agentic Commerce",
+  "description": "Agent scripts for Nayori — PerkOS Stacks Agentic Commerce",
   "scripts": {
     "test": "echo \"No tests yet\""
   },

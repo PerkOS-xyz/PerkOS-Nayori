@@ -1,4 +1,4 @@
-# PerkOS Stacks Agentic Commerce - Frontend Components
+# Nayori — PerkOS Stacks Agentic Commerce: Frontend Components
 
 ## AgentRegistry Component
 

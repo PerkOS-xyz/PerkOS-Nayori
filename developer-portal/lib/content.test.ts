@@ -2,8 +2,20 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import schema from '../openapi/nayori-api.json';
 import manifest from '../openapi/manifest.json';
+import { appName } from './shared';
 
 describe('versioned public references', () => {
+  it('uses the institutional Nayori product name', () => {
+    const overview = readFileSync(
+      new URL('../content/docs/index.mdx', import.meta.url),
+      'utf8',
+    );
+
+    expect(appName).toBe('Nayori — PerkOS Stacks Agentic Commerce');
+    expect(overview).toContain('Nayori — PerkOS Stacks Agentic Commerce');
+    expect(overview).toContain('the Bitcoin Commerce Agent');
+  });
+
   it('pins the canonical Nayori API origin and schema version', () => {
     expect(schema.openapi).toBe('3.1.0');
     expect(schema.info.version).toBe('0.7.2');

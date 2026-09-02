@@ -1,6 +1,6 @@
-# Contracts - PerkOS Stacks Agentic Commerce
+# Nayori — PerkOS Stacks Agentic Commerce Contracts
 
-Clarity smart contracts for PerkOS Stacks Agentic Commerce.
+Clarity smart contracts for Nayori — PerkOS Stacks Agentic Commerce.
 
 ## Overview
 

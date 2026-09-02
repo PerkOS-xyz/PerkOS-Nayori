@@ -1,4 +1,4 @@
-# PerkOS Stacks Agentic Commerce - Frontend Integration
+# Nayori — PerkOS Stacks Agentic Commerce: Frontend Integration
 
 ## Wallet Connect
 

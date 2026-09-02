@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
   openGraph: {
     title: appName,
-    description: 'Developer guides, API reference and security boundaries for Nayori by PerkOS.',
+    description: 'Developer guides, API reference and security boundaries for Nayori — PerkOS Stacks Agentic Commerce.',
     type: 'website',
     url: siteOrigin,
     siteName: appName,

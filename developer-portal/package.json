@@ -1,7 +1,7 @@
 {
   "name": "@perkos/nayori-docs",
   "version": "0.1.0",
-  "description": "Professional developer portal for Nayori by PerkOS",
+  "description": "Developer portal for Nayori — PerkOS Stacks Agentic Commerce",
   "private": true,
   "engines": {
     "node": ">=24.15.0"

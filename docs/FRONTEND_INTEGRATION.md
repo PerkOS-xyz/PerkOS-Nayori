@@ -35,7 +35,7 @@ import { Connect } from '@stacks/connect-react';
 <Connect
   authOptions={{
     appDetails: {
-      name: 'PerkOS Stacks Agentic Commerce',
+      name: 'Nayori — PerkOS Stacks Agentic Commerce',
       icon: 'https://your-icon-url.com/logo.png',
     },
     redirectTo: '/',

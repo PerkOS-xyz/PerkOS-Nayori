@@ -1,4 +1,4 @@
-# PerkOS Stacks Agentic Commerce - Test Results
+# Nayori — PerkOS Stacks Agentic Commerce: Test Results
 
 ## Agent Registry Tests
 
