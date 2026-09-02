@@ -1,6 +1,11 @@
 import Link from "next/link";
 import Logo, { GithubMark, PerkOSMark } from "./Logo";
 import { COMPANY_NAME, PRODUCT_FULL_NAME, PRODUCT_NAME } from "../constants/brand";
+import { CONTRACT_ADDRESS } from "../constants/contract";
+import { NETWORK_NAME } from "../constants/network";
+
+const EXPLORER_ADDRESS_URL =
+  `https://explorer.hiro.so/address/${CONTRACT_ADDRESS}?chain=${NETWORK_NAME}`;
 
 const COLUMNS: { title: string; links: { label: string; href: string; external?: boolean }[] }[] = [
   {
@@ -26,7 +31,7 @@ const COLUMNS: { title: string; links: { label: string; href: string; external?:
     links: [
       {
         label: "Contracts on the explorer",
-        href: "https://explorer.hiro.so/address/SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH?chain=mainnet",
+        href: EXPLORER_ADDRESS_URL,
         external: true,
       },
       { label: "Public snapshot (JSON)", href: "/api/evidence.json" },

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { HOME_TRANSPARENCY_METRICS, homeStatsFromSnapshot } from "../../services/home-stats";
 import type { TransparencySnapshot } from "../../services/transparency";
+import { NETWORK_NAME } from "../../constants/network";
 
 const SHORT_LABELS: Record<string, string> = {
   registeredAgentsMainnet: "agents registered",
@@ -12,7 +13,7 @@ const SHORT_LABELS: Record<string, string> = {
 };
 
 /**
- * Live mainnet counters as a market tape, sitting on the seam where the hero
+ * Live counters for the configured network as a market tape, sitting on the seam where the hero
  * art ends and the page begins.
  *
  * A tape suits this data better than a stat grid: it is a running record, and
@@ -68,7 +69,7 @@ export default function LiveTicker() {
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
           </span>
           <span className="hidden font-mono text-[11px] uppercase tracking-[0.16em] text-mist-500 sm:inline">
-            Stacks mainnet
+            Stacks {NETWORK_NAME}
           </span>
         </span>
 
