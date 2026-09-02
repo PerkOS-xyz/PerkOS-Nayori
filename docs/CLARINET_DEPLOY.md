@@ -1,4 +1,4 @@
-# PerkOS Stacks Agentic Commerce - Clarinet Deployment Guide
+# Nayori — PerkOS Stacks Agentic Commerce: Clarinet Deployment Guide
 
 ## Run Clarinet Check
 

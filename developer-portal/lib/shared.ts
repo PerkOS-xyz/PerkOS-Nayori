@@ -1,4 +1,4 @@
-export const appName = 'Nayori Developer Documentation';
+export const appName = 'Nayori — PerkOS Stacks Agentic Commerce';
 export const siteOrigin = process.env.NAYORI_DOCS_ORIGIN ?? 'https://docs.nayori.ai';
 export const docsRoute = '/';
 export const docsImageRoute = '/og';

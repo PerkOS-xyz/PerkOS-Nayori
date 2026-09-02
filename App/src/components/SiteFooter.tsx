@@ -1,6 +1,11 @@
 import Link from "next/link";
 import Logo, { GithubMark, PerkOSMark } from "./Logo";
-import { COMPANY_NAME, PRODUCT_FULL_NAME, PRODUCT_NAME } from "../constants/brand";
+import {
+  COMPANY_NAME,
+  PRODUCT_DESCRIPTOR,
+  PRODUCT_FULL_NAME,
+  PRODUCT_NAME,
+} from "../constants/brand";
 import { CONTRACT_ADDRESS } from "../constants/contract";
 import { NETWORK_NAME } from "../constants/network";
 
@@ -110,7 +115,7 @@ export default function SiteFooter() {
         </div>
 
         <div className="mt-f5 flex flex-col gap-2 border-t border-white/[0.06] pt-f3 text-micro text-mist-500 sm:flex-row sm:items-center sm:justify-between">
-          <span>{PRODUCT_FULL_NAME}</span>
+          <span>{PRODUCT_FULL_NAME} · {PRODUCT_DESCRIPTOR}</span>
           <span>Built on Stacks · Settled on Bitcoin · © 2026</span>
         </div>
       </div>

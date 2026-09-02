@@ -1,4 +1,4 @@
-# PerkOS Stacks Agentic Commerce - Deployable Contracts
+# Nayori — PerkOS Stacks Agentic Commerce: Deployable Contracts
 
 ## Smart Contracts Ready for Testnet Deployment
 

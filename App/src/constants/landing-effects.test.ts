@@ -1,11 +1,27 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import {
+  PRODUCT_DESCRIPTOR,
+  PRODUCT_FULL_NAME,
+  PRODUCT_TITLE,
+} from "./brand";
 
 const source = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("Nayori landing effects", () => {
+  it("preserves the institutional name and commercial tagline", () => {
+    expect(PRODUCT_FULL_NAME).toBe("Nayori — PerkOS Stacks Agentic Commerce");
+    expect(PRODUCT_TITLE).toBe(
+      "Nayori — PerkOS Stacks Agentic Commerce | The Bitcoin Commerce Agent",
+    );
+    expect(PRODUCT_DESCRIPTOR).toBe("The Bitcoin Commerce Agent");
+
+    const hero = source("src/components/landing/Hero.tsx");
+    expect(hero).toContain("{PRODUCT_FULL_NAME}");
+  });
+
   it("preserves the semantic hero and enhances it without replacing the banner", () => {
     const home = source("src/app/page.tsx");
     const hero = source("src/components/landing/Hero.tsx");

@@ -10,7 +10,7 @@ import HeroVideo from "./HeroVideo";
 import { useMounted } from "./useMounted";
 import { HERO_BLUR_DATA_URL } from "./heroBlur";
 import { useMdUp } from "./useMdUp";
-import { COMPANY_NAME, PRODUCT_DESCRIPTOR, PRODUCT_NAME } from "../../constants/brand";
+import { COMPANY_NAME, PRODUCT_FULL_NAME, PRODUCT_NAME } from "../../constants/brand";
 
 /**
  * Full-bleed pinned hero.
@@ -83,7 +83,7 @@ export default function Hero() {
         <div className="w-full max-w-[34rem] lg:max-w-[48rem]">
           <span className="kicker bg-black/30 backdrop-blur-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />
-            {PRODUCT_NAME} · {PRODUCT_DESCRIPTOR}
+            {PRODUCT_FULL_NAME}
           </span>
 
           <h1 className="mt-f4 text-balance text-hero font-bold text-white">
