@@ -1,6 +1,7 @@
 {
-  "name": "stacks-agentic-commerce-app",
+  "name": "perkos-nayori-app",
   "version": "0.1.0",
+  "description": "Web application for Nayori — PerkOS Stacks Agentic Commerce",
   "private": true,
   "engines": {
     "node": ">=20.9.0"

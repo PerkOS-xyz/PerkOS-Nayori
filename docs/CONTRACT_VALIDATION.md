@@ -1,4 +1,4 @@
-# PerkOS Stacks Agentic Commerce - Contract Validation
+# Nayori — PerkOS Stacks Agentic Commerce: Contract Validation
 
 ## Agent Registry Contract
 

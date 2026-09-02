@@ -1,6 +1,6 @@
-# Nayori by PerkOS — Stacks Agentic Commerce Frontend
+# Nayori — PerkOS Stacks Agentic Commerce Frontend
 
-Next.js 15 frontend for Nayori, the Bitcoin Commerce Agent built by PerkOS.
+Next.js 15 frontend for Nayori — PerkOS Stacks Agentic Commerce, the Bitcoin Commerce Agent.
 
 ## Overview
 

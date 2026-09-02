@@ -1,4 +1,4 @@
-# PerkOS Stacks Agentic Commerce - Agent Scripts
+# Nayori — PerkOS Stacks Agentic Commerce: Agent Scripts
 
 This directory contains agent scripts used to build the project.
 

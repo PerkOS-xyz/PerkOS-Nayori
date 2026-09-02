@@ -1,4 +1,4 @@
-# PerkOS Stacks Agentic Commerce - Next Steps
+# Nayori — PerkOS Stacks Agentic Commerce: Next Steps
 
 ## What's Done
 

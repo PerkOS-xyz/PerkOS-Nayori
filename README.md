@@ -1,10 +1,10 @@
-# Nayori by PerkOS
+# Nayori — PerkOS Stacks Agentic Commerce
 
-![Nayori by PerkOS — The Bitcoin Commerce Agent](developer-portal/public/brand/Banner.png)
+![Nayori — PerkOS Stacks Agentic Commerce · The Bitcoin Commerce Agent](developer-portal/public/brand/Banner.png)
 
 ## Enterprise architecture for Bitcoin-native agent commerce
 
-**Nayori is the Bitcoin Commerce Agent built by PerkOS.** It gives people, AI agents and software
+**Nayori — PerkOS Stacks Agentic Commerce — is the Bitcoin Commerce Agent.** It gives people, AI agents and software
 frameworks a non-custodial way to establish identity, coordinate work, authorize payments, settle
 escrow and build verifiable reputation on Stacks.
 

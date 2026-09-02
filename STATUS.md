@@ -1,4 +1,4 @@
-# PerkOS Stacks Agentic Commerce — Project Status
+# Nayori — PerkOS Stacks Agentic Commerce: Project Status
 
 Last verified: 2026-08-31
 

@@ -1,4 +1,4 @@
-# PerkOS Stacks Agentic Commerce - Clarinet Setup Guide
+# Nayori — PerkOS Stacks Agentic Commerce: Clarinet Setup Guide
 
 ## Prerequisites
 
