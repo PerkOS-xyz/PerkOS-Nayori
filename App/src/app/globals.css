@@ -50,12 +50,12 @@
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5
            text-sm font-medium text-white transition-all hover:bg-brand-600
            shadow-[0_10px_28px_-12px_rgba(85,70,255,0.8)] disabled:opacity-50;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-white/[0.12]
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-white/[0.12]
            bg-white/[0.02] px-4 py-2.5 text-sm font-medium text-mist-300 transition-all
            hover:border-white/30 hover:text-white disabled:opacity-50;
   }
@@ -305,5 +305,115 @@ html.nayori-motion-ready [data-nayori-reveal][data-nayori-visible="true"] {
   html.nayori-motion-ready [data-nayori-reveal] {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* Live mainnet tape. Keyframes stay at the top level: nested inside a layer
+   they can be dropped when no utility references them, and the tape freezes. */
+.nayori-ticker-track {
+  animation: nayori-ticker 46s linear infinite;
+  will-change: transform;
+}
+
+.nayori-ticker-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, black 5%, black 92%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, black 5%, black 92%, transparent 100%);
+}
+
+@keyframes nayori-ticker {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nayori-ticker-track { animation: none; }
+}
+
+/* Enforcement rows: the hairline draws in, then the enforcement point slides
+   into place behind it. Both hang off the shared reveal observer, so the rows
+   stay fully readable when it never runs. */
+html.nayori-motion-ready .nayori-enforce-row[data-nayori-reveal] {
+  opacity: 1;
+  transform: none;
+}
+
+html.nayori-motion-ready .nayori-enforce-rule {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 760ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--nayori-reveal-delay, 0ms);
+}
+
+html.nayori-motion-ready .nayori-enforce-row[data-nayori-visible="true"] .nayori-enforce-rule {
+  transform: scaleX(1);
+}
+
+html.nayori-motion-ready .nayori-enforce-where {
+  opacity: 0;
+  transform: translateX(14px);
+  transition:
+    opacity 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--nayori-reveal-delay, 0ms) + 160ms);
+}
+
+html.nayori-motion-ready .nayori-enforce-row[data-nayori-visible="true"] .nayori-enforce-where {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.nayori-motion-ready .nayori-enforce-rule,
+  html.nayori-motion-ready .nayori-enforce-where {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Deck steps. The cell keeps its own background and hairlines painted at all
+   times; only the contents move, so a cell mid-animation never shows through
+   as an empty grey block. Each stage plays its stagger when it becomes the
+   active one, which is what carries the swap on phones. */
+.nayori-steps .nayori-step {
+  transition:
+    opacity 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--nayori-step-delay, 0ms);
+}
+
+.nayori-step-rule {
+  transform-origin: left center;
+  transition: transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--nayori-step-delay, 0ms);
+}
+
+html.nayori-motion-ready article[data-active="false"] .nayori-step {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+html.nayori-motion-ready article[data-active="false"] .nayori-step-rule {
+  transform: scaleX(0);
+}
+
+html.nayori-motion-ready article[data-active="true"] .nayori-step {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+html.nayori-motion-ready article[data-active="true"] .nayori-step-rule {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nayori-steps .nayori-step,
+  .nayori-step-rule,
+  html.nayori-motion-ready article[data-active="false"] .nayori-step,
+  html.nayori-motion-ready article[data-active="false"] .nayori-step-rule {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
