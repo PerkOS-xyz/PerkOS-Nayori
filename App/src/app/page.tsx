@@ -2,6 +2,7 @@ import LandingMotionController from "../components/LandingMotionController";
 import MotionProvider from "../components/landing/MotionProvider";
 import Hero from "../components/landing/Hero";
 import LiveTicker from "../components/landing/LiveTicker";
+import Primitives from "../components/landing/Primitives";
 import ModelsDeck from "../components/landing/ModelsDeck";
 import Enforcement from "../components/landing/Enforcement";
 import BoundaryLedger from "../components/landing/BoundaryLedger";
@@ -25,6 +26,7 @@ export default function Home() {
         />
         <div className="bg-ink-950">
         <LiveTicker />
+        <Primitives />
         <ModelsDeck />
         <Enforcement />
         <BoundaryLedger />

@@ -40,6 +40,7 @@ export const ENFORCEMENT: { capability: string; where: string }[] = [
   { capability: "Agent identity", where: "Stacks agent registry + OAuth agent identity" },
   { capability: "STX and sBTC escrow", where: "Clarity commerce contracts" },
   { capability: "Reputation", where: "Reputation contract with authorized protocol callers" },
+  { capability: "Capability validation", where: "validation-registry contract, proof-hash attestations" },
   { capability: "Spending controls", where: "SDK fail-closed spending policy" },
   { capability: "Replay protection", where: "PostgreSQL uniqueness and atomic reservation" },
   { capability: "Confirmation receipts", where: "Reconciliation worker + signed receipt" },
@@ -51,7 +52,7 @@ export const BOUNDARY: { state: BoundaryState; label: string; what: string; deta
   {
     state: "live",
     label: "Live on mainnet",
-    what: "Identity, STX and sBTC escrow, reputation",
+    what: "Identity, validation, STX and sBTC escrow, reputation",
     detail: "Six current contracts, publicly verifiable on the Stacks explorer.",
   },
   {

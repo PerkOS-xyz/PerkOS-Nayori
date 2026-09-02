@@ -34,12 +34,13 @@ differently at each breakpoint.
 
 ### Page structure
 
-The landing went from a hero plus three stacked grids to a seven-beat sequence:
+The landing went from a hero plus three stacked grids to an eight-beat sequence:
 
 | Beat | Component | Notes |
 | --- | --- | --- |
 | Hero | `landing/Hero.tsx` | Full-bleed pinned art with the copy in the left band |
 | Live tape | `landing/LiveTicker.tsx` | Mainnet counters as a running tape on the seam |
+| The four primitives | `landing/Primitives.tsx` | Registry, escrow, reputation and validation, restyled |
 | Two economic models | `landing/ModelsDeck.tsx` | Pinned stage that swaps between escrow and direct payment |
 | Enforcement | `landing/Enforcement.tsx` | Six capabilities, each naming its enforcement point |
 | Current boundary | `landing/BoundaryLedger.tsx` | What is live, in controlled rollout, and deliberately closed |
@@ -48,9 +49,23 @@ The landing went from a hero plus three stacked grids to a seven-beat sequence:
 
 All copy is traceable to `README.md` — "Verified product state", "What Nayori provides",
 "Enterprise capability matrix" and "Current boundary". No claim was invented for the page.
-The hero headline is unchanged from the previous landing.
+
+Everything the previous landing said is still here. The hero headline and its three signals
+("Configured for Stacks", "Bitcoin-final settlement", "Verified end-to-end") are unchanged, and
+the four primitives keep their original wording — only their presentation follows the new
+system.
+
+Two gaps in the protocol description were closed while checking that: capability validation
+was missing from the enforcement matrix, and the boundary ledger listed identity, escrow and
+reputation as live on mainnet without validation, which `README.md` includes.
 
 ### Hero
+
+The three signals under the calls to action — "Configured for Stacks", "Bitcoin-final
+settlement", "Verified end-to-end" — are the previous landing's, unchanged. An extra row of
+figures was tried there and removed again: two rows of facts under one headline read as the
+same thing said twice, and every figure in it already has a home (the contract count in the
+boundary ledger, the SDK in the builders section).
 
 The banner is no longer an illustration inside a bordered card; it is the background of a
 full-height section, with the copy in the left band and a gradient scrim carrying it. The
@@ -66,10 +81,12 @@ leaving a third of the scroll with nothing happening.
 The stage runs at every viewport, including phones, where the alternative was a column twice
 as long:
 
-| | Stacked column | Pinned stage |
+| Deck section at ≈440px wide | Stacked column | Pinned stage |
 | --- | --- | --- |
-| Section height (≈440px wide) | 1713px | 1291px |
-| Whole page | 7369px | 6935px |
+| Height | 1713px | 1291px |
+
+That is 25% less scrolling for the same content, which is why the stage earns its keep on
+phones even more than on desktop.
 
 The pin runway is shorter on phones (`135vh`) than on desktop (`240vh`), and the stage height
 was checked against the tallest model so no card is clipped — the usual failure of pinned
@@ -188,6 +205,7 @@ Honest accounting, because the existing check exists for a reason:
 | | Before | After |
 | --- | --- | --- |
 | First Load JS on `/` | 113 kB | 163 kB |
+| Route payload for `/` | 1.18 kB | 51.3 kB |
 | Hero image transferred | 1526 kB PNG | **82 kB WebP** |
 | Hero first paint | black box until the PNG lands | inlined blur placeholder |
 
@@ -228,7 +246,8 @@ asks for less data. If the file is missing or autoplay is refused, the still sta
 
 ## QA performed
 
-Run on the branch as it stands, against the local dev server and a production build.
+Run on the branch as it stands, against the local dev server and a production build, and
+re-run after the four primitives and the hero signals were restored.
 
 **Build and static checks**
 
@@ -258,6 +277,12 @@ no horizontal overflow.
 Checked with a raw `curl`, with no JavaScript executed: the hero copy, the live counter
 labels, both economic models with all their steps, the enforcement rows, the boundary ledger,
 the SDK command and the closing CTA are all present in the server HTML.
+
+**Content carried over from the previous landing**
+
+Checked string by string in the served HTML: the three hero signals, the four primitive
+titles with their descriptions, "proof hashes", the new "Capability validation" enforcement
+row and the corrected boundary ledger are all present.
 
 **Live data**
 

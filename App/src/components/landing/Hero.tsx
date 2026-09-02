@@ -4,23 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { m, useScroll, useTransform, useReducedMotion } from "motion/react";
-import { ArrowRight, ArrowDown } from "lucide-react";
+import { ArrowRight, ShieldCheck, Bitcoin, Activity } from "lucide-react";
 import Embers from "./primitives/Embers";
 import HeroVideo from "./HeroVideo";
 import { useMounted } from "./useMounted";
 import { HERO_BLUR_DATA_URL } from "./heroBlur";
 import { useMdUp } from "./useMdUp";
 import { COMPANY_NAME, PRODUCT_DESCRIPTOR, PRODUCT_NAME } from "../../constants/brand";
-
-// Verified facts, not marketing. Source: README "Verified product state".
-const PROOF = [
-  {
-    label: "6 contracts live on Stacks mainnet",
-    href: "https://explorer.hiro.so/address/SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH?chain=mainnet",
-  },
-  { label: "@perkos/agent-sdk 0.7.0", href: "https://www.npmjs.com/package/@perkos/agent-sdk" },
-  { label: "Agent readiness 100/100", href: "/evidence" },
-];
 
 /**
  * Full-bleed pinned hero.
@@ -120,22 +110,17 @@ export default function Hero() {
               See the on-chain evidence
             </Link>
           </div>
-
-          <ul className="mt-f4 flex flex-wrap items-center gap-x-f4 gap-y-f1 font-mono text-micro text-mist-300">
-            {PROOF.map((item) => (
-              <li key={item.label}>
-                <a
-                  href={item.href}
-                  target={item.href.startsWith("http") ? "_blank" : undefined}
-                  rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  className="inline-flex min-h-[40px] items-center transition-colors duration-200 ease-signature hover:text-mist-100 sm:min-h-0"
-                >
-                  {item.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-
+          <div className="mt-f4 flex flex-wrap items-center gap-x-f4 gap-y-f1 text-micro text-mist-300">
+            <span className="inline-flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-emerald-400" /> Configured for Stacks
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <Bitcoin className="h-4 w-4 text-bitcoin" /> Bitcoin-final settlement
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <Activity className="h-4 w-4 text-brand-400" /> Verified end-to-end
+            </span>
+          </div>
         </div>
       </m.div>
 
