@@ -5,6 +5,8 @@
   "chainId": 2147483648,
   "classification": "internal-team-operated-not-m2-adoption",
   "contracts": {
+    "identity": "ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.agent-registry",
+    "validation": "ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.validation-registry",
     "stx": "ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.agentic-commerce-v5",
     "sbtc": "ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.sbtc-commerce-v4"
   },
