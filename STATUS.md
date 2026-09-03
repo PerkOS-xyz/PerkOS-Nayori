@@ -1,6 +1,6 @@
 # Nayori — PerkOS Stacks Agentic Commerce: Project Status
 
-Last verified: 2026-08-31
+Last verified: 2026-09-02
 
 ## Current status
 
@@ -20,14 +20,14 @@ Last verified: 2026-08-31
 - Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 - Settlement assets: STX and canonical mainnet sBTC
 - Contract sources: exact match with the reviewed repository sources
-- Contract tests: 120 passing (100 existing regressions plus 20 autonomous-evaluator/appeal tests)
+- Contract tests: 126 passing
 
 ### Active versioned escrow release
 
-`reputation-registry-v3`, `agentic-commerce-v4` and `sbtc-commerce-v3` are the active mainnet
-generation. The escrow contracts use a fixed 12 Bitcoin burn-block review window, terminal timeout
-payout, durable reputation retry and two-step ownership. sBTC funding pins the exact SIP-010 token
-to each job.
+`reputation-registry-v3`, `agentic-commerce-v5` and `sbtc-commerce-v4` are the active mainnet
+generation. The escrow contracts use a fixed 12 Bitcoin burn-block review window, evidence-backed
+pending decisions, a 144-burn-block appeal window, human resolution, permissionless timeout
+liveness and durable reputation retry. sBTC funding pins the exact canonical SIP-010 token.
 
 The generation first passed on Stacks testnet under
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`: controlled complete paths pass 27/27 for STX and
@@ -51,18 +51,17 @@ transfer. Web settlement reads the live escrow and job-pinned sBTC token before 
 while zero-balance open expiry uses no transfer post-condition. The earlier immutable v3/v2
 testnet generation and the prior mainnet generation remain historical evidence.
 
-### Non-deployed autonomous evaluation candidate
+### Mainnet autonomous evaluation release
 
-`agentic-commerce-v5` and `sbtc-commerce-v4` are implemented locally and remain review-only. They
-add decision-pending and disputed states, verifiable decision/explanation hashes, role-specific
+`agentic-commerce-v5` and `sbtc-commerce-v4` are deployed and configured on mainnet. They add
+decision-pending and disputed states, verifiable decision/explanation hashes, role-specific
 appeals, a job-pinned human authority, permissionless unappealed finalization and a second
-resolution-timeout liveness path. The same source accepts only a 3-burn-block QA policy or a
-144-burn-block mainnet policy at one-time initialization.
+resolution-timeout liveness path. Mainnet is initialized once with the 144-burn-block policy.
 
-Twenty focused tests cover authorization, exact boundaries, approval/rejection reversal,
-single-settlement conservation, STX and sBTC payouts, per-job token pinning, token-confusion
-rejection, reputation retry and unavailable-authority fallback. No current mainnet contract,
-production consumer, deployment script or environment selection changed in this candidate.
+Twenty focused contract tests cover authorization, exact boundaries, reversal, conservation,
+token pinning, reputation retry and authority fallback. Mainnet deployment/configuration completed
+with seven successful transactions. Controlled STX and sBTC appeal reversals passed 47/47 and
+50/50 checks, followed by a 75/75 signer-free public postcheck.
 
 ## Mainnet contracts
 
@@ -72,20 +71,20 @@ production consumer, deployment script or environment selection changed in this 
 | Validation | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.validation-registry` |
 | SIP-010 trait | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sip-010-trait` |
 | Reputation | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.reputation-registry-v3` |
-| STX escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v4` |
-| sBTC escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v3` |
+| STX escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v5` |
+| sBTC escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v4` |
 
 The prior v2/v2 generation remains immutable M1 evidence but is not the default for new jobs.
 
 ## Verified wiring
 
-- `sbtc-commerce-v3` accepts only canonical mainnet sBTC:
+- `sbtc-commerce-v4` accepts only canonical mainnet sBTC:
   `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`.
-- `agentic-commerce-v4` and `sbtc-commerce-v3` are authorized callers of
+- `agentic-commerce-v5` and `sbtc-commerce-v4` are authorized callers of
   `reputation-registry-v3`.
 - The four stateful contracts that expose `get-owner` are owned by the mainnet deployer.
-- Production build configuration explicitly selects mainnet, the deployer address and the
-  versioned v4/v3/v3 generation; the existing Vercel deployment remains a rollback path.
+- Production build defaults explicitly select mainnet, the deployer address and the v5/v4/v3
+  generation; the previous VPS image and existing Vercel deployment remain rollback paths.
 - The public API validates wallet-linked OAuth tokens issued independently by `oauth.nayori.ai`,
   plus short-lived scopes, MCP, quotes,
   payment verification, one testnet broadcast, confirmation reconciliation and a delivery ledger
@@ -131,7 +130,7 @@ npm run verify:mainnet
 - Milestone 1 is approved and complete. Its contracts and transaction evidence remain unchanged;
   the active generation is documented as a later security and liveness improvement.
 - Milestone 2 is in progress in the independent `PerkOS-Nayori-Agent-SDK` repository. The public
-  `@perkos/agent-sdk@0.5.1` package, signer adapters, testnet lifecycle, x402 v2 foundation and MPP
+  `@perkos/agent-sdk@0.7.0` package, signer adapters, testnet lifecycle, x402 v2 foundation and MPP
   PaymentAuth USDCx profile are available.
 - The invite-only API adds wallet-linked OAuth and authenticated MCP to the testnet confirmation
   and delivery-ledger path. OAuth authorizes API access but cannot sign a payment.

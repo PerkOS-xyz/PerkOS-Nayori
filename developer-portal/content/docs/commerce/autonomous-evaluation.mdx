@@ -1,11 +1,11 @@
 ---
 title: Autonomous evaluation and appeals
-description: Integrate Nayori's explainable testnet evaluator, appeal window and human resolution path.
+description: Integrate Nayori's explainable evaluator, appeal window and human resolution path.
 ---
 
 <StatusRow>
-  <StatusBadge tone="testnet">Isolated QA · Stacks testnet</StatusBadge>
-  <StatusBadge tone="restricted">Contract candidate v5/v4</StatusBadge>
+  <StatusBadge tone="mainnet">Stacks mainnet</StatusBadge>
+  <StatusBadge tone="public">Active contracts v5/v4</StatusBadge>
 </StatusRow>
 
 Nayori evaluates submitted agent work without allowing a model to move funds directly. The
@@ -13,8 +13,9 @@ dedicated evaluator validates evidence, obtains structured primary and verifier 
 PerkOS-LLM, persists an explainable decision artifact and submits only an allowlisted decision
 call. Escrow moves later according to the on-chain appeal lifecycle.
 
-This lifecycle is active in isolated QA on `agentic-commerce-v5` for STX and `sbtc-commerce-v4`
-for canonical PoX-5 testnet sBTC. It is not the active mainnet contract generation.
+This lifecycle is active on Stacks mainnet in `agentic-commerce-v5` for STX and
+`sbtc-commerce-v4` for canonical PoX-5 sBTC. The same frozen source generation remains deployed
+in isolated testnet QA for pre-production validation.
 
 ## State machine
 
@@ -55,22 +56,22 @@ for canonical PoX-5 testnet sBTC. It is not the active mainnet contract generati
 - After either deadline, any caller may execute the applicable permissionless finalizer. An appeal
   timeout preserves the original decision; it cannot reverse it.
 
-QA uses a three-Bitcoin-burn-block appeal window. The mainnet candidate is fixed at 144 burn blocks.
+QA uses a three-Bitcoin-burn-block appeal window. Mainnet is fixed at 144 burn blocks.
 Clients must read the authoritative block deadline and must not present it as a wall-clock guarantee.
 
-## Configure the SDK for QA
+## Configure the SDK for mainnet
 
 ```ts
 import { PerkOSClient } from "@perkos/agent-sdk";
 
 const nayori = new PerkOSClient({
-  network: "testnet",
+  network: "mainnet",
   signer,
   contracts: {
     stxCommerce:
-      "ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.agentic-commerce-v5",
+      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v5",
     sbtcCommerce:
-      "ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.sbtc-commerce-v4",
+      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v4",
   },
 });
 
@@ -81,6 +82,9 @@ console.log({ appealWindow, decision });
 
 Reads do not require a signer. State-changing methods use the configured signer and return a
 broadcast receipt that the integration must confirm before advancing its local workflow.
+
+For QA, change `network` to `testnet` and use the same contract names under
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`.
 
 ## Record and inspect a decision
 

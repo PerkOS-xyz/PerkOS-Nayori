@@ -15,14 +15,14 @@ The current production generation is:
 | Contract | Purpose |
 | --- | --- |
 | `reputation-registry-v3.clar` | Idempotent outcomes and ratings namespaced by protocol source and job ID |
-| `agentic-commerce-v4.clar` | STX escrow with a fixed 12-burn-block review window and durable reputation retry |
-| `sbtc-commerce-v3.clar` | SIP-010 escrow with the same 12-block window and token pinning per funded job |
+| `agentic-commerce-v5.clar` | STX escrow with explainable pending decisions, appeals and liveness-safe settlement |
+| `sbtc-commerce-v4.clar` | The same lifecycle with canonical token pinning per funded job |
 
 Submission records `submitted-at-burn` and `review-deadline = submitted-at-burn + 12`. The
-evaluator remains authoritative while `burn-block-height <= review-deadline`. Only when
-`burn-block-height > review-deadline` may any principal call `settle-review-timeout`, which pays
-the provider and records terminal status `u6`. A timeout payout is deliberately excluded from
-completed-job reputation and rating eligibility.
+evaluator may record an evidence-backed decision through that deadline, but cannot move escrow.
+Mainnet decisions remain appealable for 144 burn blocks by the affected client or provider. The
+job pins a separate human authority for resolution, while permissionless timeout functions ensure
+neither a silent evaluator nor an unavailable authority can lock funds indefinitely.
 
 Settlement never depends on reputation availability. A failed outcome write is recorded in the
 commerce contract and can be retried by any principal after the registry authorization is fixed.
@@ -30,13 +30,11 @@ Ownership changes use propose/accept, and sBTC jobs retain the token principal p
 even if the default token for future jobs changes.
 
 The active generation is deployed under mainnet principal
-`SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`: `reputation-registry-v3` at block 8885885,
-`agentic-commerce-v4` at block 8885887 and `sbtc-commerce-v3` at block 8885890. Canonical sBTC and
-both reputation allowlists confirmed in blocks 8885893–8885898. All sources match the repository.
-
-One guarded internal mainnet sBTC job then passed 26/26 checks for exactly 100 atomic units. Job
-`u1` ended completed (`u3`) with escrow zero, exact payout, synchronized reputation and persisted
-rating. This is team-operated release evidence, not external M2 adoption or revenue.
+`SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`: `agentic-commerce-v5` at block `8905872` and
+`sbtc-commerce-v4` at block `8905874`. Configuration fixed the 12/144 policy, separate authority,
+canonical sBTC and both reputation allowlists. Controlled mainnet STX and sBTC appeal reversals
+passed 47/47 and 50/50 checks; a signer-free public postcheck passed 75/75. All actors remain
+team-operated evidence, not external M2 adoption or revenue.
 
 The same source generation is deployed on testnet under
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`. The earlier immutable `agentic-commerce-v3` and
