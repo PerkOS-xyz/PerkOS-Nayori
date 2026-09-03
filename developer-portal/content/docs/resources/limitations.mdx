@@ -3,9 +3,15 @@ title: Known limitations
 description: Current product and documentation boundaries developers must account for.
 ---
 
-- Direct x402 and MPP facilitator settlement is controlled on Stacks testnet.
-- Mainnet facilitator settlement and sponsorship are disabled.
+- Direct x402 and MPP facilitator settlement is enabled on Stacks mainnet with confirmation-gated
+  delivery and payer-approved transactions.
+- Mainnet rollout acceptance currently covers signed challenges and runtime configuration;
+  controlled mainnet settlement-and-delivery canaries remain pending. Existing economic proofs
+  were executed on testnet.
+- Transaction sponsorship is disabled.
 - Partner OAuth/MCP enrollment remains invite-only.
+- The production OAuth issuer still uses testnet wallet enrollment; new mainnet partner
+  onboarding is on hold until that separate identity configuration is migrated and validated.
 - MPP uses USDCx; the hosted x402 resource currently exercises the STX profile.
 - Browser signing requires a compatible Stacks wallet such as Leather.
 - Headless custody requires an application-owned secret manager, KMS, HSM or isolated signer.

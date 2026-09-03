@@ -4,7 +4,7 @@ description: Use HTTP Payment Authentication with USDCx on Stacks for direct res
 ---
 
 <StatusRow>
-  <StatusBadge tone="testnet">Public resource · Testnet</StatusBadge>
+  <StatusBadge tone="mainnet">Public resource · Mainnet</StatusBadge>
   <StatusBadge tone="public">USDCx</StatusBadge>
 </StatusRow>
 
@@ -31,3 +31,6 @@ npm run quickstart:mpp
 ```
 
 The SDK quickstart is offline and never requests a real signature or broadcast.
+
+The live challenge identifies `stacks:1`, the canonical mainnet USDCx contract and an `SP...`
+recipient. Reject a challenge naming testnet or another token contract.

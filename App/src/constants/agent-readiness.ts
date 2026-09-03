@@ -1,5 +1,10 @@
 import { PRODUCT_DESCRIPTION, PRODUCT_FULL_NAME } from "./brand";
-import { NAYORI_API_ORIGIN, NAYORI_OAUTH_ORIGIN } from "./discovery";
+import {
+  COMMERCE_NETWORK_LABEL,
+  NAYORI_API_ORIGIN,
+  NAYORI_OAUTH_ORIGIN,
+} from "./discovery";
+import { NETWORK_NAME } from "./network";
 import { SITE_ORIGIN } from "./site";
 
 export const AGENT_SKILLS_SCHEMA =
@@ -69,10 +74,10 @@ Do not request, collect, transmit, or store a seed phrase or private key. Do not
   {
     name: "nayori-x402-quotes",
     description:
-      "Purchase Nayori's public x402 resource or use invited API and MCP tools with wallet-approved Stacks testnet payments.",
+      `Purchase Nayori's public x402 resource or use invited API and MCP tools with wallet-approved ${COMMERCE_NETWORK_LABEL} payments.`,
     content: `---
 name: nayori-x402-quotes
-description: Purchase Nayori's public x402 resource or use invited API and MCP tools with wallet-approved Stacks testnet payments.
+description: Purchase Nayori's public x402 resource or use invited API and MCP tools with wallet-approved ${COMMERCE_NETWORK_LABEL} payments.
 ---
 
 # Nayori x402 Payments
@@ -82,23 +87,23 @@ Use this skill when an agent needs the public paid report, or an invited partner
 ## Procedure
 
 1. Send GET to [the public paid resource](${SITE_ORIGIN}/api/v1) and decode its PAYMENT-REQUIRED x402 v2 header.
-2. Read [the supported-capabilities response](${NAYORI_API_ORIGIN}/supported) and [OpenAPI document](${NAYORI_API_ORIGIN}/openapi.json) before constructing the Stacks testnet payment.
+2. Read [the supported-capabilities response](${NAYORI_API_ORIGIN}/supported) and [OpenAPI document](${NAYORI_API_ORIGIN}/openapi.json) before constructing the ${COMMERCE_NETWORK_LABEL} payment.
 3. Use the public SDK and a wallet or approved custody signer to review and create PAYMENT-SIGNATURE. Copy the challenge's signed quote into the advertised X-NAYORI-SIGNED-QUOTE extension header.
 4. Resend GET to the same resource with both headers. A 202 response is pending, not paid; follow its Location after Retry-After until a 200 response includes PAYMENT-RESPONSE.
 5. For invited API or MCP access, read [OAuth metadata](${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server), [protected-resource metadata](${SITE_ORIGIN}/.well-known/oauth-protected-resource), and [Auth.md](${SITE_ORIGIN}/auth.md), then use the minimum documented scope.
 
 ## Safety boundary
 
-Public direct payment and the API pilot are limited to Stacks testnet settlement. OAuth cannot sign a payment: the payer separately reviews and signs the exact STX, sBTC, or USDCx transaction. A signed quote, verification, broadcast, or pending state is not confirmed settlement.
+Public direct payment and the API pilot are pinned to ${COMMERCE_NETWORK_LABEL}. OAuth cannot sign a payment: the payer separately reviews and signs the exact STX, sBTC, or USDCx transaction. A signed quote, verification, broadcast, or pending state is not confirmed settlement.
 `,
   },
   {
     name: "nayori-mpp-usdcx",
     description:
-      "Purchase Nayori's public capability report with MPP PaymentAuth and wallet-approved USDCx on Stacks testnet.",
+      `Purchase Nayori's public capability report with MPP PaymentAuth and wallet-approved USDCx on ${COMMERCE_NETWORK_LABEL}.`,
     content: `---
 name: nayori-mpp-usdcx
-description: Purchase Nayori's public capability report with MPP PaymentAuth and wallet-approved USDCx on Stacks testnet.
+description: Purchase Nayori's public capability report with MPP PaymentAuth and wallet-approved USDCx on ${COMMERCE_NETWORK_LABEL}.
 ---
 
 # Nayori MPP PaymentAuth
@@ -108,14 +113,14 @@ Use this skill when a PaymentAuth-compatible agent needs Nayori's paid capabilit
 ## Procedure
 
 1. Send GET to [the MPP resource](${SITE_ORIGIN}/api/mpp/v1) and parse its WWW-Authenticate: Payment challenge plus the body extension containing the signed Nayori quote.
-2. Confirm method=usdc, intent=charge, methodDetails.type=stacks, the Stacks testnet network, USDCx asset, amount, recipient and expiry.
+2. Confirm method=usdc, intent=charge, methodDetails.type=stacks, the ${COMMERCE_NETWORK_LABEL} network, USDCx asset, amount, recipient and expiry.
 3. Use @perkos/agent-sdk 0.6.0 or later to construct the unsigned transaction. Have Leather or the approved custody signer review and sign it without broadcasting from the wallet.
 4. Encode the credential and retry GET with Payment-Authorization: Payment ... plus X-NAYORI-SIGNED-QUOTE. Do not replace an unrelated OAuth Authorization: Bearer header.
 5. Treat 202 as pending. Follow Location after Retry-After until a 200 response includes Payment-Receipt.
 
 ## Safety boundary
 
-The MPP route accepts USDCx only and settlement is testnet-only. Sponsorship is disabled. A challenge, signed transaction, verification, broadcast or pending response is not confirmed payment. Never send a seed phrase or private key.
+The MPP route accepts USDCx only and settlement is pinned to ${COMMERCE_NETWORK_LABEL}. Sponsorship is disabled. A challenge, signed transaction, verification, broadcast or pending response is not confirmed payment. Never send a seed phrase or private key.
 `,
   },
 ] as const;
@@ -211,8 +216,8 @@ export function buildArdManifest(origin = SITE_ORIGIN) {
         type: "application/json",
         url: `${origin}/api/mpp/v1`,
         description:
-          "An MPP PaymentAuth USDCx resource delivered only after canonical Stacks testnet settlement.",
-        capabilities: ["mpp-paymentauth", "usdcx", "stacks-testnet", "wallet-approved"],
+          `An MPP PaymentAuth USDCx resource delivered only after canonical ${COMMERCE_NETWORK_LABEL} settlement.`,
+        capabilities: ["mpp-paymentauth", "usdcx", `stacks-${NETWORK_NAME}`, "wallet-approved"],
         representativeQueries: [
           "Purchase Nayori's capability report with MPP PaymentAuth",
           "How do I pay Nayori with USDCx through Payment-Authorization?",
@@ -226,10 +231,10 @@ export function buildArdManifest(origin = SITE_ORIGIN) {
         type: "application/vnd.oai.openapi+json;version=3.1",
         url: `${NAYORI_API_ORIGIN}/openapi.json`,
         description:
-          "Authenticated, request-bound quote issuance for STX, sBTC, and USDCx on Stacks testnet.",
-        capabilities: ["x402-quotes", "signed-quotes", "stacks-testnet"],
+          `Authenticated, request-bound quote issuance for STX, sBTC, and USDCx on ${COMMERCE_NETWORK_LABEL}.`,
+        capabilities: ["x402-quotes", "signed-quotes", `stacks-${NETWORK_NAME}`],
         representativeQueries: [
-          "Create a request-bound STX payment quote on Stacks testnet",
+          `Create a request-bound STX payment quote on ${COMMERCE_NETWORK_LABEL}`,
           "Which x402 assets and payment mechanisms does Nayori support?",
           "How can a merchant verify a signed Nayori quote?",
         ],
@@ -241,8 +246,8 @@ export function buildArdManifest(origin = SITE_ORIGIN) {
         type: "application/json",
         url: `${origin}/api/v1`,
         description:
-          "A real x402 v2 Stacks testnet resource delivered only after canonical settlement confirmation.",
-        capabilities: ["x402-payments", "stacks-testnet", "wallet-approved"],
+          `A real x402 v2 ${COMMERCE_NETWORK_LABEL} resource delivered only after canonical settlement confirmation.`,
+        capabilities: ["x402-payments", `stacks-${NETWORK_NAME}`, "wallet-approved"],
         representativeQueries: [
           "Purchase Nayori's machine-readable commerce capability report",
           "Which x402 headers does Nayori require for a Stacks payment?",

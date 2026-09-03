@@ -1,6 +1,6 @@
 # Nayori — PerkOS Stacks Agentic Commerce: Project Status
 
-Last verified: 2026-09-02
+Last verified: 2026-09-03
 
 ## Current status
 
@@ -9,8 +9,9 @@ Last verified: 2026-09-02
 - Production app: [nayori.ai](https://nayori.ai)
 - Developer portal: [docs.nayori.ai](https://docs.nayori.ai), an independent application with
   self-hosted search, generated OpenAPI reference and complete SDK/commerce onboarding.
-- Partner API: [api.nayori.ai](https://api.nayori.ai) (invite-only testnet settlement)
-- Public x402 resource and confirmed testnet proof: [nayori.ai/api/v1](https://nayori.ai/api/v1)
+- Partner API: [api.nayori.ai](https://api.nayori.ai) (invite-only; OAuth enrollment network migration pending)
+- Public mainnet x402 resource: [nayori.ai/api/v1](https://nayori.ai/api/v1); the confirmed
+  testnet proof remains reproducible release evidence.
 - Public MPP PaymentAuth USDCx resource:
   [nayori.ai/api/mpp/v1](https://nayori.ai/api/mpp/v1)
 - Same-origin OpenAPI discovery: [nayori.ai/openapi.json](https://nayori.ai/openapi.json)
@@ -21,6 +22,17 @@ Last verified: 2026-09-02
 - Settlement assets: STX and canonical mainnet sBTC
 - Contract sources: exact match with the reviewed repository sources
 - Contract tests: 126 passing
+
+### Direct-payment rollout verification
+
+Platform 0.7.3 is deployed from `595e849d765d61953d38bd9861b8f6ce23cf449b`.
+The production API/facilitator passed 36 public checks, including mainnet asset/recipient
+validation, both Ed25519 quote signatures and preservation of QA/testnet challenges. This
+rollout did not sign or broadcast a payment. Mainnet x402/MPP settlement-and-delivery canaries
+are still pending; the existing testnet economic proofs do not substitute for that gate.
+The separate production OAuth issuer still configures testnet wallet enrollment. Review its
+existing clients and invitations before migrating that identity boundary; do not invite new
+mainnet partners until the end-to-end enrollment flow has been validated.
 
 ### Active versioned escrow release
 
@@ -87,8 +99,9 @@ The prior v2/v2 generation remains immutable M1 evidence but is not the default 
   generation; the previous VPS image and existing Vercel deployment remain rollback paths.
 - The public API validates wallet-linked OAuth tokens issued independently by `oauth.nayori.ai`,
   plus short-lived scopes, MCP, quotes,
-  payment verification, one testnet broadcast, confirmation reconciliation and a delivery ledger
-  for STX, sBTC and USDCx. Mainnet facilitator settlement and fee sponsorship remain disabled.
+  payment verification, one network-pinned broadcast, confirmation reconciliation and a delivery
+  ledger for STX, sBTC and USDCx. Mainnet settlement requires an explicit runtime acknowledgement;
+  fee sponsorship remains disabled.
 - The web exposes a credential-stripping same-origin `/api/v1` route. It forwards only x402
   protocol headers to `api.nayori.ai/v1`; the API uses a merchant credential over HTTPS to the
   isolated facilitator. A payment returns 202 until confirmation and the fixed capability report
@@ -130,13 +143,13 @@ npm run verify:mainnet
 - Milestone 1 is approved and complete. Its contracts and transaction evidence remain unchanged;
   the active generation is documented as a later security and liveness improvement.
 - Milestone 2 is in progress in the independent `PerkOS-Nayori-Agent-SDK` repository. The public
-  `@perkos/agent-sdk@0.7.0` package, signer adapters, testnet lifecycle, x402 v2 foundation and MPP
+  `@perkos/agent-sdk@0.7.1` package, signer adapters, testnet lifecycle, x402 v2 foundation and MPP
   PaymentAuth USDCx profile are available.
-- The invite-only API adds wallet-linked OAuth and authenticated MCP to the testnet confirmation
+- The invite-only API adds wallet-linked OAuth and authenticated MCP to the mainnet confirmation
   and delivery-ledger path. OAuth authorizes API access but cannot sign a payment.
-- The live x402 route supports the confirmed STX testnet proof. The distinct live MPP
-  `usdc/charge/stacks` route accepts USDCx without changing escrow contracts; its controlled
-  economic proof is complete and remains internal release evidence rather than adoption/revenue.
+- The live x402 route issues mainnet challenges. The distinct live MPP `usdc/charge/stacks` route
+  accepts canonical mainnet USDCx without changing escrow contracts; controlled testnet economic
+  proofs remain internal release evidence rather than adoption or revenue.
 - The current production agent-readiness score is **100/100, Level 5 (Agent-Native)**. DNSSEC,
   DNS-AID, external OAuth, MCP, agent discovery and x402 are live; MPP is an interoperability and
   revenue expansion rather than a score workaround.
@@ -147,13 +160,9 @@ npm run verify:mainnet
 
 ## Next product work
 
-1. Review and merge the autonomous-evaluator contract candidate; do not deploy it yet.
-2. Implement the SDK, Web and dedicated evaluator service against the merged candidate in the
-   fully isolated QA environment.
-3. Complete full-role STX and official sBTC testnet E2E evidence before any mainnet rollout.
-4. Complete the independent external review against the frozen source anchors and resolve or
+1. Complete a controlled payer-approved STX and USDCx direct-payment canary on mainnet.
+2. Complete the independent external review against the frozen source anchors and resolve or
    formally mitigate every Critical/High finding before broad public onboarding.
-5. Complete the recorded SDK demo and mainnet/non-team adoption requirements for M2.
-6. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.
-7. Add operational alerts for failed Chainhook delivery and unusual escrow activity.
-8. Complete a controlled Leather USDCx testnet lifecycle before inviting external developers.
+3. Complete the recorded SDK demo and mainnet/non-team adoption requirements for M2.
+4. Invite external partners through wallet-linked OAuth and record only explicitly attested usage.
+5. Add operational alerts for failed Chainhook delivery and unusual escrow activity.
