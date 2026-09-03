@@ -20,6 +20,7 @@ import {
 
 import { evidenceManifest } from "../../constants/evidence";
 import { NETWORK_NAME } from "../../constants/network";
+import DirectPaymentEvidence from "../../components/DirectPaymentEvidence";
 import type {
   ObservedTransparencyMetrics,
   TransparencySnapshot,
@@ -172,6 +173,8 @@ export default function EvidencePage() {
           </div>
         )}
       </section>
+
+      <DirectPaymentEvidence />
 
       <section className="mt-12" aria-labelledby="grant-progress">
         <h2 id="grant-progress" className="text-xl font-semibold">Milestone 2 verified progress</h2>
