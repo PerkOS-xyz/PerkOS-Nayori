@@ -94,9 +94,9 @@ only in frozen historical sources/evidence. Mainnet remains `SM3VD...` and is un
 
 ### Autonomous evaluator/appeal generation
 
-`agentic-commerce-v5` and `sbtc-commerce-v4` are deployed and fully exercised in isolated Stacks
-testnet QA with a three-burn-block appeal policy. They are selected only by the QA Web and SDK
-configuration. Production consumers remain on v4/v3.
+`agentic-commerce-v5` and `sbtc-commerce-v4` were fully exercised in isolated Stacks testnet QA
+with a three-burn-block appeal policy before mainnet promotion. Mainnet uses the same frozen
+sources with a 144-burn-block appeal policy and a dedicated human appeal authority.
 
 The dedicated v5/v4 mainnet runner defaults to a signer-free preflight. It freezes the reviewed
 source hashes, requires an explicit appeal-authority principal separate from the deployer, checks
@@ -112,8 +112,22 @@ The deploy action additionally requires the exact strings
 `CONFIRM_AUTONOMOUS_ESCROW_MAINNET_DEPLOY=deploy-v5-v4-mainnet`, the exact deployer confirmation,
 the exact appeal-authority confirmation and an external signer file. It initializes the mainnet
 appeal policy to `u144`. The command is deliberately excluded from GitHub branch workflows.
-Production remains on v4/v3 until deployment, independent verification and a controlled
-minimal-value mainnet lifecycle all pass.
+After deployment, execute only the two immediate appealed canaries so no escrow is left waiting
+for the 144-block deadline. The runner requires four separate persistent principals, three
+external mode-0600 signer files, exact source hashes, deny-mode post-conditions and the typed
+confirmation `execute-controlled-v5-v4-mainnet`:
+
+```bash
+STACKS_NETWORK=mainnet \
+AUTONOMOUS_ESCROW_MAINNET_E2E_ASSET=sbtc \
+AUTONOMOUS_ESCROW_MAINNET_E2E_SCENARIO=reject-appeal-resolve-approve \
+CONFIRM_AUTONOMOUS_ESCROW_MAINNET_E2E=execute-controlled-v5-v4-mainnet \
+npm run e2e:autonomous:mainnet
+```
+
+Internal canaries prove operability but never count as external M2 adoption, non-team wallets or
+revenue. Production consumers remain on v4/v3 until both asset canaries, independent public-state
+verification and the consumer rollout gates pass.
 
 Verified v4/v3 testnet evidence on 2026-08-30:
 
