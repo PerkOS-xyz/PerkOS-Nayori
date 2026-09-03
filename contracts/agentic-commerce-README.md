@@ -1,7 +1,7 @@
 # Nayori Agentic Commerce
 
 Non-custodial job escrow for STX and sBTC on Stacks. The active contracts are
-`agentic-commerce-v4` and `sbtc-commerce-v3`; both use `reputation-registry-v3`.
+`agentic-commerce-v5` and `sbtc-commerce-v4`; both use `reputation-registry-v3`.
 
 ## Active mainnet contracts
 
@@ -9,8 +9,8 @@ Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 
 | Asset | Contract |
 | --- | --- |
-| STX | `agentic-commerce-v4` |
-| sBTC | `sbtc-commerce-v3` |
+| STX | `agentic-commerce-v5` |
+| sBTC | `sbtc-commerce-v4` |
 | Reputation | `reputation-registry-v3` |
 
 The sBTC contract accepts canonical mainnet sBTC only:
@@ -27,6 +27,8 @@ The sBTC contract accepts canonical mainnet sBTC only:
 | `u4` | Rejected | Evaluator rejected and client was refunded |
 | `u5` | Expired | Open/funded job expired and was refunded as applicable |
 | `u6` | Timeout paid | Review window elapsed and provider was paid without completion credit |
+| `u7` | Decision pending | Evaluator hashes are recorded; escrow has not moved |
+| `u8` | Disputed | Eligible party appealed; the pinned authority may resolve |
 
 Submitted work has a fixed 12 Bitcoin burn-block review window. The evaluator remains authoritative
 through the exact deadline. After it, any caller may trigger the deterministic timeout payout.
@@ -41,6 +43,8 @@ Both escrow contracts expose:
 (set-budget job-id amount)
 (assign-provider job-id provider)
 (submit-work job-id deliverable)
+(record-decision job-id decision evidence-hash explanation-hash)
+(appeal-decision job-id appeal-evidence-hash)
 (retry-reputation-sync job-id)
 (rate-provider job-id score comment)
 ```
@@ -49,8 +53,9 @@ STX settlement functions:
 
 ```clarity
 (fund-job job-id)
-(complete-job job-id)
-(reject-job job-id)
+(finalize-decision job-id)
+(resolve-appeal job-id final-decision resolution-hash)
+(settle-appeal-timeout job-id)
 (settle-review-timeout job-id)
 (expire-job job-id)
 ```
@@ -59,8 +64,9 @@ sBTC settlement passes the SIP-010 token trait explicitly:
 
 ```clarity
 (fund-job job-id token)
-(complete-job job-id token)
-(reject-job job-id token)
+(finalize-decision job-id token)
+(resolve-appeal job-id final-decision resolution-hash token)
+(settle-appeal-timeout job-id token)
 (settle-review-timeout job-id token)
 (expire-job job-id token)
 ```
@@ -94,21 +100,20 @@ The sBTC contract additionally exposes `get-payment-token` and `get-job-payment-
 The prior mainnet generation remains immutable historical M1 evidence and is not the default for
 new jobs. Internal deployment and smoke actors do not count as external adoption or revenue.
 
-## Autonomous evaluator and appeal candidate
+## Autonomous evaluator and appeals
 
-`agentic-commerce-v5` and `sbtc-commerce-v4` are review candidates only. They are not deployed,
-selected by the Web or presented as active mainnet contracts. They retain the current 12-burn-block
-evaluator response window and add these non-terminal states without changing historical codes:
+`agentic-commerce-v5` and `sbtc-commerce-v4` are deployed on mainnet and selected by the Web
+production release. They retain the 12-burn-block evaluator response window and add these
+non-terminal states without changing historical codes:
 
 | Code | State | Meaning |
 | ---: | --- | --- |
 | `u7` | Decision pending | Nayori recorded approve/reject evidence; escrow has not moved |
 | `u8` | Disputed | The eligible economic party appealed; escrow remains locked for resolution |
 
-The contract owner must initialize the generation before the first job. The accepted immutable
-policy values are three Bitcoin burn blocks for isolated QA/testnet or 144 for mainnet. Every job
-pins the active appeal authority, so later two-step rotation cannot change who resolves an existing
-appeal.
+The accepted immutable policy values are three Bitcoin burn blocks for isolated QA/testnet or 144
+for mainnet. Every job pins the active appeal authority, so later two-step rotation cannot change
+who resolves an existing appeal.
 
 The evaluator records a decision, evidence digest and public-explanation digest but cannot settle
 immediately. For approval, only the client may appeal; for rejection, only the assigned provider
@@ -119,4 +124,4 @@ original decision only after the second deadline.
 
 Only final settlement moves funds or writes completed/disputed reputation. Approvals pay exactly
 the pinned provider, rejections refund exactly the pinned client, and sBTC uses the per-job pinned
-SIP-010 token. The candidate removes the immediate `complete-job` and `reject-job` entrypoints.
+SIP-010 token. This generation removes the immediate `complete-job` and `reject-job` entrypoints.

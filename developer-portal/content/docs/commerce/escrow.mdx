@@ -31,8 +31,9 @@ an explicit refund path.
 - **Provider:** accepts the work and submits a deliverable.
 - **Evaluator:** completes or rejects the submitted work.
 
-Completion pays the provider and updates job-linked reputation. Rejection and eligible expiry
-return escrow according to the contract lifecycle.
+An evaluator decision starts an appeal period without moving funds. After the decision becomes
+final, approval pays the provider and updates job-linked reputation; rejection refunds the client.
+Eligible expiry paths return or release escrow according to the contract lifecycle.
 
 ## Active review-window lifecycle
 
@@ -44,9 +45,10 @@ The active versioned release begins a fixed 12 Bitcoin burn-block review window 
 submits work. The evaluator can approve or reject through the exact deadline. After the deadline,
 any caller can release escrow to the provider so an unavailable evaluator cannot trap funds.
 
-The exact v4/v3/v3 sources first passed controlled STX and official PoX-5 sBTC paths on testnet,
-including a real timeout payout. They were then source-verified on mainnet and a guarded internal
-100-atomic-sBTC lifecycle passed 26/26. Internal actors remain release evidence, not external
+The active v5/v4/v3 source set first passed controlled STX and official PoX-5 sBTC paths on
+testnet, including decisions, appeals and real timeout payouts. It was then source-verified on
+mainnet. Guarded mainnet canaries passed 47/47 STX checks and 50/50 sBTC checks, followed by an
+independent 75/75 public-state postcheck. Internal actors remain release evidence, not external
 adoption or revenue.
 
 <Mermaid

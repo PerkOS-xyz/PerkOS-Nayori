@@ -13,13 +13,16 @@ const deployer =
   "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH";
 const canonicalSbtc =
   "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token";
+const appealAuthority =
+  process.env.MAINNET_APPEAL_AUTHORITY ||
+  "SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH";
 const contracts = [
   { name: "agent-registry", file: "agent-registry.clar" },
   { name: "validation-registry", file: "validation-registry.clar" },
   { name: "sip-010-trait", file: "sip-010-trait.clar" },
   { name: "reputation-registry-v3", file: "reputation-registry-v3.clar" },
-  { name: "agentic-commerce-v4", file: "agentic-commerce-v4.clar" },
-  { name: "sbtc-commerce-v3", file: "sbtc-commerce-v3.clar" },
+  { name: "agentic-commerce-v5", file: "agentic-commerce-v5.clar" },
+  { name: "sbtc-commerce-v4", file: "sbtc-commerce-v4.clar" },
 ];
 
 if (!deployer.startsWith("SP")) {
@@ -46,6 +49,13 @@ async function read(contractName, functionName, functionArgs = []) {
   });
 }
 
+function scalar(value) {
+  if (value && typeof value === "object" && "value" in value) {
+    return scalar(value.value);
+  }
+  return value;
+}
+
 for (const { name, file } of contracts) {
   const localSource = readFileSync(`contracts/${file}`, "utf8");
   const { source } = await fetchJson(
@@ -60,8 +70,8 @@ for (const { name, file } of contracts) {
 for (const contractName of [
   "agent-registry",
   "reputation-registry-v3",
-  "agentic-commerce-v4",
-  "sbtc-commerce-v3",
+  "agentic-commerce-v5",
+  "sbtc-commerce-v4",
 ]) {
   const owner = cvToValue(await read(contractName, "get-owner")).value;
   if (owner !== deployer) {
@@ -71,16 +81,16 @@ for (const contractName of [
 }
 
 const paymentToken = cvToValue(
-  await read("sbtc-commerce-v3", "get-payment-token")
+  await read("sbtc-commerce-v4", "get-payment-token")
 ).value;
 if (paymentToken !== canonicalSbtc) {
   throw new Error(
-    `sbtc-commerce-v3 token is ${paymentToken}, expected ${canonicalSbtc}`
+    `sbtc-commerce-v4 token is ${paymentToken}, expected ${canonicalSbtc}`
   );
 }
-console.log(`✓ sbtc-commerce-v3 uses canonical mainnet sBTC`);
+console.log(`✓ sbtc-commerce-v4 uses canonical mainnet sBTC`);
 
-for (const caller of ["agentic-commerce-v4", "sbtc-commerce-v3"]) {
+for (const caller of ["agentic-commerce-v5", "sbtc-commerce-v4"]) {
   const isAllowed = cvToValue(
     await read("reputation-registry-v3", "is-registered-caller", [
       Cl.contractPrincipal(deployer, caller),
@@ -92,27 +102,44 @@ for (const caller of ["agentic-commerce-v4", "sbtc-commerce-v3"]) {
   console.log(`✓ ${caller} is authorized on reputation-registry-v3`);
 }
 
-for (const contractName of ["agentic-commerce-v4", "sbtc-commerce-v3"]) {
-  const reviewWindow = cvToValue(
-    await read(contractName, "get-review-window")
+for (const contractName of ["agentic-commerce-v5", "sbtc-commerce-v4"]) {
+  const config = cvToValue(
+    await read(contractName, "get-protocol-config")
   ).value;
+  const configured = Boolean(scalar(config.configured));
+  const reviewWindow = BigInt(scalar(config["review-window"]));
+  const appealWindow = BigInt(scalar(config["appeal-window"]));
+  const configuredAuthority = String(scalar(config["appeal-authority"]));
+  if (!configured) {
+    throw new Error(`${contractName} protocol is not initialized`);
+  }
   if (BigInt(reviewWindow) !== 12n) {
     throw new Error(`${contractName} review window is ${reviewWindow}, expected 12`);
   }
-  console.log(`✓ ${contractName} uses a 12 Bitcoin-block review window`);
+  if (appealWindow !== 144n) {
+    throw new Error(`${contractName} appeal window is ${appealWindow}, expected 144`);
+  }
+  if (configuredAuthority !== appealAuthority) {
+    throw new Error(
+      `${contractName} appeal authority is ${configuredAuthority}, expected ${appealAuthority}`
+    );
+  }
+  console.log(
+    `✓ ${contractName} uses review 12, appeal 144 and authority ${configuredAuthority}`
+  );
 }
 
 const agentCount = cvToValue(
   await read("agent-registry", "get-agent-count")
 ).value;
 const stxJobCount = cvToValue(
-  await read("agentic-commerce-v4", "get-job-count")
+  await read("agentic-commerce-v5", "get-job-count")
 ).value;
 const sbtcJobCount = cvToValue(
-  await read("sbtc-commerce-v3", "get-job-count")
+  await read("sbtc-commerce-v4", "get-job-count")
 ).value;
 
 console.log(`✓ agent count: ${agentCount}`);
 console.log(`✓ STX job count: ${stxJobCount}`);
 console.log(`✓ sBTC job count: ${sbtcJobCount}`);
-console.log("PerkOS mainnet verification complete.");
+console.log("Nayori v5/v4 mainnet verification complete.");
