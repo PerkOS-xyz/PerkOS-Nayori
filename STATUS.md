@@ -28,11 +28,15 @@ Last verified: 2026-09-03
 Platform 0.7.3 is deployed from `595e849d765d61953d38bd9861b8f6ce23cf449b`.
 The production API/facilitator passed 36 public checks, including mainnet asset/recipient
 validation, both Ed25519 quote signatures and preservation of QA/testnet challenges. This
-rollout did not sign or broadcast a payment. Mainnet x402/MPP settlement-and-delivery canaries
-are still pending; the existing testnet economic proofs do not substitute for that gate.
-The separate production OAuth issuer still configures testnet wallet enrollment. Review its
-existing clients and invitations before migrating that identity boundary; do not invite new
-mainnet partners until the end-to-end enrollment flow has been validated.
+rollout did not sign or broadcast a payment. Subsequently, payer-approved mainnet x402 and MPP
+canaries completed on 2026-09-03: 0.004 STX at block 8911041 and 0.01 USDCx at block 8911047.
+An independent 41-check postcheck verified canonical success, exact single transfers, signed receipts
+and idempotent delivery. Both actors are internal, not external adoption or revenue.
+Production OAuth has also moved to mainnet wallet claims and passed 19 controlled enrollment checks;
+partner access remains invite-only. QA retains testnet identities and challenges.
+
+The new direct-payment panel and `/api/payments.json` require the opt-in facilitator feed to be
+enabled after QA merge/validation. The existing live escrow counters do not index these transfers.
 
 ### Active versioned escrow release
 
@@ -160,7 +164,7 @@ npm run verify:mainnet
 
 ## Next product work
 
-1. Complete a controlled payer-approved STX and USDCx direct-payment canary on mainnet.
+1. Validate and activate the separate public direct-payment evidence feed through QA, then production.
 2. Complete the independent external review against the frozen source anchors and resolve or
    formally mitigate every Critical/High finding before broad public onboarding.
 3. Complete the recorded SDK demo and mainnet/non-team adoption requirements for M2.

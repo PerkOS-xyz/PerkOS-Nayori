@@ -270,6 +270,14 @@ The public evidence service reads canonical contracts and indexed transactions. 
 observations, established production evidence and explicitly attested external adoption. If a required source is
 incomplete, the result becomes `unavailable` instead of presenting a false zero.
 
+Direct x402/MPP payments use a separate, opt-in facilitator feed: `/v1/public/payments` is verified
+against canonical Hiro transactions and proxied by `/api/payments.json`. The dashboard shows the
+latest 25 settlement candidates with exact token amounts, payer/recipient, delivery status and explorer
+links. `hasMore` identifies a bounded window rather than lifetime totals. `/api/evidence.json` adds
+an independent `directPayments` section; escrow counters and the curated CSV remain unchanged.
+This panel requires the facilitator's `PUBLIC_PAYMENT_EVIDENCE_ENABLED` flag after QA validation;
+before activation or during an outage it reports unavailable. Internal canaries are not adoption or revenue.
+
 ## Primary transaction flows
 
 ### Escrowed agent job
@@ -488,6 +496,7 @@ produce a signed receipt, and only a receipt can unlock delivery.
 | `/evidence` | Human-readable transparency dashboard |
 | `/api/evidence.json` | Versioned agent-readable evidence snapshot |
 | `/api/evidence.csv` | Stable curated mainnet transaction evidence export |
+| `/api/payments.json` | Latest chain-verified direct-payment window; independent source status |
 | `/llms.txt` and `/auth.md` | Agent usage, authorization and safety guidance |
 
 The Web also registers three read-only WebMCP tools for public capabilities, skills and evidence.
@@ -673,11 +682,11 @@ Testnet transactions and team-operated activity are not presented as external ma
 - The SDK and hosted settlement boundary have not yet completed the planned external review.
 - x402/MPP settlement is mainnet-enabled and remains payer-approved and non-sponsored.
 - Sponsorship is disabled.
-- The controlled MPP economic proof is complete on testnet. The mainnet rollout has passed
-  signed-challenge checks; payer-approved mainnet direct-payment canaries remain pending.
+- Controlled mainnet x402 (0.004 STX) and MPP (0.01 USDCx) settlement-and-delivery canaries passed
+  on 2026-09-03. These internal transactions are operational evidence, not independent revenue.
 - Partner registration is controlled and not an open public onboarding surface.
-- The separate OAuth issuer still configures testnet wallet enrollment. Its identity-network
-  migration and a mainnet enrollment check must precede new partner invitations.
+- Production OAuth wallet claims are configured for mainnet and passed controlled enrollment
+  checks. Partner access remains invite-only; OAuth does not grant transaction-signing authority.
 - The automatic paid delivery is a fixed Nayori capability report, not an arbitrary merchant URL.
 - A signed receipt is final at configured confirmation depth; automatic deep-reorganization
   revocation is not implemented in the current release.
