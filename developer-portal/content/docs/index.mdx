@@ -7,8 +7,8 @@ description: Developer documentation for Nayori identity, escrow, direct payment
 
 <StatusRow>
   <StatusBadge tone="mainnet">Identity and escrow · Mainnet</StatusBadge>
-  <StatusBadge tone="testnet">x402 and MPP · Testnet</StatusBadge>
-  <StatusBadge tone="public">SDK 0.7.0 · Public</StatusBadge>
+  <StatusBadge tone="mainnet">x402 and MPP · Mainnet</StatusBadge>
+  <StatusBadge tone="public">SDK 0.7.1 · Public</StatusBadge>
 </StatusRow>
 
 Nayori — PerkOS Stacks Agentic Commerce — is the Bitcoin Commerce Agent. It gives applications, autonomous agents and
@@ -38,9 +38,9 @@ payments and verify economic outcomes on Stacks.
     Wallet --> Mainnet["Stacks mainnet contracts"]
     API --> OAuth["oauth.nayori.ai"]
     API --> Facilitator["facilitator.nayori.ai"]
-    Facilitator --> Testnet["Stacks testnet settlement"]
+    Facilitator --> Mainnet
     Mainnet --> Evidence["nayori.ai/evidence"]
-    Testnet --> Receipt["Signed receipt and delivery"]`}
+    Mainnet --> Receipt["Signed receipt and delivery"]`}
 />
 
 ## What is live today
@@ -51,9 +51,9 @@ payments and verify economic outcomes on Stacks.
 | STX job escrow | Stacks mainnet | Public | `agentic-commerce-v5` |
 | sBTC job escrow | Stacks mainnet | Public | `sbtc-commerce-v4` |
 | Job-linked reputation | Stacks mainnet | Public read | `reputation-registry-v3` |
-| x402 paid resource | Stacks testnet | Public resource | Nayori facilitator ledger + Stacks |
-| MPP PaymentAuth resource | Stacks testnet | Public resource | Nayori facilitator ledger + Stacks |
-| Partner OAuth and MCP | Testnet pilot | Invite-only | Nayori OAuth and Platform |
+| x402 paid resource | Stacks mainnet | Public resource | Nayori facilitator ledger + Stacks |
+| MPP PaymentAuth resource | Stacks mainnet | Public resource | Nayori facilitator ledger + Stacks |
+| Partner OAuth and MCP | Mainnet | Invite-only | Nayori OAuth and Platform |
 
 ## First successful outcome
 

@@ -15,8 +15,8 @@ escrow and build verifiable reputation on Stacks.
 
 > **Current boundary:** the identity and STX/sBTC escrow contracts are live on Stacks mainnet.
 > The public x402 and MPP paid-resource paths are live with confirmation-gated settlement on
-> Stacks testnet. Mainnet facilitator settlement and transaction sponsorship remain disabled until
-> the external security review and controlled-rollout gates are closed.
+> Stacks mainnet. Transaction sponsorship remains disabled; every payment is separately approved
+> by the payer.
 
 ## Executive summary
 
@@ -42,14 +42,14 @@ one service:
 | --- | --- |
 | On-chain network | Stacks mainnet for identity, STX escrow, sBTC escrow and reputation |
 | Mainnet contracts | Six current contracts under `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` |
-| Agent SDK | `@perkos/agent-sdk@0.7.0`, public on npm |
+| Agent SDK | `@perkos/agent-sdk@0.7.1`, public on npm |
 | Browser wallet | Leather through Stacks Connect; wallet remains the signing boundary |
 | Headless agents | Policy-constrained signer interface for KMS/HSM/secret-manager integrations |
-| x402 | Live same-origin STX testnet resource; SDK profiles for STX, sBTC and USDCx |
-| MPP PaymentAuth | Live same-origin USDCx testnet resource using `usdc/charge/stacks` |
+| x402 | Live same-origin mainnet resource; SDK profiles for STX, sBTC and USDCx |
+| MPP PaymentAuth | Live same-origin mainnet USDCx resource using `usdc/charge/stacks` |
 | Authorization | External OAuth issuer, wallet claims, scoped API/MCP tokens and public JWKS |
 | Agent readiness | Last verified 2026-08-28: 100/100, Level 5, Commerce 2/2 |
-| Delivery maturity | Mainnet escrow foundation in production; direct-payment commerce in controlled testnet rollout |
+| Delivery maturity | Mainnet escrow and confirmation-gated direct-payment commerce in production |
 
 ## Contents
 
@@ -114,7 +114,7 @@ boundaries, not five independent products.
 | --- | --- | --- | --- |
 | [`PerkOS-Nayori`](https://github.com/PerkOS-xyz/PerkOS-Nayori) | Public | Clarity contracts, Web application, same-origin protocol proxies, agent discovery, public evidence and deployment verification | Facilitator secrets, OAuth signing keys, merchant credentials or custody |
 | [`PerkOS-Nayori-Agent-SDK`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK) | Public | TypeScript read clients, transaction plans, signer adapters, confirmation tracking, spending policy, x402 and MPP encoding/verification | Private keys, hosted replay state, merchant authentication or production settlement state |
-| [`PerkOS-Nayori-Platform`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Platform) | Private operational repository | Resource API, facilitator, merchant routes, signed quotes, verification, testnet broadcast, reconciliation, receipts and delivery ledger | OAuth identity database, wallet keys or changes to the on-chain contracts |
+| [`PerkOS-Nayori-Platform`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Platform) | Private operational repository | Resource API, facilitator, merchant routes, signed quotes, verification, network-pinned broadcast, reconciliation, receipts and delivery ledger | OAuth identity database, wallet keys or changes to the on-chain contracts |
 | [`PerkOS-Nayori-OAuth`](https://github.com/PerkOS-xyz/PerkOS-Nayori-OAuth) | Private operational repository | OAuth issuer, anonymous agent identity, wallet claims, partner invitations, client credentials, access tokens and JWKS | Payment signing, settlement, sponsorship or merchant delivery |
 | [`PerkOS-Nayori-Evaluator`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Evaluator) | Private operational repository | Deterministic evaluation intake, policy-constrained LLM analysis, public decision artifacts and testnet decision submission | Escrow custody, appeal authority, arbitrary wallet signing or production contract activation |
 
@@ -170,8 +170,8 @@ flowchart LR
   end
 
   subgraph BitcoinPlane[Bitcoin and Stacks plane]
-    Mainnet["Stacks mainnet<br/>Identity, escrow and reputation"]
-    Testnet["Stacks testnet<br/>x402 and MPP settlement"]
+    Mainnet["Stacks mainnet<br/>Identity, escrow, reputation, x402 and MPP"]
+    Testnet["Stacks testnet<br/>Isolated QA"]
     Hiro["Hiro APIs<br/>Read, broadcast and observe"]
   end
 
@@ -260,7 +260,7 @@ The Platform codebase runs as isolated roles:
 - **Resource server:** exposes x402/MPP resources, validates OAuth where needed and calls the
   facilitator with one merchant credential.
 - **Facilitator:** issues signed quotes, verifies the wallet-signed transaction, reserves replay
-  keys, performs one testnet broadcast and owns the settlement/delivery database.
+  keys, performs one network-pinned broadcast and owns the settlement/delivery database.
 - **Reconciliation worker:** observes pending transactions, applies confirmation depth and creates
   signed receipts. It never broadcasts.
 
@@ -269,6 +269,14 @@ The Platform codebase runs as isolated roles:
 The public evidence service reads canonical contracts and indexed transactions. It separates raw
 observations, established production evidence and explicitly attested external adoption. If a required source is
 incomplete, the result becomes `unavailable` instead of presenting a false zero.
+
+Direct x402/MPP payments use a separate, opt-in facilitator feed: `/v1/public/payments` is verified
+against canonical Hiro transactions and proxied by `/api/payments.json`. The dashboard shows the
+latest 25 settlement candidates with exact token amounts, payer/recipient, delivery status and explorer
+links. `hasMore` identifies a bounded window rather than lifetime totals. `/api/evidence.json` adds
+an independent `directPayments` section; escrow counters and the curated CSV remain unchanged.
+This panel requires the facilitator's `PUBLIC_PAYMENT_EVIDENCE_ENABLED` flag after QA validation;
+before activation or during an outage it reports unavailable. Internal canaries are not adoption or revenue.
 
 ## Primary transaction flows
 
@@ -320,7 +328,7 @@ sequenceDiagram
   participant API as api.nayori.ai resource server
   participant Fac as facilitator.nayori.ai
   participant DB as Settlement PostgreSQL
-  participant Stacks as Stacks testnet
+  participant Stacks as Stacks mainnet
   participant Worker as Reconciliation worker
 
   Caller->>Web: GET protected resource
@@ -407,7 +415,8 @@ commerce scopes remain independently controlled and are not granted by a wallet 
 - Dedicated keys for OAuth, quotes and receipts; private material is never reused across roles.
 - Merchant isolation, scoped tokens and per-process plus edge rate limiting.
 - HTTPS-only production origins and configuration validation before the listener opens.
-- Mainnet facilitator settlement and sponsorship hard-disabled in the current release.
+- Mainnet facilitator settlement requires an exact runtime acknowledgement; sponsorship remains
+  hard-disabled.
 
 ## Data, settlement and failure handling
 
@@ -460,11 +469,11 @@ produce a signed receipt, and only a receipt can unlock delivery.
 
 | Origin | Role | Network/write boundary |
 | --- | --- | --- |
-| [`nayori.ai`](https://nayori.ai) | Brand, Web application, discovery, paid-resource proxies and evidence | Mainnet contract reads/wallet calls; testnet payment proxy |
+| [`nayori.ai`](https://nayori.ai) | Brand, Web application, discovery, paid-resource proxies and evidence | Mainnet contract reads, wallet calls and payment proxy |
 | [`app.nayori.ai`](https://app.nayori.ai) | Application entry point | Same product boundary as the apex |
 | [`docs.nayori.ai`](https://docs.nayori.ai) | Developer documentation and SDK guidance | Read-only |
-| [`api.nayori.ai`](https://api.nayori.ai/.well-known/agent.json) | Resource API, OpenAPI and scoped MCP | Testnet commerce; no wallet custody |
-| [`facilitator.nayori.ai`](https://facilitator.nayori.ai/supported) | Isolated quote, verification, settlement and delivery runtime | Testnet broadcast/confirmation only |
+| [`api.nayori.ai`](https://api.nayori.ai/.well-known/agent.json) | Resource API, OpenAPI and scoped MCP | Mainnet commerce; no wallet custody |
+| [`facilitator.nayori.ai`](https://facilitator.nayori.ai/supported) | Isolated quote, verification, settlement and delivery runtime | Mainnet broadcast and confirmation |
 | [`oauth.nayori.ai`](https://oauth.nayori.ai/.well-known/oauth-authorization-server) | OAuth issuer, agent identity and wallet claims | Authorization only; cannot pay |
 | [`nayori.perkos.xyz`](https://nayori.perkos.xyz) | PerkOS product relationship/compatibility origin | Web compatibility |
 | [`stacks.perkos.xyz`](https://stacks.perkos.xyz) | Historical Stacks compatibility origin | Web compatibility |
@@ -487,6 +496,7 @@ produce a signed receipt, and only a receipt can unlock delivery.
 | `/evidence` | Human-readable transparency dashboard |
 | `/api/evidence.json` | Versioned agent-readable evidence snapshot |
 | `/api/evidence.csv` | Stable curated mainnet transaction evidence export |
+| `/api/payments.json` | Latest chain-verified direct-payment window; independent source status |
 | `/llms.txt` and `/auth.md` | Agent usage, authorization and safety guidance |
 
 The Web also registers three read-only WebMCP tools for public capabilities, skills and evidence.
@@ -649,8 +659,8 @@ Implemented:
 - Public TypeScript SDK and npm package.
 - Read clients, transaction builders, browser/headless signers and confirmation receipts.
 - Spending policy and fail-closed economic verification.
-- x402 v2 STX/sBTC/USDCx profiles and a confirmed STX testnet paid-resource flow.
-- MPP PaymentAuth USDCx profile and live testnet challenge/settlement infrastructure.
+- x402 v2 STX/sBTC/USDCx profiles and a confirmation-gated mainnet paid-resource flow.
+- MPP PaymentAuth USDCx profile and live mainnet challenge/settlement infrastructure.
 - External OAuth issuer, agent wallet claims, scoped MCP and agent-readiness discovery.
 - Public transparency dashboard separating established production evidence from externally
   attested adoption.
@@ -670,13 +680,16 @@ Testnet transactions and team-operated activity are not presented as external ma
 ### Known limitations
 
 - The SDK and hosted settlement boundary have not yet completed the planned external review.
-- x402/MPP facilitator settlement is intentionally testnet-only.
+- x402/MPP settlement is mainnet-enabled and remains payer-approved and non-sponsored.
 - Sponsorship is disabled.
-- The controlled MPP economic proof is complete; broader external-wallet validation is still pending.
+- Controlled mainnet x402 (0.004 STX) and MPP (0.01 USDCx) settlement-and-delivery canaries passed
+  on 2026-09-03. These internal transactions are operational evidence, not independent revenue.
 - Partner registration is controlled and not an open public onboarding surface.
+- Production OAuth wallet claims are configured for mainnet and passed controlled enrollment
+  checks. Partner access remains invite-only; OAuth does not grant transaction-signing authority.
 - The automatic paid delivery is a fixed Nayori capability report, not an arbitrary merchant URL.
 - A signed receipt is final at configured confirmation depth; automatic deep-reorganization
-  revocation is not implemented in the current testnet release.
+  revocation is not implemented in the current release.
 
 ## Developer quickstart
 

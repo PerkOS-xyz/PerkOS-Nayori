@@ -16,3 +16,37 @@ mainnet contracts.
 The dashboard separates raw on-chain totals from explicitly attested external adoption. Unknown
 wallets remain unattested. If a complete chain snapshot is unavailable, the API reports
 `unavailable` rather than publishing false zeroes.
+
+## Direct x402 and MPP payments
+
+Direct resource payments are **not escrow jobs**. Their separate dashboard panel refreshes every
+minute from `/api/payments.json`, a fixed-origin proxy to the facilitator's `/v1/public/payments`.
+The JSON evidence snapshot includes the same source under `directPayments`; the curated CSV and
+agent/job/adoption counters are not changed by these payments.
+
+The facilitator feed must be explicitly enabled after QA verification. If disabled, unavailable or
+malformed, the panel reports unavailable rather than zero payments. QA and production use their own
+network and resource URLs; the Web rejects a snapshot from a different network.
+
+- Only confirmed settlements with a receipt for Nayori's two configured public resources are eligible.
+- Each row is checked against the canonical Stacks transaction, block/hash, payer, recipient and one
+  exact transfer of the canonical asset. Unsupported or reorged records cannot become verified rows.
+- The feed checks the latest 25 candidates. `hasMore` indicates older records; `excludedCount` counts
+  candidates omitted after chain verification. These figures are not lifetime revenue totals.
+- Amounts are atomic decimal strings with explicit decimals, never floating-point token values.
+- Delivery status is a facilitator-ledger observation. It is distinct from blockchain confirmation.
+- No settlement IDs, quotes, signatures, credentials, raw signed transactions or paid response bodies
+  are exposed. The endpoint accepts no merchant or wallet search parameters.
+
+Known PerkOS wallets are labeled internal; other wallets remain unattested. Neither category
+automatically qualifies as external adoption or independent customer revenue.
+
+### Controlled mainnet examples
+
+| Protocol | Amount | Confirmation | Transaction |
+| --- | --- | --- | --- |
+| x402 | 0.004 STX | Block 8911041 | [View transaction](https://explorer.hiro.so/txid/0xa7cdc2fb169e4956917db2d5c3b1df59cd4d21014f6e0d60fa794a7fc0e52248?chain=mainnet) |
+| MPP | 0.01 USDCx | Block 8911047 | [View transaction](https://explorer.hiro.so/txid/0xd6c67fa8b89912f3ebc93fda0e3c70931b5cd6462c4388823dbb9762b6bcc948?chain=mainnet) |
+
+Both payments completed confirmation-gated, idempotent delivery on 2026-09-03. They are internal
+operational tests, not externally operated jobs or grant-adoption evidence.

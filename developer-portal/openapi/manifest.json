@@ -1,7 +1,7 @@
 {
   "source": "https://api.nayori.ai/openapi.json",
-  "apiVersion": "0.7.2",
+  "apiVersion": "0.7.3",
   "openapiVersion": "3.1.0",
-  "lastVerified": "2026-08-31",
-  "sha256": "8674a7937ba97de267830505c013d0bb60365e2be1484268dc6d9824cb004ecf"
+  "lastVerified": "2026-09-03",
+  "sha256": "3e57fbc947e2b50b90d7f9b4e0491d920ca49a16b4297076658fce818af62860"
 }

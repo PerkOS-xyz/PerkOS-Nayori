@@ -1,6 +1,8 @@
 // Every string here is traceable to README.md — "What Nayori provides",
 // "Enterprise capability matrix" and "Current boundary". No invented claims.
 
+import { NETWORK_NAME } from "../../constants/network";
+
 export type Model = {
   id: string;
   name: string;
@@ -57,14 +59,14 @@ export const BOUNDARY: { state: BoundaryState; label: string; what: string; deta
   },
   {
     state: "rollout",
-    label: "Controlled rollout",
+    label: NETWORK_NAME === "mainnet" ? "Live direct commerce" : "Controlled rollout",
     what: "Public x402 and MPP paid-resource paths",
-    detail: "Live on Stacks testnet with confirmation-gated settlement.",
+    detail: `Live on Stacks ${NETWORK_NAME} with confirmation-gated settlement.`,
   },
   {
     state: "gated",
     label: "Deliberately closed",
-    what: "Mainnet facilitator settlement and transaction sponsorship",
-    detail: "Disabled until the external security review and controlled-rollout gates are closed.",
+    what: "Transaction sponsorship",
+    detail: "Disabled; every direct payment remains separately approved by the payer.",
   },
 ];

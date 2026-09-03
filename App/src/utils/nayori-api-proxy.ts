@@ -6,7 +6,7 @@ const PUBLIC_PATHS = new Set([
 ]);
 
 const NAYORI_PUBLIC_MPP_PATH = "/mpp/v1";
-// Mirrors the fixed testnet merchant route; the runtime 402 remains authoritative.
+// Mirrors the network-pinned merchant route; the runtime 402 remains authoritative.
 const NAYORI_PUBLIC_MPP_AMOUNT = "10000";
 
 type JsonObject = Record<string, unknown>;
