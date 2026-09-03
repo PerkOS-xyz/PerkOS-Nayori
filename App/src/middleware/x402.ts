@@ -3,6 +3,7 @@
 // with API endpoints for agent services
 
 import { NextRequest, NextResponse } from 'next/server';
+import { NETWORK_NAME } from '../constants/network';
 import { parseX402Headers, verifyX402Payment } from '../services/x402';
 
 /**
@@ -44,7 +45,7 @@ export async function x402Middleware(req: NextRequest): Promise<{
           message: 'This endpoint requires x402 payment headers',
           x402: {
             version: '1.0',
-            network: 'stacks-testnet',
+            network: `stacks-${NETWORK_NAME}`,
           },
         },
         { status: 402 }

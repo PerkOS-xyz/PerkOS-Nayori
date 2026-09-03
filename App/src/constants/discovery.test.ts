@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildDiscoveryManifest,
   buildLlmsText,
+  COMMERCE_NETWORK_ID,
   NAYORI_API_ORIGIN,
   NAYORI_FACILITATOR_ORIGIN,
   NAYORI_OAUTH_ORIGIN,
@@ -96,8 +97,8 @@ describe("agent discovery", () => {
     expect(manifest.availability.sponsorship).toBe(false);
     expect(manifest.availability.a2aProtocolEndpoint).toBe(false);
     expect(manifest.capabilities[3].quoteService).toMatchObject({
-      status: "public-resource-and-invite-only-api-testnet-settlement",
-      network: "stacks:2147483648",
+      status: `public-resource-and-invite-only-api-${NETWORK_NAME}-settlement`,
+      network: COMMERCE_NETWORK_ID,
       quoteIssuance: true,
       paymentVerification: true,
       settlement: true,
@@ -141,5 +142,11 @@ describe("agent discovery", () => {
     expect(text).toContain(`${origin}/auth.md`);
     expect(text).toContain(`${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server`);
     expect(text).toContain("requires authorization from a Stacks wallet");
+    expect(text).toContain(`Stacks ${NETWORK_NAME}`);
+    expect(text).not.toContain(
+      NETWORK_NAME === "mainnet"
+        ? "Mainnet facilitator settlement and sponsorship remain disabled"
+        : "public Nayori API runs an invite-only partner pilot on Stacks mainnet"
+    );
   });
 });

@@ -15,6 +15,9 @@ import {
 
 export const STACKS_MAINNET_ID = "stacks:1";
 export const STACKS_TESTNET_ID = "stacks:2147483648";
+export const COMMERCE_NETWORK_ID =
+  NETWORK_NAME === "testnet" ? STACKS_TESTNET_ID : STACKS_MAINNET_ID;
+export const COMMERCE_NETWORK_LABEL = `Stacks ${NETWORK_NAME}`;
 export function resolveServiceOrigin(variable: string, value: string): string {
   const url = new URL(value);
   const isLocal = url.hostname === "localhost" || url.hostname === "127.0.0.1";
@@ -52,7 +55,7 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
     },
     status: NETWORK_NAME === "testnet" ? "qa-testnet-web" : "public-mainnet-web",
     homepage: origin,
-    network: NETWORK_NAME === "testnet" ? STACKS_TESTNET_ID : STACKS_MAINNET_ID,
+    network: COMMERCE_NETWORK_ID,
     discovery: {
       llms: `${origin}/llms.txt`,
       sitemap: `${origin}/sitemap.xml`,
@@ -104,7 +107,7 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
         assets: ["STX", "sBTC", "USDCx"],
         publicResource: {
           url: `${origin}/api/v1`,
-          network: STACKS_TESTNET_ID,
+          network: COMMERCE_NETWORK_ID,
           x402Version: 2,
           scheme: "exact",
           assetTransferMethod: "stacks-signed-tx-v1",
@@ -112,8 +115,8 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
           walletApproval: "required",
         },
         quoteService: {
-          status: "public-resource-and-invite-only-api-testnet-settlement",
-          network: STACKS_TESTNET_ID,
+          status: `public-resource-and-invite-only-api-${NETWORK_NAME}-settlement`,
+          network: COMMERCE_NETWORK_ID,
           authorization: "wallet-linked-oauth-or-merchant-key",
           quoteIssuance: true,
           paymentVerification: true,
@@ -131,7 +134,7 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
         assets: ["USDCx"],
         publicResource: {
           url: `${origin}/api/mpp/v1`,
-          network: STACKS_TESTNET_ID,
+          network: COMMERCE_NETWORK_ID,
           protocol: "mpp-paymentauth",
           method: "usdc",
           intent: "charge",
@@ -193,10 +196,10 @@ Nayori is a ${environment} web application and TypeScript SDK for autonomous com
 - [Agents](${origin}/agents): On-chain agent directory and registration.
 - [Jobs](${origin}/jobs): STX and sBTC job escrow lifecycle.
 - [Analytics](${origin}/analytics): Currency-separated protocol activity.
-- [Transparency dashboard](${origin}/evidence): Live mainnet contract totals, explorer-verifiable M1 evidence and explicitly attested M2 adoption.
+- [Transparency dashboard](${origin}/evidence): Live ${COMMERCE_NETWORK_LABEL} contract totals, explorer-verifiable M1 evidence and explicitly attested M2 adoption.
 - [Evidence JSON](${origin}/api/evidence.json): Versioned machine-readable transparency snapshot.
-- [Public x402 resource](${origin}/api/v1): A real x402 v2 payment challenge for a settlement-backed Nayori capability report on Stacks testnet.
-- [Public MPP resource](${origin}/api/mpp/v1): MPP PaymentAuth usdc/charge/stacks challenge for the same report, paid in USDCx on Stacks testnet.
+- [Public x402 resource](${origin}/api/v1): A real x402 v2 payment challenge for a settlement-backed Nayori capability report on ${COMMERCE_NETWORK_LABEL}.
+- [Public MPP resource](${origin}/api/mpp/v1): MPP PaymentAuth usdc/charge/stacks challenge for the same report, paid in USDCx on ${COMMERCE_NETWORK_LABEL}.
 - [Machine manifest](${origin}/.well-known/agent.json): Structured capabilities and canonical contracts.
 - [API Catalog](${origin}/.well-known/api-catalog): RFC 9727 links to the public quote API description, documentation and status.
 - [ARD catalog](${origin}/.well-known/ard.json): Search-oriented descriptions of Nayori's agentic resources.
@@ -207,7 +210,7 @@ Nayori is a ${environment} web application and TypeScript SDK for autonomous com
 
 - [Application and contracts](https://github.com/PerkOS-xyz/PerkOS-Nayori): Public source, Clarity contracts and deployment evidence.
 - [Nayori Agent SDK](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK): TypeScript SDK published as \`@perkos/agent-sdk\`.
-- [Nayori commerce API](${NAYORI_API_ORIGIN}): Public x402 and MPP paid-resource server plus invite-only merchant and MCP operations on Stacks testnet.
+- [Nayori commerce API](${NAYORI_API_ORIGIN}): Public x402 and MPP paid-resource server plus invite-only merchant and MCP operations on ${COMMERCE_NETWORK_LABEL}.
 - [Nayori facilitator](${NAYORI_FACILITATOR_ORIGIN}/supported): Isolated quote, verification, settlement-confirmation and delivery-ledger runtime.
 - [API capabilities](${NAYORI_API_ORIGIN}/supported): Exact network, mechanism, assets and availability flags.
 - [API OpenAPI schema](${NAYORI_API_ORIGIN}/openapi.json): Machine-readable HTTP contract.
@@ -235,10 +238,10 @@ Supporting browsers can discover three read-only WebMCP tools on the application
 - Request-bound direct x402 profile in the SDK: STX, sBTC and USDCx.
 - The real same-origin paid resource is ${origin}/api/v1. It returns PAYMENT-REQUIRED, accepts a wallet-created PAYMENT-SIGNATURE and the advertised X-NAYORI-SIGNED-QUOTE, then returns 202 until canonical confirmation and PAYMENT-RESPONSE with the delivered report.
 - The MPP PaymentAuth resource is ${origin}/api/mpp/v1. It returns WWW-Authenticate: Payment, selects Payment-Authorization so OAuth Bearer remains separate, accepts USDCx only, and emits Payment-Receipt only after canonical confirmation and idempotent delivery.
-- The public Nayori API runs an invite-only partner pilot on Stacks testnet (\`${STACKS_TESTNET_ID}\`) for STX, sBTC and USDCx.
+- The public Nayori API runs an invite-only partner pilot on ${COMMERCE_NETWORK_LABEL} (\`${COMMERCE_NETWORK_ID}\`) for STX, sBTC and USDCx.
 - OAuth authorizes API and MCP access. It never signs a payment; each payment transaction remains separately wallet-approved.
 - A signed quote, successful verification or broadcast response is not proof of settlement. Only the confirmed settlement state and signed receipt cross that boundary.
-- Mainnet facilitator settlement and sponsorship remain disabled while the external security-review gate is open.
+- Transaction sponsorship remains disabled; direct payments require a payer-approved transaction.
 
 ## Safety
 
