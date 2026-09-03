@@ -550,8 +550,8 @@ All current contracts are deployed by:
 | Validation | `validation-registry` | Capability and proof-hash attestations |
 | SIP-010 interface | `sip-010-trait` | Canonical fungible-token contract interface |
 | Reputation | `reputation-registry-v3` | Source-namespaced outcomes, job-linked ratings and retryable synchronization |
-| STX escrow | `agentic-commerce-v4` | Current STX lifecycle with evaluator review and timeout liveness |
-| sBTC escrow | `sbtc-commerce-v3` | Current sBTC lifecycle with token pinning and timeout liveness |
+| STX escrow | `agentic-commerce-v5` | Explainable evaluator decisions, appeals and liveness-safe STX settlement |
+| sBTC escrow | `sbtc-commerce-v4` | The same lifecycle with canonical, job-pinned sBTC settlement |
 
 Canonical mainnet sBTC:
 
@@ -566,7 +566,9 @@ mainnet generation remains immutable historical evidence and is not the default 
 | --- | --- | --- |
 | Open | Job exists but is not funded | Set budget and fund |
 | Funded | Exact asset is held by the contract | Assign provider and submit work |
-| Submitted | Deliverable is ready for evaluation | Evaluator completes or rejects |
+| Submitted | Deliverable is ready for evaluation | Evaluator records an evidence-backed decision |
+| Decision pending | Decision hashes are on-chain and escrow has not moved | Eligible party appeals or permissionless finalization follows the deadline |
+| Disputed | Client or provider appealed | Pinned human authority resolves, or timeout preserves the original decision |
 | Completed | Escrow released to provider | Eligible job-linked rating |
 | Rejected | Escrow refunded to client | Terminal |
 | Expired | Deadline passed and escrow refunded as applicable | Terminal |
@@ -579,15 +581,15 @@ mainnet promotion.
 | Component | Active contract | Security scope |
 | --- | --- | --- |
 | Reputation | `reputation-registry-v3` | Source- and job-namespaced outcomes/ratings, idempotent writes and two-step ownership |
-| STX escrow | `agentic-commerce-v4` | Fixed 12-burn-block review liveness, durable reputation synchronization and two-step ownership |
-| sBTC escrow | `sbtc-commerce-v3` | The STX controls plus per-job SIP-010 token pinning |
+| STX escrow | `agentic-commerce-v5` | Fixed review window, explainable pending decisions, role-specific appeals and two settlement timeouts |
+| sBTC escrow | `sbtc-commerce-v4` | The STX controls plus canonical per-job SIP-010 token pinning |
 
 For submitted work, the contracts record a fixed Nayori review window of **12 Bitcoin burn
-blocks**. The evaluator may complete or reject through the exact deadline. Only after that deadline
-may any principal trigger a deterministic provider payout. That liveness payout uses the separate
-terminal state `Timeout paid (u6)` and does not count as a completed job, rating eligibility or
-reputation success. Failed reputation writes never roll back economic settlement; they remain
-durable and permissionlessly retryable.
+blocks**. The evaluator records approve/reject plus evidence and explanation hashes without moving
+escrow. Mainnet then provides a **144 Bitcoin burn-block appeal window**. Only the affected client
+or provider may appeal, and a separately pinned human authority may uphold or reverse the result.
+Unappealed decisions and unavailable-authority cases have permissionless liveness paths with fixed
+recipients. Failed reputation writes never roll back settlement and remain retryable.
 
 The Web and SDK read the current escrow and the funded job's
 pinned sBTC token before opening a settlement signature. Their trait argument and exact deny-mode
@@ -609,21 +611,21 @@ tests and an 11/11 signer-free preflight before one internal 100-atomic-sBTC lif
 26/26. Job `u1` finished in state `u3` with escrow zero, exact provider payout, successful
 reputation synchronization and a persisted rating. These team-operated actions are release
 evidence, not external adoption or revenue. The independent external security review remains an
-open delivery item and this release must not be described as externally audited.
+open delivery item and this release must not be described as externally audited. See the
+[mainnet security-evidence anchor](docs/MAINNET_AUTONOMOUS_SECURITY_EVIDENCE.md).
 
-### Autonomous evaluation candidate
+### Autonomous evaluation and appeals
 
-The repository also contains the non-deployed `agentic-commerce-v5` and `sbtc-commerce-v4`
-candidates for Nayori's autonomous evaluation and human appeal workflow. A decision enters a
-pending state without moving escrow, the affected client or provider receives a Bitcoin-burn-block
-appeal window, and only then can settlement become final. The human appeal authority is pinned per
-job and cannot redirect either payout destination. A second timeout prevents an unavailable appeal
-authority from locking funds indefinitely while preserving the original decision.
+`agentic-commerce-v5` and `sbtc-commerce-v4` are live on mainnet and are the production contract
+generation. Their frozen sources were deployed in blocks `8905872` and `8905874`, configured with
+the mainnet `u144` appeal policy and independently verified. Controlled STX and sBTC canaries then
+passed 47/47 and 50/50 checks: both roles appealed, the human authority reversed both original
+decisions, escrow reached zero, and exactly one refund or payout occurred.
 
-The same reviewed source accepts only the explicit policy values `u3` for isolated QA/testnet or
-`u144` for mainnet during one-time initialization. These contracts are not selected by current
-production consumers and have no production deployment path in this change. See the
-[approved architecture and threat model](docs/plans/2026-08-31-autonomous-evaluator-and-qa-design.md).
+The same source uses only `u3` in isolated QA/testnet. Internal deployer, provider, evaluator and
+authority activity is operability evidence and is explicitly excluded from external adoption,
+non-team wallet and revenue counts. See the
+[architecture and threat model](docs/plans/2026-08-31-autonomous-evaluator-and-qa-design.md).
 
 The immutable earlier `agentic-commerce-v3` and `sbtc-commerce-v2` generation remains testnet-only
 at 144 blocks as historical evidence. The prior mainnet `agentic-commerce-v2`, `sbtc-commerce` and

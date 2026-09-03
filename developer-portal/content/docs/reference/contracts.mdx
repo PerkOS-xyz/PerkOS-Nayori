@@ -16,12 +16,13 @@ Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 | Capability validation | `validation-registry` |
 | SIP-010 interface | `sip-010-trait` |
 | Job-linked reputation | `reputation-registry-v3` |
-| STX escrow | `agentic-commerce-v4` |
-| sBTC escrow | `sbtc-commerce-v3` |
+| STX escrow | `agentic-commerce-v5` |
+| sBTC escrow | `sbtc-commerce-v4` |
 
 The active sBTC contract accepts the canonical mainnet token
 `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`. Both commerce contracts use a fixed
-12 Bitcoin burn-block review window and write source-namespaced outcomes to reputation v3.
+12 Bitcoin burn-block evaluator window, a 144-block appeal window and source-namespaced outcomes
+in reputation v3.
 
 ## Versioned security release
 
@@ -30,25 +31,28 @@ The active sBTC contract accepts the canonical mainnet token
   <StatusBadge tone="public">Source verified</StatusBadge>
 </StatusRow>
 
-`reputation-registry-v3`, `agentic-commerce-v4` and `sbtc-commerce-v3` are deployed under the
+`reputation-registry-v3`, `agentic-commerce-v5` and `sbtc-commerce-v4` are deployed under the
 mainnet deployer above and selected by the application. They add a fixed 12 Bitcoin burn-block
-evaluator window, a separate timeout-paid state, retryable reputation synchronization, source/job
+evaluator window, an explainable evaluator decision, a 144-block appeal period with a separately
+pinned authority, a separate timeout-paid state, retryable reputation synchronization, source/job
 namespacing, per-job sBTC token pinning and two-step ownership.
 
-All reviewed sources match on-chain byte-for-byte. The mainnet deploy/configuration transactions
-confirmed in blocks 8885885–8885898. A guarded internal smoke then exercised one complete
-100-atomic-sBTC job: 26/26 checks passed, with terminal state `u3`, zero escrow, exact payout,
-successful reputation synchronization and a persisted rating.
+All reviewed sources match on-chain byte-for-byte. The v5/v4 deployments confirmed in blocks
+`8905872` and `8905874`; initialization and allowlist transactions confirmed through block
+`8905886`. Two controlled mainnet canaries exercised both assets and both appeal directions:
+STX passed 47/47 checks and sBTC passed 50/50. An independent signer-free postcheck then passed
+75/75 public-state checks. Both jobs reached the correct terminal state with zero escrow, one exact
+settlement and synchronized reputation.
 
-The same source generation remains verifiable on testnet under
+The same source generation remains verifiable in isolated QA on testnet under
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`. Its STX and official PoX-5 sBTC complete paths pass,
 and the real-timeout job `u2` settled in state `u6` with zero escrow, one exact payout and no
 completion, reputation or rating credit. The earlier immutable `agentic-commerce-v3` and
 `sbtc-commerce-v2` contracts remain testnet-only at 144 blocks as historical evidence.
 
-The prior `agentic-commerce-v2`, `sbtc-commerce` and `reputation-registry-v2` mainnet generation is
-preserved as historical release evidence. It is not the default for new jobs. Internal deployment and
-smoke actors are release evidence, not external adoption, non-team usage or revenue.
+The prior `agentic-commerce-v4`, `sbtc-commerce-v3` generation and the earlier v2 contracts are
+preserved as immutable historical release evidence. They are not the default for new jobs. Internal
+deployment and smoke actors are release evidence, not external adoption, non-team usage or revenue.
 
 ## Verification
 

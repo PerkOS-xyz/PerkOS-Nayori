@@ -52,6 +52,7 @@ const versionedEscrowTestnetDeploy = "scripts/deploy-versioned-escrow-testnet.mj
 const versionedEscrowTestnetE2e = "scripts/e2e-versioned-escrow-testnet.mjs";
 const autonomousEscrowTestnetDeploy = "scripts/deploy-autonomous-escrow-testnet.mjs";
 const autonomousEscrowMainnetDeploy = "scripts/deploy-autonomous-escrow-mainnet.mjs";
+const autonomousEscrowMainnetE2e = "scripts/e2e-autonomous-escrow-mainnet.mjs";
 const autonomousEscrowTestnetE2e = "scripts/e2e-autonomous-escrow-testnet.mjs";
 const versionedEscrowMainnetDeploy = "scripts/deploy-versioned-escrow-mainnet.mjs";
 const versionedEscrowMainnetE2e = "scripts/e2e-versioned-escrow-mainnet.mjs";
@@ -212,6 +213,68 @@ forbidPattern(
   if (confirmation < 0 || credentialRead < 0 || confirmation > credentialRead) {
     failures.push(
       `${autonomousEscrowMainnetDeploy}: typed confirmation must precede credential reads`
+    );
+  }
+}
+requirePattern(
+  autonomousEscrowMainnetE2e,
+  /process\.env\.STACKS_NETWORK\s*!==\s*["']mainnet["']/,
+  "the autonomous mainnet E2E must require explicit mainnet",
+);
+requirePattern(
+  autonomousEscrowMainnetE2e,
+  /CONFIRM_AUTONOMOUS_ESCROW_MAINNET_E2E\s*!==[\s\S]*?["']execute-controlled-v5-v4-mainnet["']/,
+  "the autonomous mainnet E2E requires its release-specific typed confirmation",
+);
+requirePattern(
+  autonomousEscrowMainnetE2e,
+  /CONFIRM_AUTONOMOUS_ESCROW_MAINNET_DEPLOYER\s*!==\s*client/,
+  "the autonomous mainnet E2E requires the exact deployer confirmation",
+);
+requirePattern(
+  autonomousEscrowMainnetE2e,
+  /CONFIRM_AUTONOMOUS_ESCROW_MAINNET_APPEAL_AUTHORITY\s*!==\s*appealAuthority/,
+  "the autonomous mainnet E2E requires the exact appeal-authority confirmation",
+);
+requirePattern(
+  autonomousEscrowMainnetE2e,
+  /EXPECTED_SOURCE_HASHES[\s\S]*?createHash\(["']sha256["']\)[\s\S]*?digest\(["']hex["']\)/,
+  "the autonomous mainnet E2E must freeze source hashes",
+);
+requirePattern(
+  autonomousEscrowMainnetE2e,
+  /APPEAL_WINDOW_BURN_BLOCKS\s*=\s*144n/,
+  "the autonomous mainnet E2E must require the 144-block policy",
+);
+requirePattern(
+  autonomousEscrowMainnetE2e,
+  /SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4\.sbtc-token/,
+  "the autonomous mainnet E2E must pin canonical mainnet sBTC",
+);
+requirePattern(
+  autonomousEscrowMainnetE2e,
+  /postConditionMode:\s*PostConditionMode\.Deny/,
+  "the autonomous mainnet E2E must use deny-mode post conditions",
+);
+requirePattern(
+  autonomousEscrowMainnetE2e,
+  /statSync\(path\)\.mode[\s\S]*?permissions\s*&\s*0o077/,
+  "the autonomous mainnet E2E must enforce private external signer files",
+);
+forbidPattern(
+  autonomousEscrowMainnetE2e,
+  /STACKS_TESTNET|PostConditionMode\.Allow|randomPrivateKey/,
+  "the autonomous mainnet E2E may not expose testnet, allow mode or ephemeral signers",
+);
+{
+  const contents = source(autonomousEscrowMainnetE2e);
+  const confirmation = contents.indexOf(
+    "CONFIRM_AUTONOMOUS_ESCROW_MAINNET_E2E !=="
+  );
+  const credentialRead = contents.indexOf("parseEnv(CLIENT_ENV_PATH)");
+  if (confirmation < 0 || credentialRead < 0 || confirmation > credentialRead) {
+    failures.push(
+      `${autonomousEscrowMainnetE2e}: typed confirmation must precede credential reads`
     );
   }
 }
@@ -508,6 +571,16 @@ requirePattern(
   /STX_COMMERCE_HAS_REVIEW_TIMEOUT[\s\S]*?agentic-commerce-v4/,
   "the Web must recognize the v4 STX review-timeout interface",
 );
+requirePattern(
+  "App/src/constants/contract.ts",
+  /NEXT_PUBLIC_STX_COMMERCE_CONTRACT\s*\|\|\s*["']agentic-commerce-v5["']/,
+  "the Web default must select the active v5 STX contract",
+);
+requirePattern(
+  "App/src/constants/contract.ts",
+  /NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT\s*\|\|\s*["']sbtc-commerce-v4["']/,
+  "the Web default must select the active v4 sBTC contract",
+);
 for (const variable of [
   "NEXT_PUBLIC_RELEASE_CHANNEL",
   "NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS",
@@ -536,6 +609,17 @@ requirePattern(
   "App/src/constants/contract.ts",
   /SBTC_COMMERCE_HAS_REVIEW_TIMEOUT[\s\S]*?sbtc-commerce-v3/,
   "the Web must recognize the v3 sBTC review-timeout and token-pinning interface",
+);
+
+requirePattern(
+  "scripts/verify-current-mainnet.mjs",
+  /name:\s*["']agentic-commerce-v5["'][\s\S]*?name:\s*["']sbtc-commerce-v4["']/,
+  "the signer-free current-mainnet verifier must select the active v5/v4 contracts",
+);
+requirePattern(
+  "scripts/verify-current-mainnet.mjs",
+  /appealWindow\s*!==\s*144n[\s\S]*?configuredAuthority\s*!==\s*appealAuthority/,
+  "the current-mainnet verifier must enforce the 144-block policy and pinned authority",
 );
 
 for (const path of [
