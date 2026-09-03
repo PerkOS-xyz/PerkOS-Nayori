@@ -571,6 +571,16 @@ requirePattern(
   /STX_COMMERCE_HAS_REVIEW_TIMEOUT[\s\S]*?agentic-commerce-v4/,
   "the Web must recognize the v4 STX review-timeout interface",
 );
+requirePattern(
+  "App/src/constants/contract.ts",
+  /NEXT_PUBLIC_STX_COMMERCE_CONTRACT\s*\|\|\s*["']agentic-commerce-v5["']/,
+  "the Web default must select the active v5 STX contract",
+);
+requirePattern(
+  "App/src/constants/contract.ts",
+  /NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT\s*\|\|\s*["']sbtc-commerce-v4["']/,
+  "the Web default must select the active v4 sBTC contract",
+);
 for (const variable of [
   "NEXT_PUBLIC_RELEASE_CHANNEL",
   "NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS",
@@ -599,6 +609,17 @@ requirePattern(
   "App/src/constants/contract.ts",
   /SBTC_COMMERCE_HAS_REVIEW_TIMEOUT[\s\S]*?sbtc-commerce-v3/,
   "the Web must recognize the v3 sBTC review-timeout and token-pinning interface",
+);
+
+requirePattern(
+  "scripts/verify-current-mainnet.mjs",
+  /name:\s*["']agentic-commerce-v5["'][\s\S]*?name:\s*["']sbtc-commerce-v4["']/,
+  "the signer-free current-mainnet verifier must select the active v5/v4 contracts",
+);
+requirePattern(
+  "scripts/verify-current-mainnet.mjs",
+  /appealWindow\s*!==\s*144n[\s\S]*?configuredAuthority\s*!==\s*appealAuthority/,
+  "the current-mainnet verifier must enforce the 144-block policy and pinned authority",
 );
 
 for (const path of [

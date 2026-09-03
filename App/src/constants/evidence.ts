@@ -7,7 +7,7 @@ import {
 import { NETWORK_NAME } from "./network";
 
 export const EVIDENCE_VERSION = 2;
-export const EVIDENCE_UPDATED_AT = "2026-08-28T00:00:00.000Z";
+export const EVIDENCE_UPDATED_AT = "2026-09-03T02:00:00.000Z";
 
 export const milestone2Targets = {
   registeredAgentsMainnet: 10,
@@ -56,8 +56,27 @@ const qaEvidenceWallets = [
     : []),
 ] as const;
 
+const mainnetEvidenceWallets = [
+  ...m1EvidenceWallets,
+  {
+    address: "SP1VSKCGJCBV3EBS8GWPJ9FD1QARHQ9EN8S49PG8T",
+    classification: "team" as const,
+    roles: ["controlled-provider"],
+  },
+  {
+    address: "SP2ENKFX2BGX94HC4KYZCCV7KEN7JXJXZDKC3GPGC",
+    classification: "team" as const,
+    roles: ["controlled-evaluator"],
+  },
+  {
+    address: "SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH",
+    classification: "team" as const,
+    roles: ["appeal-authority"],
+  },
+] as const;
+
 export const evidenceWallets =
-  NETWORK_NAME === "testnet" ? qaEvidenceWallets : m1EvidenceWallets;
+  NETWORK_NAME === "testnet" ? qaEvidenceWallets : mainnetEvidenceWallets;
 
 export type EvidenceWalletClassification =
   | "team"

@@ -28,10 +28,11 @@ The current product stack contains:
 - `validation-registry`
 - `sip-010-trait`
 - `reputation-registry-v3`
-- `agentic-commerce-v4` for STX escrow
-- `sbtc-commerce-v3` for sBTC escrow
+- `agentic-commerce-v5` for STX escrow and autonomous decisions
+- `sbtc-commerce-v4` for sBTC escrow and autonomous decisions
 
-The prior v2/v2 generation remains immutable historical evidence and is not selected for new jobs.
+The prior v4/v3 and v2 generations remain immutable historical evidence and are not selected for
+new jobs.
 
 ## Historical bootstrap deployment
 
@@ -79,8 +80,9 @@ counts.
 
 ## Active versioned escrow release
 
-The repository includes `reputation-registry-v3`, `agentic-commerce-v4` and `sbtc-commerce-v3` as
-the active 12-block generation. It was first deployed on Stacks testnet under
+The repository includes `reputation-registry-v3`, `agentic-commerce-v5` and `sbtc-commerce-v4` as
+the active generation. It combines the 12-block evaluator window with an explainable decision and
+appeal lifecycle. The preceding v4/v3 generation was first deployed on Stacks testnet under
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5` from exact merge
 `b15544d601bd4e49610be854f7ad33a0af90c0a7`, then promoted on mainnet from exact merge
 `670d23abe78051cfb3963228650fed5089d6827c`.
@@ -126,8 +128,8 @@ npm run e2e:autonomous:mainnet
 ```
 
 Internal canaries prove operability but never count as external M2 adoption, non-team wallets or
-revenue. Production consumers remain on v4/v3 until both asset canaries, independent public-state
-verification and the consumer rollout gates pass.
+revenue. The production-consumer rollout selects v5/v4 only after both asset canaries, independent
+public-state verification and the QA consumer gates pass.
 
 Verified v4/v3 testnet evidence on 2026-08-30:
 
@@ -214,9 +216,11 @@ The corresponding testnet preview selects:
 
 ```env
 NEXT_PUBLIC_STACKS_NETWORK=testnet
-NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v4
-NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v3
+NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v5
+NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v4
 NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3
+NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS=STBTXHXFXFGMNPXST7A6XQ1WNGC0V6TB6CDDQZB4
+NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS=ST256E5DAXM7RDFZ76ECCTPTBYHRXXJQ29H16DN69
 ```
 
 The separately guarded mainnet promoter defaults to a signer-free preflight and leaves all
@@ -285,9 +289,11 @@ Configure these values in the target production build environment:
 ```env
 NEXT_PUBLIC_STACKS_NETWORK=mainnet
 NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
-NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v4
-NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v3
+NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v5
+NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v4
 NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3
+NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS=SP2ENKFX2BGX94HC4KYZCCV7KEN7JXJXZDKC3GPGC
+NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS=SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH
 NEXT_PUBLIC_SITE_URL=https://nayori.ai
 ```
 

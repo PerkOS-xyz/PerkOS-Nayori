@@ -32,17 +32,18 @@ describe('versioned public references', () => {
       'utf8',
     );
     expect(overview).not.toMatch(/\b(?:M1|M2|Milestone\s*[12])\b/i);
-    expect(overview).toContain('SDK 0.6.0 · Public');
+    expect(overview).toContain('SDK 0.7.0 · Public');
   });
 
-  it('documents the autonomous appeal lifecycle as an isolated testnet candidate', () => {
+  it('documents the autonomous appeal lifecycle as the active mainnet generation', () => {
     const guide = readFileSync(
       new URL('../content/docs/commerce/autonomous-evaluation.mdx', import.meta.url),
       'utf8',
     );
     expect(guide).toContain('agentic-commerce-v5');
     expect(guide).toContain('sbtc-commerce-v4');
-    expect(guide).toContain('It is not the active mainnet contract generation.');
+    expect(guide).toContain('This lifecycle is active on Stacks mainnet');
+    expect(guide).toContain('Mainnet is fixed at 144 burn blocks.');
     expect(guide).toContain('await nayori.appealDecision');
     expect(guide).toContain('await nayori.resolveAppeal');
     expect(guide).toContain('await nayori.settleAppealTimeout');
