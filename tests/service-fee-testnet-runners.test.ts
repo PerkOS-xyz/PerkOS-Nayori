@@ -1,4 +1,12 @@
-import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import {
   mkdtempSync,
   realpathSync,
@@ -58,18 +66,19 @@ import {
 import { main as deployMain } from "../scripts/deploy-service-fee-testnet.mjs";
 
 // Unit-test journals must never acquire or delete the live operator's account lock.
-const isolation = vi.hoisted(() => ({ root: "" }));
-vi.mock("node:os", async () => {
-  const actual = await vi.importActual<typeof import("node:os")>("node:os");
-  const fs = await vi.importActual<typeof import("node:fs")>("node:fs");
-  const path = await vi.importActual<typeof import("node:path")>("node:path");
-  isolation.root = fs.realpathSync(
-    fs.mkdtempSync(path.join(actual.tmpdir(), "nayori-fee-suite-")),
-  );
-  return { ...actual, tmpdir: () => isolation.root };
+const isolation = realpathSync(
+  mkdtempSync(join(tmpdir(), "nayori-fee-suite-")),
+);
+beforeAll(() => {
+  // Native .mjs dependencies can bypass Vitest module mocks. os.tmpdir() reads these
+  // process-local variables dynamically, including inside the real Journal helper.
+  vi.stubEnv("TMPDIR", isolation);
+  vi.stubEnv("TMP", isolation);
+  vi.stubEnv("TEMP", isolation);
 });
 afterAll(() => {
-  if (isolation.root) rmSync(isolation.root, { recursive: true, force: true });
+  vi.unstubAllEnvs();
+  rmSync(isolation, { recursive: true, force: true });
 });
 
 const treasury = "ST1E7E64H8VSSSGE0RPWF90RRC91MQG7CRQRM1BFX";
@@ -108,6 +117,16 @@ function event(
 }
 
 describe("testnet-only release and custody guards", () => {
+  it("isolates real journal account locks from the operator temporary directory", () => {
+    const journal = new Journal(join(temp(), "isolated.json"), { test: true });
+    try {
+      expect(journal.accountLock).toBe(
+        join(isolation, `nayori-service-fee-testnet-${DEPLOYER}.lock`),
+      );
+    } finally {
+      journal.close();
+    }
+  });
   it("pins the two candidate sources and excludes public fault-injection deployments", () => {
     expect(Object.values(CONTRACTS)).toEqual([
       "agentic-commerce-v6",
