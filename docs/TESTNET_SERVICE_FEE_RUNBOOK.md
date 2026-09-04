@@ -142,6 +142,18 @@ reviewed SHA, actors, scenario and returned create-job transaction.
 
 ## Recovery, deadlines and evidence
 
+Public observations share a read-only transport with a minimum three-second interval. Hiro
+documents a [50-request/minute unauthenticated allowance](https://docs.hiro.so/en/resources/guides/rate-limits),
+shared by the client IP; other processes can still exhaust it. An HTTP 429 read is retried at
+most twice, honoring `Retry-After` seconds or HTTP dates. Without a valid hint, the bounded
+backoff is conservative; a server cooldown exceeding 60 seconds stops for later recovery
+instead of retrying early. No API key or alternate network is introduced.
+
+Only allowlisted GET observations and POST `/v2/contracts/call-read` observations use this
+transport. Transaction broadcasts and faucet requests cannot enter it. Transport failures,
+other HTTP errors and unresolved transaction outcomes still stop the runner; the journal and
+single-broadcast policy below remain authoritative. Read retry is not transaction retry.
+
 Each operation records its intent hash, nonce and locally derived txid durably **before** broadcast.
 Rerunning with the same receipt observes existing txids; it never re-signs or retransmits that
 operation. A timeout, rejection, conflicting receipt or dropped transaction requires inspection.

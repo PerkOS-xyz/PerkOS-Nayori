@@ -255,11 +255,103 @@ export function signer(path, address, keyField) {
     closeSync(fd);
   }
 }
+// Only public observations may be retried. The broadcast NETWORK above deliberately
+// does not use this transport: an ambiguous transaction must retain its one txid.
+export function createReadTransport({
+  fetchFn = (...args) => fetch(...args),
+  now = Date.now,
+  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+} = {}) {
+  let queue = Promise.resolve(),
+    lastStart = -Infinity;
+  const functions = new Set([
+    "get-owner",
+    "get-protocol-config",
+    "get-job-count",
+    "is-registered-caller",
+    "get-payment-token",
+    "get-job",
+    "get-job-service-fee",
+    "get-escrow-balance",
+    "get-decision",
+    "get-job-payment-token",
+    "get-reputation-sync",
+  ]);
+  return async (input, options = {}) => {
+    const url = new URL(input),
+      method = (options.method || "GET").toUpperCase();
+    ensure(
+      url.origin === API && !url.username && !url.password && !url.hash,
+      "Read transport requires canonical testnet origin",
+    );
+    const parts = url.pathname.split("/");
+    const sourceRead =
+      parts.length === 6 &&
+      parts.slice(0, 4).join("/") === "/v2/contracts/source" &&
+      parts[4] === DEPLOYER &&
+      Object.hasOwn(SOURCE_HASHES, parts[5]);
+    const contractRead =
+      parts.length === 7 &&
+      parts.slice(0, 4).join("/") === "/v2/contracts/call-read" &&
+      parts[4] === DEPLOYER &&
+      Object.hasOwn(SOURCE_HASHES, parts[5]) &&
+      functions.has(parts[6]);
+    const getRead =
+      url.pathname === "/v2/info" ||
+      sourceRead ||
+      /^\/extended\/v1\/address\/ST[0-9A-Z]+\/(balances|nonces)$/.test(
+        url.pathname,
+      ) ||
+      /^\/extended\/v1\/tx\/(mempool|0x[a-f0-9]{64})$/.test(url.pathname);
+    ensure(
+      (method === "GET" && getRead && options.body === undefined) ||
+        (method === "POST" && contractRead && typeof options.body === "string"),
+      "Only allowlisted public reads may use retry transport",
+    );
+    const run = async () => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        options.signal?.throwIfAborted();
+        const spacing = Math.max(0, lastStart + 3000 - now());
+        if (spacing) await sleep(spacing);
+        options.signal?.throwIfAborted();
+        lastStart = now();
+        const timeout = AbortSignal.timeout(20000);
+        const response = await fetchFn(url.href, {
+          ...options,
+          method,
+          redirect: "error",
+          signal: options.signal
+            ? AbortSignal.any([options.signal, timeout])
+            : timeout,
+        });
+        if (response.status !== 429 || attempt === 2) return response;
+        const retryAfter = response.headers.get("retry-after");
+        let delay = 5000 * 2 ** attempt;
+        if (retryAfter !== null) {
+          const value = retryAfter.trim();
+          const requested = /^\d+(\.\d+)?$/.test(value)
+            ? Math.ceil(Number(value) * 1000)
+            : Date.parse(value) - now();
+          // Invalid server hints receive a conservative one-minute cooldown.
+          delay = Math.max(delay, Number.isNaN(requested) ? 60000 : requested);
+        }
+        await response.body?.cancel();
+        ensure(
+          delay <= 60000,
+          "Read retry requires more than 60 seconds; preserve receipt and resume later",
+        );
+        await sleep(delay);
+      }
+    };
+    const task = queue.then(run);
+    queue = task.catch(() => undefined);
+    return task;
+  };
+}
+const readTransport = createReadTransport();
+
 export async function get(path, allow404 = false) {
-  const response = await fetch(API + path, {
-    redirect: "error",
-    signal: AbortSignal.timeout(20000),
-  });
+  const response = await readTransport(API + path);
   if (allow404 && response.status === 404) return null;
   ensure(response.ok, `Testnet API HTTP ${response.status}`);
   return response.json();
@@ -313,6 +405,7 @@ export async function read(name, fn, args = []) {
     functionArgs: args,
     senderAddress: DEPLOYER,
     network: NETWORK,
+    client: { baseUrl: API, fetch: readTransport },
   });
 }
 export async function sources(requireCandidates) {
