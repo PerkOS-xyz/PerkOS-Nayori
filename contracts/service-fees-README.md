@@ -1,8 +1,8 @@
 # Earned service fees — candidate contract reference
 
 `agentic-commerce-v6` (STX) and `sbtc-commerce-v5` (sBTC) add a fixed **200 basis-point
-service fee** to the autonomous-decision escrow lifecycle. They are **simnet candidates,
-not deployed contracts or the current application/SDK defaults**. Production continues to
+service fee** to the autonomous-decision escrow lifecycle. They are **testnet candidates,
+not production contracts or the current application/SDK defaults**. Production continues to
 use STX v5 and sBTC v4 without this fee. Existing jobs and their terms are unchanged.
 
 ## Economic policy
@@ -109,7 +109,8 @@ outcome and reputation do not change because a fee was refunded.
 
 This is **not guaranteed automatic recovery** from an insolvent, unavailable or uncooperative
 treasury. Commercial launch needs an approved custody/signing policy, funded refund reserves
-and a monitored refund process. The tests use public simnet fixtures, not an operational treasury.
+and a monitored refund process. The local tests use public simnet fixtures; the separate controlled
+testnet runner uses dedicated QA roles and receipts, not a production treasury.
 
 ## Appeals and x402
 

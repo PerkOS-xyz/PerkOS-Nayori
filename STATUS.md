@@ -7,10 +7,13 @@ Last verified: 2026-09-03
 ### Additive fee candidate — 2026-09-04
 
 STX `agentic-commerce-v6` and sBTC `sbtc-commerce-v5` implement a fixed 2% earned service fee,
-job-pinned treasury, evidence-backed waivers and treasury-funded refunds in simnet only.
-The 86 focused cases and full 212-test suite pass locally; the static security gate passes.
+job-pinned treasury, evidence-backed waivers and treasury-funded refunds. The candidates were
+deployed and initialized on testnet on 2026-09-04 from QA merge `556e90a`; seven transactions
+returned `(ok true)`, and a separate public source/configuration/transaction postcheck passed 13/13.
+The 86 focused simnet cases remain part of the full suite; the reviewed deployment ran 267/267
+tests and the static security gate before signing. The twenty real-chain paths remain a separate gate.
 See the [candidate reference](contracts/service-fees-README.md) for the policy and limitations.
-No active contract, deployment configuration, SDK package or production default was changed.
+No production contract, SDK package or application default was changed.
 Opt-in Web fee disclosures and wallet/job-scoped acceptance are served in QA; matching SDK
 support is merged to its QA branch, still unreleased. Docs distinguish quotes, charges, waivers
 and actual refunds. Dedicated testnet deployment/E2E runners now cover a 20-path matrix, with

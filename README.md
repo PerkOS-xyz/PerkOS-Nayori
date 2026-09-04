@@ -86,6 +86,8 @@ The matching opt-in Web/Docs integration is served in QA and the SDK support is 
 QA branch, not an active price change or npm release. Current deployed v5/v4 jobs retain their
 original terms. See the [candidate integration guide](developer-portal/content/docs/commerce/service-fees.mdx)
 and [guarded testnet deployment and 20-path contract test runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
+The fee candidates were deployed and initialized on testnet on 2026-09-04; deployment alone
+does not select them in the application or complete the twenty real-chain validation paths.
 
 ### Direct paid resources
 
@@ -759,7 +761,7 @@ signer and explicit spending policy.
 - [MPP integration](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/MPP_PAYMENTS.md)
 - [Partner pilot](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/PARTNER_PILOT.md)
 - [Deployment guide](docs/DEPLOYMENT.md)
-- [Earned service fee contracts — simnet candidate, not deployed](contracts/service-fees-README.md)
+- [Earned service fee contracts — testnet candidate, not production](contracts/service-fees-README.md)
 - [Current product status](STATUS.md)
 
 ## Project structure

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import {
   mkdtempSync,
   realpathSync,
@@ -10,6 +10,7 @@ import {
   existsSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
+import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import {
   Cl,
@@ -55,6 +56,21 @@ import {
   main as e2eMain,
 } from "../scripts/e2e-service-fee-testnet.mjs";
 import { main as deployMain } from "../scripts/deploy-service-fee-testnet.mjs";
+
+// Unit-test journals must never acquire or delete the live operator's account lock.
+const isolation = vi.hoisted(() => ({ root: "" }));
+vi.mock("node:os", async () => {
+  const actual = await vi.importActual<typeof import("node:os")>("node:os");
+  const fs = await vi.importActual<typeof import("node:fs")>("node:fs");
+  const path = await vi.importActual<typeof import("node:path")>("node:path");
+  isolation.root = fs.realpathSync(
+    fs.mkdtempSync(path.join(actual.tmpdir(), "nayori-fee-suite-")),
+  );
+  return { ...actual, tmpdir: () => isolation.root };
+});
+afterAll(() => {
+  if (isolation.root) rmSync(isolation.root, { recursive: true, force: true });
+});
 
 const treasury = "ST1E7E64H8VSSSGE0RPWF90RRC91MQG7CRQRM1BFX";
 const provider = "ST10T9RQQX1D1XRGA9QV3J6AP8FDFNTQ1BXJZ3NEP";
@@ -192,6 +208,32 @@ describe("testnet-only release and custody guards", () => {
     expect(() => signer(join(dir, "link.env"), address, "QA_KEY")).toThrow(
       /symlink/,
     );
+  });
+  it("accepts ignored signer paths literally through real Git, including spaces and brackets", () => {
+    const dir = temp(),
+      key = randomPrivateKey();
+    const address = getAddressFromPrivateKey(key, "testnet");
+    execFileSync("git", ["init", "--quiet", dir]);
+    writeFileSync(join(dir, ".gitignore"), ".env*\n");
+    for (const name of [".env.qa", ".env.qa [provider]", ".env.qa\nprovider"]) {
+      const path = join(dir, name);
+      writeFileSync(path, `QA_KEY=${key}\n`, { mode: 0o600 });
+      expect(signer(path, address, "QA_KEY")).toBe(key);
+    }
+  });
+  it("rejects unignored or force-tracked signer files in a real Git repository", () => {
+    const dir = temp(),
+      key = randomPrivateKey();
+    const address = getAddressFromPrivateKey(key, "testnet");
+    execFileSync("git", ["init", "--quiet", dir]);
+    const exposed = join(dir, "qa.env"),
+      tracked = join(dir, ".env.qa");
+    writeFileSync(exposed, `QA_KEY=${key}\n`, { mode: 0o600 });
+    expect(() => signer(exposed, address, "QA_KEY")).toThrow(/ignored/);
+    writeFileSync(join(dir, ".gitignore"), ".env*\n");
+    writeFileSync(tracked, `QA_KEY=${key}\n`, { mode: 0o600 });
+    execFileSync("git", ["add", "--force", "--", ".env.qa"], { cwd: dir });
+    expect(() => signer(tracked, address, "QA_KEY")).toThrow(/tracked/);
   });
   it.each([
     "treasury",
