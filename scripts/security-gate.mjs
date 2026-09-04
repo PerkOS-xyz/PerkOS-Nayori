@@ -747,6 +747,17 @@ for (const candidate of ["agentic-commerce-v6", "sbtc-commerce-v5"]) {
   }
 }
 
+const feeTestnetCore = "scripts/service-fee-testnet-core.mjs";
+requirePattern(feeTestnetCore, /env\.STACKS_NETWORK === "testnet"/, "fee runners must require explicit testnet");
+requirePattern(feeTestnetCore, /PostConditionMode\.Deny/, "fee runner transactions must use deny mode");
+requirePattern(feeTestnetCore, /broadcast-intent-recorded/, "fee runners must persist intent before broadcast");
+requirePattern(feeTestnetCore, /SERVICE_FEE_REVIEWED_SHA/, "fee execution requires a reviewed exact SHA");
+requirePattern(feeTestnetCore, /merge-base[\s\S]*--is-ancestor[\s\S]*origin\/qa/, "fee execution must be merged to QA");
+requirePattern(feeTestnetCore, /0o600/, "fee custody and journals require private file permissions");
+for (const runner of [feeTestnetCore, "scripts/deploy-service-fee-testnet.mjs", "scripts/e2e-service-fee-testnet.mjs"]) {
+  forbidPattern(runner, /PostConditionMode\.Allow|STACKS_MAINNET|https:\/\/api\.mainnet\.hiro\.so/, "fee runner has no mainnet or allow-mode branch");
+}
+
 if (failures.length > 0) {
   console.error("Nayori security gate failed:\n- " + failures.join("\n- "));
   process.exit(1);
