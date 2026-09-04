@@ -748,6 +748,7 @@ signer and explicit spending policy.
 - [MPP integration](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/MPP_PAYMENTS.md)
 - [Partner pilot](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/PARTNER_PILOT.md)
 - [Deployment guide](docs/DEPLOYMENT.md)
+- [Earned service fee contracts — simnet candidate, not deployed](contracts/service-fees-README.md)
 - [Current product status](STATUS.md)
 
 ## Project structure

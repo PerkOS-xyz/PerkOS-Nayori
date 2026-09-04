@@ -698,6 +698,55 @@ requirePattern(
   "QA rollback must restore release identity environment files",
 );
 
+// Candidate fee generation: static tripwires supplement (not replace) simnet tests.
+function clarityFunction(path, kind, name) {
+  const contents = source(path);
+  const start = contents.indexOf(`(define-${kind} (${name}`);
+  if (start < 0) {
+    failures.push(`${path}: missing ${kind} function ${name}`);
+    return "";
+  }
+  const end = contents.indexOf("\n(define-", start + 1);
+  return contents.slice(start, end < 0 ? undefined : end);
+}
+
+for (const candidate of ["agentic-commerce-v6", "sbtc-commerce-v5"]) {
+  const path = `contracts/${candidate}.clar`;
+  const check = (condition, message) => { if (!condition) failures.push(`${path}: ${message}`); };
+  const fn = (name, kind = "public") => clarityFunction(path, kind, name);
+  requirePattern(path, /\(define-constant SERVICE_FEE_BPS u200\)/, "service fee must stay at the approved 200 bps");
+  requirePattern(path, /\(define-constant SERVICE_FEE_DIVISOR u50\)/, "fee arithmetic must divide without multiplication overflow");
+  check(/\(treasury principal\)/.test(fn("initialize-protocol")), "initialization requires an explicit treasury");
+  check(/treasury: \(var-get service-treasury\)/.test(fn("create-job")), "jobs must pin their treasury");
+  check((source(path).match(/\(var-set service-treasury /g) ?? []).length === 1, "treasury must be immutable after initialization");
+  const split = fn("settle-service-payment", "private");
+  check(/\(asserts! \(is-some \(map-get\? decisions job-id\)\)/.test(split), "fees require an evaluator decision");
+  check(/\(is-eq gross \(default-to u0 \(map-get\? escrow-balances job-id\)\)\)/.test(split), "split must constrain the exact job escrow");
+  check(/\(is-none \(map-get\? service-fee-settlements job-id\)\)/.test(split), "fee collection must be one-shot");
+  check(/service-fee-waivers job-id\)\) u0/.test(split), "a waived fee must be zero before transfer");
+  for (const name of ["finalize-decision", "resolve-appeal", "settle-appeal-timeout"]) {
+    check(/\(try! \(settle-service-payment job-id /.test(fn(name)), `${name} must use the atomic split helper`);
+    if (candidate === "sbtc-commerce-v5") check(/\(try! \(check-job-token job-id token\)\)/.test(fn(name)), `${name} must check the pinned token`);
+  }
+  for (const name of ["fund-job", "record-decision", "appeal-decision", "expire-job", "settle-review-timeout", "retry-reputation-sync"]) {
+    check(!/settle-service-payment|map-set service-fee-settlements/.test(fn(name)), `${name} may not collect a service fee`);
+  }
+  check(!/stx-transfer\?|contract-call\? token transfer/.test(fn("appeal-decision")), "filing an appeal must not charge an automatic second fee");
+  const waiver = fn("waive-service-fee");
+  check(/\(is-eq tx-sender \(get appeal-authority job\)\)/.test(waiver), "only the job-pinned authority can waive");
+  check(/\(is-valid-hash evidence-hash\)/.test(waiver), "waivers require evidence");
+  const refund = fn("refund-service-fee");
+  check(/\(is-eq tx-sender \(get treasury job\)\)/.test(refund), "refunds require pinned treasury authorization");
+  check(/\(is-some \(map-get\? service-fee-waivers job-id\)\)/.test(refund), "refunds require a waiver");
+  check(/\(> amount u0\)/.test(refund) && /refunded-fee: \(get charged-fee settlement\)/.test(refund), "refunds must be exact and one-shot");
+  check(!/as-contract/.test(refund), "fee refunds must spend treasury funds, never escrow");
+  if (candidate === "sbtc-commerce-v5") {
+    check(/\(try! \(check-job-token job-id token\)\)/.test(refund), "fee refunds must use the job-pinned token");
+    const transfers = source(path).split("\n").filter(line => line.includes("contract-call? token transfer"));
+    check(transfers.length === 6 && transfers.every(line => line.includes("ERR_TOKEN_TRANSFER_FAILED")), "every SIP-010 transfer must reject ok-false results");
+  }
+}
+
 if (failures.length > 0) {
   console.error("Nayori security gate failed:\n- " + failures.join("\n- "));
   process.exit(1);
