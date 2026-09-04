@@ -124,6 +124,12 @@ The service must not replace the eligible party's ability to file an appeal on t
 
 Before enabling these contracts for users:
 
+The opt-in SDK and Web/Docs integration now has a separate QA review track. It does not change
+the deployed defaults or satisfy the real-chain activation gates below. The browser displays
+per-job fee state and requires scoped acceptance before funding/submission; the SDK adds policy
+reads and treasury-signed return plans. The published npm package is unchanged. See the
+[candidate integration guide](../developer-portal/content/docs/commerce/service-fees.mdx).
+
 1. Add SDK ABI/policy support, including the treasury initialization argument and fee getters.
 2. Disclose gross, base fee, net payout/refund and gas before funding/acceptance. Update Web,
    Docs, evaluator configuration and settlement receipt/indexer logic together.

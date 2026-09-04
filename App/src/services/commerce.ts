@@ -18,6 +18,7 @@ import {
 } from "./sbtc-commerce";
 import { formatSbtcCompact, formatStx } from "../utils/format";
 import { NETWORK_NAME } from "../constants/network";
+import { getJobServiceFee, hasServiceFees, type FeeDisclosure } from "./service-fees";
 import {
   SBTC_COMMERCE_HAS_REVIEW_TIMEOUT,
   SBTC_COMMERCE_HAS_AUTONOMOUS_DECISIONS,
@@ -27,7 +28,7 @@ import {
 } from "../constants/contract";
 
 export type Currency = "sbtc" | "stx";
-export type CommerceJob = (Job | SbtcJob) & { currency: Currency };
+export type CommerceJob = (Job | SbtcJob) & { currency: Currency } & FeeDisclosure;
 export type RatingAvailability =
   | "checking"
   | "available"
@@ -92,7 +93,12 @@ export async function getCommerceJob(
       job.reputationSyncOutcome = sync.outcome;
     }
   }
-  return { ...job, currency };
+  const result: CommerceJob = { ...job, currency };
+  if (hasServiceFees(currency)) {
+    try { result.serviceFee = await getJobServiceFee(job, currency); }
+    catch { result.serviceFeeUnavailable = true; }
+  }
+  return result;
 }
 
 export async function getCommerceJobCount(currency: Currency): Promise<number> {
