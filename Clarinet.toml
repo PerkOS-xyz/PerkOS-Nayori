@@ -76,3 +76,17 @@ epoch = "2.5"
 
 [repl]
 costs_version = 2
+
+# Earned service-fee candidates: simnet only; no production defaults changed.
+[contracts.agentic-commerce-v6]
+path = "contracts/agentic-commerce-v6.clar"
+epoch = "2.5"
+
+[contracts.sbtc-commerce-v5]
+path = "contracts/sbtc-commerce-v5.clar"
+epoch = "2.5"
+
+# Fault-injection token, never deployed outside simnet.
+[contracts.mock-sbtc-token-fees]
+path = "contracts/mock-sbtc-token-fees.clar"
+epoch = "2.5"

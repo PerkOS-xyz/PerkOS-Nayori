@@ -76,6 +76,11 @@ plan:
       path: contracts/agentic-commerce-v5.clar
       clarity-version: 2
     - transaction-type: emulated-contract-publish
+      contract-name: agentic-commerce-v6
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/agentic-commerce-v6.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
       contract-name: sip-010-trait
       emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
       path: contracts/sip-010-trait.clar
@@ -89,6 +94,11 @@ plan:
       contract-name: mock-sbtc-token-alt
       emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
       path: contracts/mock-sbtc-token.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
+      contract-name: mock-sbtc-token-fees
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/mock-sbtc-token-fees.clar
       clarity-version: 2
     - transaction-type: emulated-contract-publish
       contract-name: reputation-registry
@@ -114,6 +124,11 @@ plan:
       contract-name: sbtc-commerce-v4
       emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
       path: contracts/sbtc-commerce-v4.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
+      contract-name: sbtc-commerce-v5
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/sbtc-commerce-v5.clar
       clarity-version: 2
     - transaction-type: emulated-contract-publish
       contract-name: validation-registry

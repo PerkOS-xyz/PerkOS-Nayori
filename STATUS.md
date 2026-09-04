@@ -4,6 +4,17 @@ Last verified: 2026-09-03
 
 ## Current status
 
+### Additive fee candidate — 2026-09-04
+
+STX `agentic-commerce-v6` and sBTC `sbtc-commerce-v5` implement a fixed 2% earned service fee,
+job-pinned treasury, evidence-backed waivers and treasury-funded refunds in simnet only.
+The 86 focused cases and full 212-test suite pass locally; the static security gate passes.
+See the [candidate reference](contracts/service-fees-README.md) for the policy and limitations.
+No active contract, deployment configuration, SDK package or production default was changed.
+SDK/Web/Docs/evidence integration, custody selection and real QA E2E are required before rollout.
+
+### Deployed baseline (last verified 2026-09-03)
+
 **Live on Stacks mainnet.**
 
 - Production app: [nayori.ai](https://nayori.ai)
