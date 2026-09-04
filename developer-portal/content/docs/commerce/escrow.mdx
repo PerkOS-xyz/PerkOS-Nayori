@@ -17,8 +17,12 @@ an explicit refund path.
     [*] --> Open: create job
     Open --> Funded: set budget and fund
     Funded --> Submitted: provider submits
-    Submitted --> Completed: evaluator approves
-    Submitted --> Rejected: evaluator rejects
+    Submitted --> DecisionPending: evaluator records decision
+    DecisionPending --> Completed: final approval after appeal window
+    DecisionPending --> Rejected: final rejection after appeal window
+    DecisionPending --> Disputed: eligible party appeals
+    Disputed --> Completed: final approval
+    Disputed --> Rejected: final rejection
     Funded --> Expired: deadline passes
     Completed --> [*]
     Rejected --> [*]
@@ -28,8 +32,8 @@ an explicit refund path.
 ## Roles
 
 - **Client:** creates and funds the job.
-- **Provider:** accepts the work and submits a deliverable.
-- **Evaluator:** completes or rejects the submitted work.
+- **Provider:** inspects the terms and submits a deliverable after client assignment.
+- **Evaluator:** records an evidence-backed decision; final settlement follows the appeal policy.
 
 An evaluator decision starts an appeal period without moving funds. After the decision becomes
 final, approval pays the provider and updates job-linked reputation; rejection refunds the client.
@@ -57,8 +61,12 @@ adoption or revenue.
     [*] --> Open: create job
     Open --> Funded: set budget and fund
     Funded --> Submitted: provider submits
-    Submitted --> Completed: evaluator approves at or before deadline
-    Submitted --> Rejected: evaluator rejects at or before deadline
+    Submitted --> DecisionPending: evaluator records decision through deadline
+    DecisionPending --> Completed: final approval after appeal window
+    DecisionPending --> Rejected: final rejection after appeal window
+    DecisionPending --> Disputed: eligible party appeals
+    Disputed --> Completed: final approval
+    Disputed --> Rejected: final rejection
     Submitted --> TimeoutPaid: any caller settles after deadline
     Open --> Expired: original deadline passes
     Funded --> Expired: original deadline passes
@@ -81,3 +89,7 @@ post-conditions.
 
 See [autonomous evaluation and appeals](/commerce/autonomous-evaluation),
 [contract reference](/reference/contracts) and [settlement semantics](/commerce/settlement).
+
+The current generation has no earned service fee. The additive, unreleased STX v6/sBTC v5
+integration is described separately in [earned service fees](/commerce/service-fees); it does
+not change existing job terms or deployed defaults.

@@ -1,0 +1,96 @@
+---
+title: Earned service fees
+description: Candidate 2% escrow economics, consent, treasury settlement and evidence-backed fee returns.
+---
+
+<Callout title="Candidate integration — not an active price change">
+  STX v6 and sBTC v5 are simnet candidates. This Web/Docs integration is opt-in; current
+  deployed v5/v4 contracts and existing jobs retain their original no-service-fee terms.
+  The new SDK methods are unreleased and are not in npm 0.7.1. Deployment, treasury custody
+  and real testnet validation are required before activation.
+</Callout>
+
+## Where the money stays
+
+The client funds the gross job budget. The entire amount remains in escrow during work,
+evaluation and any appeal. A decision records evidence; it does not immediately pay Nayori.
+At final evaluated settlement the contract releases both legs atomically and escrow becomes zero.
+The service fee goes to the treasury pinned to that job, not to another job's escrow.
+
+For gross atomic amount `G`, the fee is `floor(G / 50)` and net is `G - fee`.
+The 2% is **inside the budget**, not an extra debit. Amounts below 50 atomic units round
+down to zero fee. STX uses micro-STX; sBTC uses satoshis. Network gas is separate, in STX.
+
+| Final path | Economic recipient | Treasury |
+| --- | --- | --- |
+| Approved after evaluation | Provider receives net | One 2% earned fee |
+| Rejected after evaluation | Client receives net refund | One 2% earned fee |
+| Expiry before evaluation | Client receives funded gross | Zero |
+| Review timeout without evaluation | Provider receives gross, without completion credit | Zero |
+| Evidence-backed waiver before settlement | Final recipient receives gross | Zero |
+
+For a 1,000-satoshi budget, evaluated approval pays 980 satoshis to the provider and 20 to
+treasury. Evaluated rejection instead returns 980 to the client and 20 to treasury.
+An appeal reversal alone is not proof of platform fault and does not automatically waive the fee.
+
+## Before funding or submitting work
+
+The candidate Web displays gross, potential fee, net approval/net rejection, treasury and gas
+on the jobs list and detail page. Client and provider explicitly accept the displayed terms
+before funding or submitting. Acceptance is scoped to wallet, job, asset, contract, budget,
+status and waiver. Live reads are repeated before signing; stale or unavailable policy blocks
+those actions instead of silently showing a zero fee.
+
+The provider should inspect the same breakdown **before starting work**. The UI acknowledgment
+occurs before submission; it is not a separate on-chain work-acceptance signature. Assignment is
+still controlled by the client. No provider marketplace or auto-claim behavior is introduced here.
+
+## SDK integration boundary
+
+The unreleased SDK source adds `getServiceFeePolicy`, `getJobServiceFee`, `quoteServiceFee`,
+`initializeServiceFeeProtocol`, `waiveServiceFee` and `refundServiceFee`. Funding and submission
+require a `serviceFeeAcceptance` containing accepted gross amount, `basisPoints: 200`, pinned
+treasury and `rejectionRefund: 'net-after-evaluation'`. Existing generations do not require it.
+
+Use the matching reviewed source build in isolated QA, not an unversioned production upgrade.
+High-level methods validate live state; synchronous transaction builders require the caller
+to supply verified state. Wallet/enterprise custody authorization is always separate from OAuth
+and from an LLM's recommendation. See the [SDK reference](/reference/sdk).
+
+## Actual charges and returns
+
+`get-job-service-fee` exposes a potential `fee-amount`, whether service was recorded, an optional
+waiver and an optional settlement ledger. A potential quote is not revenue.
+
+- No settlement ledger: no fee collected.
+- `charged-fee - refunded-fee`: fee retained after actual returns.
+- `net + refunded-fee`: total delivered to the economic recipient.
+- Waiver plus an outstanding collected fee: refund obligation, not a completed refund.
+
+The job-pinned appeal authority can record a nonzero evidence hash to waive a fee. Before
+settlement, this results in a full-budget transfer to the final recipient. After settlement,
+the treasury must separately sign `refund-service-fee` and have enough balance to return
+the charged fee to the party that bore it: provider on approval, client on rejection.
+
+The contract does not claw funds back from an unavailable treasury. Commercial activation
+requires reserves, signing custody and a monitored refund procedure. The SDK supports these
+administrative actions; the Web exposes their accounting but is not an operator refund console.
+
+## Appeals and optional analysis
+
+Filing an appeal has no additional service fee and is not blocked by the fee-quote UI.
+Only the normal transaction gas applies. Additional AI/human analysis would be a separately
+scoped and accepted quote, preferably paid through x402; that service is **not yet implemented**.
+There is no automatic second 2%, unlimited paid retry or pay-to-win decision rule.
+
+## Verification before activation
+
+SDK and Web preserve exact gross aggregate outflow in deny-mode post-conditions. A treasury
+refund constrains the treasury's exact outflow. These constraints do not independently enforce
+recipient identities; validate contract source, ledger and canonical transfer events.
+[Stacks documents aggregate post-conditions for multiple transfers](https://docs.stacks.co/post-conditions/examples).
+
+The direct x402/MPP single-transfer verifier is unchanged. This release does not add USDCx
+escrow or advertise an active fee to current jobs. Public aggregate revenue indexing and real
+testnet two-role fee E2E remain activation gates; per-job ledger displays are not lifetime revenue.
+Internal validation wallets never count as external revenue or adoption.

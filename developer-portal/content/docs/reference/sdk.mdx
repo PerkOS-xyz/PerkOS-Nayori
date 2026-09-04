@@ -44,8 +44,16 @@ See the package README for the full exported API and exact release-specific sign
 
 ## Autonomous decision methods
 
-The explicit testnet contract override exposes `getAppealWindow`, `getDecision`, `recordDecision`,
+The current v5/v4 default generation exposes `getAppealWindow`, `getDecision`, `recordDecision`,
 `appealDecision`, `finalizeDecision`, `resolveAppeal` and `settleAppealTimeout`. High-level
 settlement methods read the job, live escrow, decision and job-pinned sBTC token before creating
 deny-mode post-conditions. See the [lifecycle guide](/commerce/autonomous-evaluation) before
 enabling a signer.
+
+## Unreleased fee-generation support
+
+Opt-in STX v6/sBTC v5 source support adds live fee-policy/ledger reads, gross-budget acceptance
+for both client and provider, an explicit treasury initialization argument, evidence-backed
+waivers and treasury-funded returns. These methods are **not included in npm 0.7.1** and the
+contracts are not deployed defaults. Read [earned service fees](/commerce/service-fees) for
+the exact economic and release boundaries. No additional x402 analysis charge is implemented.

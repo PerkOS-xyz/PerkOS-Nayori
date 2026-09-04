@@ -43,6 +43,8 @@ import {
   expiryText,
   formatJobAmount,
   getCommerceJobCount,
+  getCommerceJob,
+  getCommerceEscrow,
   getCommerceJobs,
   getRatingAvailability,
   isValidStacksAddress,
@@ -57,6 +59,8 @@ import { humanizeContractError } from "../../services/contract-errors";
 import { trackTx, txExplorer, txIdOf } from "../../services/tx";
 import StatusBadge from "../../components/StatusBadge";
 import JobStepper from "../../components/JobStepper";
+import ServiceFeeBreakdown from "../../components/ServiceFeeBreakdown";
+import { feeAcceptanceKey, hasServiceFees, verifyFeeAction } from "../../services/service-fees";
 import Addr from "../../components/Addr";
 import { useToast } from "../../components/Toast";
 import { sbtcToSats, stxToMicro } from "../../utils/format";
@@ -138,6 +142,7 @@ export default function JobsPage() {
   const [address, setAddress] = useState("");
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [actionForm, setActionForm] = useState<ActionForm | null>(null);
+  const [acceptedFees, setAcceptedFees] = useState<Record<string, boolean>>({});
   const [ratingFor, setRatingFor] = useState<number | null>(null);
   const [ratingScore, setRatingScore] = useState(5);
   const [ratingStates, setRatingStates] = useState<
@@ -388,25 +393,43 @@ export default function JobsPage() {
     }
     const digest = await sha256Ascii(actionForm.value.trim());
     await run(
-      () =>
-        isSbtc
+      async () => {
+        const job = jobs.find((item) => item.id === jobId);
+        if (!job) throw new Error("Refresh the job before submitting.");
+        await withFreshFee(job, async () => undefined, true);
+        return isSbtc
           ? submitSbtcWork(jobId, digest)
-          : stxCall("submit-work", [Cl.uint(jobId), Cl.bufferFromAscii(digest)]),
+          : stxCall("submit-work", [Cl.uint(jobId), Cl.bufferFromAscii(digest)]);
+      },
       `submitting-${jobId}`,
       "Submit deliverable",
       () => setActionForm(null)
     );
   }
 
+  async function withFreshFee<T>(job: CommerceJob, action: (fresh: CommerceJob) => Promise<T>, consent = false): Promise<T> {
+    if (!hasServiceFees(job.currency)) return action(job);
+    const fresh = await getCommerceJob(job.id, job.currency);
+    if (!fresh) throw new Error("Could not reload the job before signing.");
+    const key = feeAcceptanceKey(job, address);
+    verifyFeeAction(job, fresh, address, consent ? (acceptedFees[key] ? key : "") : undefined);
+    if (job.status === 7 || job.status === 8) {
+      fresh.escrow = await getCommerceEscrow(job.id, job.currency);
+      if (exactEscrow(fresh) !== fresh.budget || !fresh.serviceFee?.serviceRecorded || fresh.serviceFee.settlement) throw new Error("Could not verify exact unsettled gross escrow and evaluation.");
+    }
+    if (getConnectedStxAddress() !== address) throw new Error("Wallet account changed. Reconnect and review the job terms again.");
+    return action(fresh);
+  }
+
   const handleFundJob = (job: CommerceJob) =>
     run(
-      () =>
+      () => withFreshFee(job, async (job) =>
         isSbtc
           ? fundSbtcJob(job.id, job.budget, address)
           : stxCall("fund-job", [Cl.uint(job.id)], {
               postConditions: [Pc.principal(address).willSendEq(job.budget).ustx()],
               postConditionMode: "deny",
-            }),
+            }), true),
       `funding-${job.id}`,
       `Fund job with ${unit}`
     );
@@ -484,14 +507,14 @@ export default function JobsPage() {
 
   const handleFinalizeDecision = (job: CommerceJob) =>
     run(
-      () =>
+      () => withFreshFee(job, async (job) =>
         isSbtc
           ? finalizeSbtcDecision(job.id, exactEscrow(job))
           : stxCall(
               "finalize-decision",
               [Cl.uint(job.id)],
               settlementOptions(job)
-            ),
+            )),
       `finalizing-decision-${job.id}`,
       "Finalize unappealed decision"
     );
@@ -508,14 +531,14 @@ export default function JobsPage() {
     const decision = actionForm.mode === "resolve-approve" ? 1 : 2;
     const digest = await sha256Ascii(actionForm.value.trim());
     await run(
-      () =>
+      () => withFreshFee(job, async (job) =>
         isSbtc
           ? resolveSbtcAppeal(job.id, decision, digest, exactEscrow(job))
           : stxCall(
               "resolve-appeal",
               [Cl.uint(job.id), Cl.uint(decision), Cl.bufferFromHex(digest)],
               settlementOptions(job)
-            ),
+            )),
       `resolving-appeal-${job.id}`,
       `Resolve appeal: ${decision === 1 ? "approve" : "reject"}`,
       () => setActionForm(null)
@@ -524,14 +547,14 @@ export default function JobsPage() {
 
   const handleSettleAppealTimeout = (job: CommerceJob) =>
     run(
-      () =>
+      () => withFreshFee(job, async (job) =>
         isSbtc
           ? settleSbtcAppealTimeout(job.id, exactEscrow(job))
           : stxCall(
               "settle-appeal-timeout",
               [Cl.uint(job.id)],
               settlementOptions(job)
-            ),
+            )),
       `settling-appeal-timeout-${job.id}`,
       "Finalize original decision after appeal timeout"
     );
@@ -824,6 +847,14 @@ export default function JobsPage() {
                   )}
                 </dl>
 
+                <ServiceFeeBreakdown job={job} />
+                {job.serviceFee && !job.serviceFeeUnavailable && (permissions.canFund || permissions.canSubmit) && (
+                  <label className="mt-3 flex items-start gap-2 text-sm text-mist-300">
+                    <input type="checkbox" className="mt-1 accent-orange-500" checked={!!acceptedFees[feeAcceptanceKey(job, address)]} onChange={(event) => setAcceptedFees((previous) => ({ ...previous, [feeAcceptanceKey(job, address)]: event.target.checked }))} />
+                    <span>I accept the displayed gross budget and 2% included earned fee: provider receives net on approval; client receives net on evaluated rejection. Gas is separate.</span>
+                  </label>
+                )}
+
                 {Boolean(job.escrow) && (
                   <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-bitcoin/25 bg-bitcoin/10 px-2.5 py-1 text-xs text-bitcoin-400">
                     <Bitcoin className="h-3.5 w-3.5" /> Escrow locked: <span className="font-mono">{formatJobAmount(job.escrow!, currency)}</span>
@@ -959,13 +990,13 @@ export default function JobsPage() {
                     <button onClick={() => setActionForm({ jobId: job.id, mode: "budget", value: "" })} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white">Set Budget</button>
                   )}
                   {permissions.canFund && (
-                    <button onClick={() => void handleFundJob(job)} className="btn-sm border border-bitcoin/30 text-bitcoin-400 hover:bg-bitcoin/10">Fund with {unit}</button>
+                    <button disabled={hasServiceFees(currency) && (!job.serviceFee || job.serviceFeeUnavailable || !acceptedFees[feeAcceptanceKey(job, address)])} onClick={() => void handleFundJob(job)} className="btn-sm border border-bitcoin/30 text-bitcoin-400 hover:bg-bitcoin/10 disabled:opacity-40">Fund with {unit}</button>
                   )}
                   {permissions.canAssign && (
                     <button onClick={() => setActionForm({ jobId: job.id, mode: "provider", value: "" })} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white">Assign Provider</button>
                   )}
                   {permissions.canSubmit && (
-                    <button onClick={() => setActionForm({ jobId: job.id, mode: "deliverable", value: "" })} className="btn-sm bg-brand text-white hover:bg-brand-600">Submit Work</button>
+                    <button disabled={hasServiceFees(currency) && (!job.serviceFee || job.serviceFeeUnavailable || !acceptedFees[feeAcceptanceKey(job, address)])} onClick={() => setActionForm({ jobId: job.id, mode: "deliverable", value: "" })} className="btn-sm bg-brand text-white hover:bg-brand-600 disabled:opacity-40">Submit Work</button>
                   )}
                   {review.canEvaluatorSettle && (
                     <>

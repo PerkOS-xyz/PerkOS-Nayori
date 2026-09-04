@@ -80,6 +80,12 @@ job, a provider submits work, and an evaluator completes or rejects it. Completi
 escrow and updates job-linked reputation; rejection or expiry returns funds according to the
 contract lifecycle.
 
+An additive [earned-service-fee candidate](contracts/service-fees-README.md) introduces a 2%
+fee included in an escrow job budget, payable to a pinned treasury only at final evaluated settlement.
+The matching opt-in Web/SDK/Docs integration is under QA review, not an active price change or
+npm release. Current deployed v5/v4 jobs retain their original terms. See the
+[candidate integration guide](developer-portal/content/docs/commerce/service-fees.mdx).
+
 ### Direct paid resources
 
 Use direct HTTP payments when an agent needs an immediate API response or digital resource. The
@@ -291,7 +297,7 @@ sequenceDiagram
   participant Wallet as Leather or enterprise signer
   participant Registry as Agent Registry
   participant Escrow as STX or sBTC Commerce
-  participant Reputation as Reputation Registry v2
+  participant Reputation as Reputation Registry v3
 
   Client->>Wallet: Approve agent registration
   Wallet->>Registry: register-agent
@@ -302,10 +308,14 @@ sequenceDiagram
   Client->>Wallet: Approve exact funding transaction
   Wallet->>Escrow: fund-job
   Escrow-->>Escrow: Hold STX or canonical sBTC
-  Provider->>Wallet: Approve assignment and submission
-  Wallet->>Escrow: assign-provider and submit-work
-  Evaluator->>Wallet: Approve completion or rejection
-  Wallet->>Escrow: complete-job or reject-job
+  Client->>Wallet: Assign provider if not already pinned
+  Wallet->>Escrow: assign-provider
+  Provider->>Wallet: Approve submission
+  Wallet->>Escrow: submit-work
+  Evaluator->>Wallet: Record decision and evidence
+  Wallet->>Escrow: record-decision
+  Note over Client,Escrow: Eligible party may appeal; pinned authority resolves disputes
+  Wallet->>Escrow: Finalize after deadline or resolve appeal
   alt Completed
     Escrow-->>Provider: Release escrow
     Escrow->>Reputation: Record completion
@@ -770,7 +780,7 @@ PerkOS-Nayori/
 
 ## Contributing
 
-1. Create a branch from current `main`.
+1. Create a feature branch from current `qa`; promote a verified QA release separately to `main`.
 2. Keep secrets and production runtime configuration outside Git.
 3. Run contract tests, Web tests, lint and build for affected surfaces.
 4. Preserve explicit mainnet/testnet and implemented/planned distinctions.

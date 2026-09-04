@@ -11,7 +11,10 @@ job-pinned treasury, evidence-backed waivers and treasury-funded refunds in simn
 The 86 focused cases and full 212-test suite pass locally; the static security gate passes.
 See the [candidate reference](contracts/service-fees-README.md) for the policy and limitations.
 No active contract, deployment configuration, SDK package or production default was changed.
-SDK/Web/Docs/evidence integration, custody selection and real QA E2E are required before rollout.
+Opt-in Web fee disclosures, wallet/job-scoped acceptance and matching unreleased SDK support
+are under QA integration review. Docs distinguish quotes, charges, waivers and actual refunds.
+No active selection or npm publication accompanies this integration. Custody selection,
+evaluator configuration, aggregate revenue indexing and real QA E2E remain required before rollout.
 
 ### Deployed baseline (last verified 2026-09-03)
 
