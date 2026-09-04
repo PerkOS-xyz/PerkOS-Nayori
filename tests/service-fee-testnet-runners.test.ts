@@ -1,4 +1,12 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import {
   mkdtempSync,
   realpathSync,
@@ -10,6 +18,7 @@ import {
   existsSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
+import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import {
   Cl,
@@ -56,6 +65,22 @@ import {
 } from "../scripts/e2e-service-fee-testnet.mjs";
 import { main as deployMain } from "../scripts/deploy-service-fee-testnet.mjs";
 
+// Unit-test journals must never acquire or delete the live operator's account lock.
+const isolation = realpathSync(
+  mkdtempSync(join(tmpdir(), "nayori-fee-suite-")),
+);
+beforeAll(() => {
+  // Native .mjs dependencies can bypass Vitest module mocks. os.tmpdir() reads these
+  // process-local variables dynamically, including inside the real Journal helper.
+  vi.stubEnv("TMPDIR", isolation);
+  vi.stubEnv("TMP", isolation);
+  vi.stubEnv("TEMP", isolation);
+});
+afterAll(() => {
+  vi.unstubAllEnvs();
+  rmSync(isolation, { recursive: true, force: true });
+});
+
 const treasury = "ST1E7E64H8VSSSGE0RPWF90RRC91MQG7CRQRM1BFX";
 const provider = "ST10T9RQQX1D1XRGA9QV3J6AP8FDFNTQ1BXJZ3NEP";
 const actors = roles(treasury, provider);
@@ -92,6 +117,16 @@ function event(
 }
 
 describe("testnet-only release and custody guards", () => {
+  it("isolates real journal account locks from the operator temporary directory", () => {
+    const journal = new Journal(join(temp(), "isolated.json"), { test: true });
+    try {
+      expect(journal.accountLock).toBe(
+        join(isolation, `nayori-service-fee-testnet-${DEPLOYER}.lock`),
+      );
+    } finally {
+      journal.close();
+    }
+  });
   it("pins the two candidate sources and excludes public fault-injection deployments", () => {
     expect(Object.values(CONTRACTS)).toEqual([
       "agentic-commerce-v6",
@@ -192,6 +227,32 @@ describe("testnet-only release and custody guards", () => {
     expect(() => signer(join(dir, "link.env"), address, "QA_KEY")).toThrow(
       /symlink/,
     );
+  });
+  it("accepts ignored signer paths literally through real Git, including spaces and brackets", () => {
+    const dir = temp(),
+      key = randomPrivateKey();
+    const address = getAddressFromPrivateKey(key, "testnet");
+    execFileSync("git", ["init", "--quiet", dir]);
+    writeFileSync(join(dir, ".gitignore"), ".env*\n");
+    for (const name of [".env.qa", ".env.qa [provider]", ".env.qa\nprovider"]) {
+      const path = join(dir, name);
+      writeFileSync(path, `QA_KEY=${key}\n`, { mode: 0o600 });
+      expect(signer(path, address, "QA_KEY")).toBe(key);
+    }
+  });
+  it("rejects unignored or force-tracked signer files in a real Git repository", () => {
+    const dir = temp(),
+      key = randomPrivateKey();
+    const address = getAddressFromPrivateKey(key, "testnet");
+    execFileSync("git", ["init", "--quiet", dir]);
+    const exposed = join(dir, "qa.env"),
+      tracked = join(dir, ".env.qa");
+    writeFileSync(exposed, `QA_KEY=${key}\n`, { mode: 0o600 });
+    expect(() => signer(exposed, address, "QA_KEY")).toThrow(/ignored/);
+    writeFileSync(join(dir, ".gitignore"), ".env*\n");
+    writeFileSync(tracked, `QA_KEY=${key}\n`, { mode: 0o600 });
+    execFileSync("git", ["add", "--force", "--", ".env.qa"], { cwd: dir });
+    expect(() => signer(tracked, address, "QA_KEY")).toThrow(/tracked/);
   });
   it.each([
     "treasury",

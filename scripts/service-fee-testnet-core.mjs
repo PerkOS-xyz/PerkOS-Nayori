@@ -221,11 +221,11 @@ export function signer(path, address, keyField) {
     ).trim();
     ensure(!tracked, "Signer file must never be tracked by Git");
     try {
-      execFileSync(
-        "git",
-        ["--literal-pathspecs", "check-ignore", "--quiet", "--", file],
-        { cwd: repository, stdio: "ignore" },
-      );
+      execFileSync("git", ["check-ignore", "--quiet", "--stdin", "-z"], {
+        cwd: repository,
+        input: `${file}\0`,
+        stdio: ["pipe", "ignore", "ignore"],
+      });
     } catch {
       throw new SafetyError("Signer inside a Git worktree must be ignored");
     }

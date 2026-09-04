@@ -4,7 +4,7 @@ Non-custodial job escrow for STX and sBTC on Stacks. The active contracts are
 `agentic-commerce-v5` and `sbtc-commerce-v4`; both use `reputation-registry-v3`.
 
 An additive [earned-service-fee candidate](service-fees-README.md) introduces STX v6 and sBTC
-v5 for simnet validation. It is not deployed or selected by the application; the active
+v5 for validation. Both candidates are deployed on testnet but not selected by the application; the active
 generation and existing jobs retain their original full-budget settlement policy.
 
 ## Active mainnet contracts

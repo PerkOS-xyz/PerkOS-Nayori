@@ -4,6 +4,23 @@ This runbook prepares **STX v6 and sBTC v5**. It does not activate production, c
 defaults, publish npm, deploy the LLM evaluator or demonstrate external adoption. Sources are
 frozen in `scripts/service-fee-testnet-core.mjs`. Existing v5/v4 runners remain unchanged.
 
+## Verified candidate deployment — 2026-09-04
+
+QA merge `556e90ae13a2105989d6990aa99e892b4ecb395e` passed CI and 267 local tests/security gate
+before the seven deployment/configuration transactions confirmed with `(ok true)`. A separate
+13-check public read verified source digests, canonical transactions/nonces, owners, policy,
+treasury, reputation authorization and the canonical PoX-5 sBTC configuration.
+
+Under testnet deployer `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`:
+
+- STX v6 deployment: [transaction](https://explorer.hiro.so/txid/0x9c169fe4f3cffeeab5fa0c538dfe49a0096b6ca6ca61bf5a5100d28ac157885e?chain=testnet), block 257605.
+- sBTC v5 deployment: [transaction](https://explorer.hiro.so/txid/0x2eb7be13a13fdfa411f0851d4f98a805d3f3ae99fd9dc25f108c7d75ab14410f?chain=testnet), block 257610.
+- Both candidates use QA treasury `ST1E7E64H8VSSSGE0RPWF90RRC91MQG7CRQRM1BFX`, a three-burn-block
+  appeal window, twelve-burn-block review window and the fixed 200-basis-point policy.
+
+These are internal testnet deployments, not production fee activation, complete twenty-path
+E2E evidence, SDK/Hermes onboarding or external adoption. Application/SDK defaults remain v5/v4.
+
 ## Release and custody boundaries
 
 Use a clean checkout of the reviewed merge to `qa`, fetch `origin/qa`, and set its full SHA as
@@ -19,6 +36,8 @@ with real assets or treat the QA treasury as approval of a production treasury.
 Signer files must be absolute, owned, mode `0600`, non-symlink paths; keep them outside Git or
 explicitly ignored and untracked. Do not `source` them into the shell. Only their paths are passed
 to the commands; key values must not appear in command history, evidence or browser bundles.
+The Git ignore check uses NUL-delimited stdin for literal filenames; `check-ignore` does not
+support Git's global `--literal-pathspecs` option. Tracked and unignored files still fail closed.
 
 | Path variable                   | Fields read, only during execution                                                    |
 | ------------------------------- | ------------------------------------------------------------------------------------- |
