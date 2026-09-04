@@ -50,8 +50,10 @@ overlapping pending rotations. Treasury cannot rotate in this candidate generati
 
 Review remains 12 Bitcoin burn blocks. Initialization accepts the existing QA 3-block or
 mainnet 144-block appeal policy. Selecting 144 is a deployment gate: the contract does not
-infer which policy to initialize from the network. No deployment script or default has
-been changed by this addition.
+infer which policy to initialize from the network. The dedicated
+[testnet fee runbook](../docs/TESTNET_SERVICE_FEE_RUNBOOK.md) fixes QA initialization to three
+burn blocks and an explicitly confirmed treasury. Historical deployment scripts and defaults
+remain unchanged; no mainnet fee promoter is provided.
 
 The sBTC token remains pinned per funded job. Every SIP-010 transfer checks both the response
 and its boolean result: `(err ...)` and `(ok false)` fail the operation. Only an explicitly

@@ -11,10 +11,14 @@ job-pinned treasury, evidence-backed waivers and treasury-funded refunds in simn
 The 86 focused cases and full 212-test suite pass locally; the static security gate passes.
 See the [candidate reference](contracts/service-fees-README.md) for the policy and limitations.
 No active contract, deployment configuration, SDK package or production default was changed.
-Opt-in Web fee disclosures, wallet/job-scoped acceptance and matching unreleased SDK support
-are under QA integration review. Docs distinguish quotes, charges, waivers and actual refunds.
-No active selection or npm publication accompanies this integration. Custody selection,
-evaluator configuration, aggregate revenue indexing and real QA E2E remain required before rollout.
+Opt-in Web fee disclosures and wallet/job-scoped acceptance are served in QA; matching SDK
+support is merged to its QA branch, still unreleased. Docs distinguish quotes, charges, waivers
+and actual refunds. Dedicated testnet deployment/E2E runners now cover a 20-path matrix, with
+signer-free preflights and durable single-broadcast journals; their availability is not on-chain
+execution evidence. See [the runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
+No candidate contract selection or npm publication accompanies this integration. Operational
+custody/reserves, evaluator configuration, aggregate revenue indexing and real QA E2E remain
+required before activation. Production remains v5/v4.
 
 ### Deployed baseline (last verified 2026-09-03)
 

@@ -82,9 +82,10 @@ contract lifecycle.
 
 An additive [earned-service-fee candidate](contracts/service-fees-README.md) introduces a 2%
 fee included in an escrow job budget, payable to a pinned treasury only at final evaluated settlement.
-The matching opt-in Web/SDK/Docs integration is under QA review, not an active price change or
-npm release. Current deployed v5/v4 jobs retain their original terms. See the
-[candidate integration guide](developer-portal/content/docs/commerce/service-fees.mdx).
+The matching opt-in Web/Docs integration is served in QA and the SDK support is merged to its
+QA branch, not an active price change or npm release. Current deployed v5/v4 jobs retain their
+original terms. See the [candidate integration guide](developer-portal/content/docs/commerce/service-fees.mdx)
+and [guarded testnet deployment and 20-path contract test runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
 
 ### Direct paid resources
 
