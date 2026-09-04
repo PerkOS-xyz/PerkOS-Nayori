@@ -12,11 +12,14 @@ vi.mock("../constants/network", () => ({
   NETWORK: "mainnet",
   NETWORK_NAME: "mainnet",
 }));
-vi.mock("../constants/contract", async (original) => ({
-  ...(await original<typeof import("../constants/contract")>()),
+// Keep this mainnet fixture independent of the CI/deployment environment.
+// Importing the real module here validates CI's testnet address against the
+// mocked mainnet network before these overrides can take effect.
+vi.mock("../constants/contract", () => ({
   CONTRACT_ADDRESS: "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH",
   STX_COMMERCE_CONTRACT_NAME: "agentic-commerce-v6",
   SBTC_COMMERCE_CONTRACT_NAME: "sbtc-commerce-v5",
+  REPUTATION_CONTRACT_NAME: "reputation-registry-v3",
   STX_COMMERCE_HAS_SERVICE_FEES: true,
   SBTC_COMMERCE_HAS_SERVICE_FEES: true,
   STX_COMMERCE_HAS_AUTONOMOUS_DECISIONS: true,
@@ -221,6 +224,14 @@ describe("native fee adapter and disclosure", () => {
         BigInt(20)
       );
       expect(readOnly).toHaveBeenCalledTimes(2);
+      for (const [options] of readOnly.mock.calls) {
+        expect(options).toMatchObject({
+          contractAddress: AUTHORITY,
+          contractName:
+            currency === "stx" ? "agentic-commerce-v6" : "sbtc-commerce-v5",
+          network: "mainnet",
+        });
+      }
     }
   );
   it("retains the job but marks its fee unavailable when RPC fails", async () => {
