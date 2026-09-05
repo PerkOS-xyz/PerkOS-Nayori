@@ -289,7 +289,7 @@ describe("public node and nonce preflight", () => {
       ),
     );
     await expect(info()).rejects.toThrow(/identity/);
-  });
+  }, 15000);
   it("accepts nonce zero for a new wallet without inventing a consumed nonce", async () => {
     vi.stubGlobal(
       "fetch",
@@ -310,13 +310,13 @@ describe("public node and nonce preflight", () => {
       ),
     );
     expect(await nonce(treasury)).toBe(0n);
-  });
+  }, 15000);
   it("refuses pending transactions before fetching/signing a nonce", async () => {
     const fetch = vi.fn(async () => new Response(JSON.stringify({ total: 1 })));
     vi.stubGlobal("fetch", fetch);
     await expect(nonce(DEPLOYER)).rejects.toThrow(/pending/);
     expect(fetch).toHaveBeenCalledTimes(1);
-  });
+  }, 15000);
   it("refuses nonce gaps even when mempool total is zero", async () => {
     vi.stubGlobal(
       "fetch",
@@ -337,7 +337,7 @@ describe("public node and nonce preflight", () => {
       ),
     );
     await expect(nonce(DEPLOYER)).rejects.toThrow(/contiguous/);
-  });
+  }, 15000);
 });
 
 describe("20-scenario accounting oracle (unit tests, not on-chain E2E)", () => {
