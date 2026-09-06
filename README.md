@@ -89,7 +89,8 @@ and [guarded testnet deployment and 20-path contract test runbook](docs/TESTNET_
 The fee candidates were deployed and initialized on testnet on 2026-09-04; deployment alone
 does not select them in the application. The twenty controlled contract paths subsequently passed;
 the packaged QA SDK passed 168 public-state checks against their twenty terminal jobs. Evaluator
-v6/v5 compatibility is deployed in QA, still selecting v5/v4. These results do not complete the
+v6/v5 compatibility and explicit selection are deployed in isolated QA/testnet. Production still
+selects v5/v4. These results do not complete the
 real buyer/provider SDK + evaluator workflow. The accounting panel is a separate activation
 prerequisite, not an announcement of production fees.
 

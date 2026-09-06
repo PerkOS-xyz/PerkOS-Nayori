@@ -5,6 +5,9 @@ service fee** to the autonomous-decision escrow lifecycle. They are **testnet ca
 not production contracts or the current application/SDK defaults**. Production continues to
 use STX v5 and sBTC v4 without this fee. Existing jobs and their terms are unchanged.
 
+Isolated QA/testnet explicitly selects v6/v5 in Web and Evaluator for controlled integration
+testing. That selection does not change production defaults or publish the candidate SDK.
+
 ## Economic policy
 
 The client funds the gross job budget. The fee is included in that budget, not an extra 2%

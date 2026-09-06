@@ -8,9 +8,10 @@ Last verified: 2026-09-03
 
 Update 2026-09-06: twenty internal real-chain contract paths are complete; the installed QA SDK
 passed 168/168 public checks across those jobs. Evaluator compatibility is deployed from QA merge
-`66ae96f`, while its selected pair remains v5/v4. The new Web accounting integration exposes
+`66ae96f`; QA Web/Docs merge `9eee547` and the evaluator now select v6/v5 explicitly. Production
+still selects v5/v4. The new Web accounting integration exposes
 charges/refunds/retained amounts separately from quotes; source availability is not activation.
-Coordinated v6/v5 QA selection and the full two-role SDK/LLM workflow are still pending. No
+Coordinated v6/v5 QA selection is complete; the full two-role SDK/LLM workflow remains pending. No
 production defaults, contracts or npm package change with this integration.
 
 STX `agentic-commerce-v6` and sBTC `sbtc-commerce-v5` implement a fixed 2% earned service fee,
@@ -27,9 +28,9 @@ support is merged to its QA branch, still unreleased. Docs distinguish quotes, c
 and actual refunds. Dedicated testnet deployment/E2E runners now cover a 20-path matrix, with
 signer-free preflights and durable single-broadcast journals; their availability is not on-chain
 execution evidence. See [the runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
-No candidate contract selection or npm publication accompanies this integration. Operational
-custody/reserves, coordinated consumer selection and real QA E2E remain
-required before activation. Production remains v5/v4.
+QA consumer selection is explicit and operationally separate from source compatibility; no npm
+publication accompanies it. Operational custody/reserves and real QA E2E remain required before
+commercial activation. Production remains v5/v4.
 
 ### Deployed baseline (last verified 2026-09-03)
 
