@@ -15,6 +15,10 @@ See [`QA_RELEASES.md`](QA_RELEASES.md) for the operational sequence and
 
 ## Production
 
+For opt-in earned-service-fee QA selection, follow [the coordinated consumer gate](QA_FEE_CONSUMERS.md).
+Changing `NEXT_PUBLIC_*` values only at runtime is insufficient: the Web embeds them at build
+time. The default production pair in this guide remains v5/v4, without the candidate fee.
+
 PerkOS is deployed on Stacks mainnet under:
 
 `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
