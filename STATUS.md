@@ -6,12 +6,20 @@ Last verified: 2026-09-03
 
 ### Additive fee candidate — 2026-09-04
 
+Update 2026-09-06: twenty internal real-chain contract paths are complete; the installed QA SDK
+passed 168/168 public checks across those jobs. Evaluator compatibility is deployed from QA merge
+`66ae96f`, while its selected pair remains v5/v4. The new Web accounting integration exposes
+charges/refunds/retained amounts separately from quotes; source availability is not activation.
+Coordinated v6/v5 QA selection and the full two-role SDK/LLM workflow are still pending. No
+production defaults, contracts or npm package change with this integration.
+
 STX `agentic-commerce-v6` and sBTC `sbtc-commerce-v5` implement a fixed 2% earned service fee,
 job-pinned treasury, evidence-backed waivers and treasury-funded refunds. The candidates were
 deployed and initialized on testnet on 2026-09-04 from QA merge `556e90a`; seven transactions
 returned `(ok true)`, and a separate public source/configuration/transaction postcheck passed 13/13.
 The 86 focused simnet cases remain part of the full suite; the reviewed deployment ran 267/267
-tests and the static security gate before signing. The twenty real-chain paths remain a separate gate.
+tests and the static security gate before signing. The twenty real-chain paths later passed as
+internal contract evidence, separately from the application/SDK/LLM workflow.
 See the [candidate reference](contracts/service-fees-README.md) for the policy and limitations.
 No production contract, SDK package or application default was changed.
 Opt-in Web fee disclosures and wallet/job-scoped acceptance are served in QA; matching SDK
@@ -20,7 +28,7 @@ and actual refunds. Dedicated testnet deployment/E2E runners now cover a 20-path
 signer-free preflights and durable single-broadcast journals; their availability is not on-chain
 execution evidence. See [the runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
 No candidate contract selection or npm publication accompanies this integration. Operational
-custody/reserves, evaluator configuration, aggregate revenue indexing and real QA E2E remain
+custody/reserves, coordinated consumer selection and real QA E2E remain
 required before activation. Production remains v5/v4.
 
 ### Deployed baseline (last verified 2026-09-03)

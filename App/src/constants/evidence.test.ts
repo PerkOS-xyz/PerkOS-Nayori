@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { NETWORK_NAME } from "./network";
 import {
   evidenceManifest,
   evidenceTransactionsCsv,
@@ -9,6 +10,9 @@ import {
 } from "./evidence";
 
 describe("public grant evidence", () => {
+  it.each(["ST3QBWTA0XSA94YDXT13QFH3ZMSZSM1V4Z645YHT9", "ST1E7E64H8VSSSGE0RPWF90RRC91MQG7CRQRM1BFX"])("keeps controlled QA wallet %s out of external adoption", address => {
+    expect(classifyEvidenceWallet(address)).toBe(NETWORK_NAME === "testnet" ? "team" : "unattested");
+  });
   it("keeps M1 baseline separate from verified M2 adoption", () => {
     expect(evidenceManifest.schemaVersion).toBe(2);
     expect(evidenceManifest.milestone1.completedJobs).toBe(1);

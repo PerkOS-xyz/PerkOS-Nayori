@@ -7,7 +7,9 @@ description: Candidate 2% escrow economics, consent, treasury settlement and evi
   STX v6 and sBTC v5 are deployed testnet candidates. This Web/Docs integration is opt-in; current
   deployed v5/v4 contracts and existing jobs retain their original no-service-fee terms.
   The new SDK methods are unreleased and are not in npm 0.7.1. Production rollout, treasury
-  custody and the full real testnet validation matrix are required before activation.
+  custody and the full buyer/provider SDK + evaluator workflow are required before activation.
+  The twenty controlled contract paths and installed-SDK public reads have passed; evaluator
+  compatibility is deployed in QA, but consumers have not yet selected v6/v5.
 </Callout>
 
 ## Where the money stays
@@ -91,6 +93,10 @@ recipient identities; validate contract source, ledger and canonical transfer ev
 [Stacks documents aggregate post-conditions for multiple transfers](https://docs.stacks.co/post-conditions/examples).
 
 The direct x402/MPP single-transfer verifier is unchanged. This release does not add USDCx
-escrow or advertise an active fee to current jobs. Public aggregate revenue indexing and real
-testnet two-role fee E2E remain activation gates; per-job ledger displays are not lifetime revenue.
+escrow or advertise an active fee to current jobs. The `/evidence` accounting panel and JSON
+`serviceFees` section summarize validated ledgers by asset and pinned treasury. Charges, refunds,
+retained amounts and waived refunds still owed are distinct, exact atomic strings; quotes are not
+income. Missing required data marks that asset unavailable, never a partial or false zero total.
+The scope is jobs in the selected contract, not historical generations or a treasury balance.
+The real testnet two-role SDK/evaluator E2E remains an activation gate; these figures are not lifetime revenue.
 Internal validation wallets never count as external revenue or adoption.

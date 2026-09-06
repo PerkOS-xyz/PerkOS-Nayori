@@ -87,7 +87,11 @@ QA branch, not an active price change or npm release. Current deployed v5/v4 job
 original terms. See the [candidate integration guide](developer-portal/content/docs/commerce/service-fees.mdx)
 and [guarded testnet deployment and 20-path contract test runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
 The fee candidates were deployed and initialized on testnet on 2026-09-04; deployment alone
-does not select them in the application or complete the twenty real-chain validation paths.
+does not select them in the application. The twenty controlled contract paths subsequently passed;
+the packaged QA SDK passed 168 public-state checks against their twenty terminal jobs. Evaluator
+v6/v5 compatibility is deployed in QA, still selecting v5/v4. These results do not complete the
+real buyer/provider SDK + evaluator workflow. The accounting panel is a separate activation
+prerequisite, not an announcement of production fees.
 
 ### Direct paid resources
 
@@ -123,13 +127,12 @@ boundaries, not five independent products.
 | --- | --- | --- | --- |
 | [`PerkOS-Nayori`](https://github.com/PerkOS-xyz/PerkOS-Nayori) | Public | Clarity contracts, Web application, same-origin protocol proxies, agent discovery, public evidence and deployment verification | Facilitator secrets, OAuth signing keys, merchant credentials or custody |
 | [`PerkOS-Nayori-Agent-SDK`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK) | Public | TypeScript read clients, transaction plans, signer adapters, confirmation tracking, spending policy, x402 and MPP encoding/verification | Private keys, hosted replay state, merchant authentication or production settlement state |
-| [`PerkOS-Nayori-Platform`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Platform) | Private operational repository | Resource API, facilitator, merchant routes, signed quotes, verification, network-pinned broadcast, reconciliation, receipts and delivery ledger | OAuth identity database, wallet keys or changes to the on-chain contracts |
-| [`PerkOS-Nayori-OAuth`](https://github.com/PerkOS-xyz/PerkOS-Nayori-OAuth) | Private operational repository | OAuth issuer, anonymous agent identity, wallet claims, partner invitations, client credentials, access tokens and JWKS | Payment signing, settlement, sponsorship or merchant delivery |
-| [`PerkOS-Nayori-Evaluator`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Evaluator) | Private operational repository | Deterministic evaluation intake, policy-constrained LLM analysis, public decision artifacts and testnet decision submission | Escrow custody, appeal authority, arbitrary wallet signing or production contract activation |
+| [`PerkOS-Nayori-Platform`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Platform) | Public | Resource API, facilitator, merchant routes, signed quotes, verification, network-pinned broadcast, reconciliation, receipts and delivery ledger | OAuth identity database, wallet keys or changes to the on-chain contracts |
+| [`PerkOS-Nayori-OAuth`](https://github.com/PerkOS-xyz/PerkOS-Nayori-OAuth) | Public | OAuth issuer, anonymous agent identity, wallet claims, partner invitations, client credentials, access tokens and JWKS | Payment signing, settlement, sponsorship or merchant delivery |
+| [`PerkOS-Nayori-Evaluator`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Evaluator) | Public | Deterministic evaluation intake, policy-constrained LLM analysis, public decision artifacts and testnet decision submission | Escrow custody, appeal authority, arbitrary wallet signing or production contract activation |
 
-The two private repository links resolve for authorized maintainers today. Their responsibilities
-are documented here so enterprise reviewers can evaluate the complete topology; making their
-source public later does not require changing the architecture.
+All five repositories are public. Runtime credentials, deployment configuration and internal
+operational evidence remain outside GitHub; public source does not grant access to those systems.
 
 The public repository contains two independently deployable presentation applications: `App/`
 serves the transactional product and wallet flows, while `developer-portal/` serves the developer
@@ -286,6 +289,14 @@ links. `hasMore` identifies a bounded window rather than lifetime totals. `/api/
 an independent `directPayments` section; escrow counters and the curated CSV remain unchanged.
 This panel requires the facilitator's `PUBLIC_PAYMENT_EVIDENCE_ENABLED` flag after QA validation;
 before activation or during an outage it reports unavailable. Internal canaries are not adoption or revenue.
+
+Escrow fees use the independent `serviceFees` section in `/api/evidence.json` and the escrow
+accounting panel on `/evidence`. They summarize already-validated ledgers by asset and pinned
+treasury: potential quotes, actual charges, actual refunds, retained amounts and outstanding
+waived refunds. Atomic decimal strings preserve precision. Missing fee data makes that asset's
+totals unavailable; older generations are explicitly unsupported. These are selected-contract
+observations, not lifetime totals, treasury balances or verified external revenue. The curated
+CSV and adoption counters retain their existing meanings.
 
 ## Primary transaction flows
 
