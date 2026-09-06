@@ -20,6 +20,9 @@ describe("documentation release routing", () => {
   it.each(["qa", "production"])("renders both documentation links for %s", async channel => {
     vi.stubEnv("NEXT_PUBLIC_RELEASE_CHANNEL", channel);
     vi.stubEnv("NEXT_PUBLIC_STACKS_NETWORK", channel === "qa" ? "testnet" : "mainnet");
+    vi.stubEnv("NEXT_PUBLIC_CONTRACT_ADDRESS", channel === "qa"
+      ? "ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5"
+      : "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH");
     vi.resetModules();
     const [{ default: Footer }, { default: Quickstart }] = await Promise.all([
       import("../components/SiteFooter"), import("../components/landing/Quickstart"),
