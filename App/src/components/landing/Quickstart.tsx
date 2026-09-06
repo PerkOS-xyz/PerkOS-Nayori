@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { Check, Copy, ArrowUpRight } from "lucide-react";
+import { DOCS_ORIGIN } from "../../constants/docs";
 
 const INSTALL = "npm i @perkos/agent-sdk";
 
 const LINKS = [
-  { label: "Documentation", href: "https://docs.nayori.ai" },
+  { label: "Documentation", href: DOCS_ORIGIN },
   { label: "Agent SDK on npm", href: "https://www.npmjs.com/package/@perkos/agent-sdk" },
   { label: "Source on GitHub", href: "https://github.com/PerkOS-xyz/PerkOS-Nayori" },
 ];

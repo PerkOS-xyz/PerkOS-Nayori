@@ -4,6 +4,13 @@ This is a coordinated **testnet-only** operational selection, not a change to pr
 All five Nayori repositories are public; runtime configuration, credentials and internal evidence
 remain outside Git. No private key or LLM/merchant credential is needed in a browser build.
 
+## Selected QA release
+
+QA Web/Docs source is merge `9eee547f7fdc5371bece2dc0c91f84b9a4e4b02c` ([PR #133](https://github.com/PerkOS-xyz/PerkOS-Nayori/pull/133));
+Evaluator source remains `66ae96f138d78808eccdd2294cf10816e5dca1f1`. Both explicitly select
+STX v6/sBTC v5 on testnet. This is a runtime/configuration gate, not a new contract deployment.
+Production remains v5/v4 and the full buyer/provider SDK plus actual evaluator E2E remains open.
+
 ## Source and state requirements
 
 1. Review and merge Web/Docs fee evidence support to `qa`; pass both baseline v5/v4 and fee v6/v5
@@ -33,12 +40,17 @@ is200 basis points,12 burn blocks for review and3 for appeal. Do not shorten dea
 mainnet constants to accelerate testing. The treasury cannot be the client, provider, evaluator
 or appeal authority. Never send a treasury key to the evaluator or LLM.
 
-The existing deployment controller pins Web build arguments to v5/v4. A runtime `.env` change
-does not override those baked values. Review the scoped QA deployment configuration/controller
-adjustment separately and record it; do not bypass its network or release checks. Build on the
+The QA deployment controller explicitly pins Web build arguments to v6/v5; production remains
+v5/v4. A runtime `.env` change does not override baked values. Review future scoped QA
+configuration/controller adjustments separately and record them; do not bypass network or release checks. Build on the
 VPS, stage the exact reviewed source from the maintainer's Mac, and do not retag production images.
 Prevent new test jobs while consumers are being coordinated. Preserve access to old job identities;
 never reinterpret an old `(contract, job-id)` as belonging to the new contract.
+
+The Web job route is a view of the currently selected generation, not an immutable historical
+permalink. Retain the full contract principal, asset, job ID and explorer proof in receipts;
+read historical jobs with an explicitly configured SDK. The seven prior QA v5/v4 jobs were
+terminal with zero escrow before this selection; their identities and evidence remain unchanged.
 
 ## Before a new economic job
 

@@ -48,4 +48,17 @@ describe('versioned public references', () => {
     expect(guide).toContain('await nayori.resolveAppeal');
     expect(guide).toContain('await nayori.settleAppealTimeout');
   });
+
+  it('distinguishes fee selection in QA from production and published SDK support', () => {
+    const guide = readFileSync(
+      new URL('../content/docs/commerce/service-fees.mdx', import.meta.url),
+      'utf8',
+    );
+    expect(guide).toContain('selected in isolated QA/testnet');
+    expect(guide).toContain('Production v5/v4 contracts');
+    expect(guide).toContain('not in npm 0.7.1');
+    expect(guide).toContain('does not');
+    expect(guide).toContain('certify the full two-role SDK/LLM lifecycle');
+    expect(guide).not.toContain('consumers have not yet selected v6/v5');
+  });
 });
