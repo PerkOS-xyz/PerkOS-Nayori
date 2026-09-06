@@ -56,6 +56,7 @@ import {
 } from "../scripts/service-fee-testnet-core.mjs";
 import {
   SCENARIOS,
+  NO_DECISION_ERRORS,
   scenario,
   economics,
   deadlineGate,
@@ -117,6 +118,12 @@ function event(
 }
 
 describe("testnet-only release and custody guards", () => {
+  it("matches each review-timeout absence code to its deployed contract", () => {
+    expect(NO_DECISION_ERRORS).toEqual({
+      stx: { decision: "829", reputation: "823" },
+      sbtc: { decision: "930", reputation: "923" },
+    });
+  });
   it("isolates real journal account locks from the operator temporary directory", () => {
     const journal = new Journal(join(temp(), "isolated.json"), { test: true });
     try {
