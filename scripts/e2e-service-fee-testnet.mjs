@@ -50,6 +50,10 @@ export const SCENARIOS = {
   "refund-approve": { original: 2, final: 1, refund: true },
   "refund-reject": { original: 1, final: 2, refund: true },
 };
+export const NO_DECISION_ERRORS = Object.freeze({
+  stx: Object.freeze({ decision: "829", reputation: "823" }),
+  sbtc: Object.freeze({ decision: "930", reputation: "923" }),
+});
 export function scenario(asset, name) {
   ensure(
     Object.hasOwn(CONTRACTS, asset) && Object.hasOwn(SCENARIOS, name),
@@ -667,12 +671,13 @@ export async function main(env = process.env) {
     verifyLedger(await fee(), spec, actors);
     if (spec.wait === "review") {
       const d = await read(name, "get-decision", [Cl.uint(jobId)]),
-        r = await read(name, "get-reputation-sync", [Cl.uint(jobId)]);
+        r = await read(name, "get-reputation-sync", [Cl.uint(jobId)]),
+        missing = NO_DECISION_ERRORS[spec.asset];
       ensure(
         d.type === ClarityType.ResponseErr &&
           r.type === ClarityType.ResponseErr &&
-          plain(cvToValue(d)) === (spec.asset === "stx" ? "829" : "930") &&
-          plain(cvToValue(r)) === (spec.asset === "stx" ? "823" : "924"),
+          plain(cvToValue(d)) === missing.decision &&
+          plain(cvToValue(r)) === missing.reputation,
         "Timeout fabricated decision/reputation",
       );
     } else {
