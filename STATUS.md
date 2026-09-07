@@ -4,6 +4,13 @@ Last verified: 2026-09-03
 
 ## Current status
 
+### QA onboarding checkpoint documentation — 2026-09-07
+
+README and portal clarify separate wallet/escrow funding, bounded buyer/provider gas, custody's
+six-burn confirmation policy and job-bound provider handoff. Signing transport remains an
+operator responsibility. These documentation updates do not certify the complete autonomous
+Hermes E2E, change production contracts, publish npm or claim external adoption.
+
 ### Existing-agent documentation candidate — 2026-09-07
 
 The QA documentation now starts with an agent already running its own LLM. It separates

@@ -105,6 +105,35 @@ purchase. The candidate local Hermes bridge does not purchase x402 resources.
 
 ## Successful onboarding
 
+### Wallet funding is not escrow funding
+
+For the bounded sBTC Hermes QA walkthrough, the buyer needs 1000 **atomic sBTC units** plus
+30000 micro-STX for six actions; the provider needs 10000 micro-STX for registration/submission.
+The pilot reserves 5000 micro-STX per action. These are authorization caps, not a live network
+fee quote; incoming funding transfers also cost their sender gas. Verify your own addresses and
+the canonical token before funding. Money in a wallet is not deposited in a job until the exact
+`fund-job` transaction succeeds. Do not pay the provider directly instead of funding escrow.
+
+### Wait for the custody confirmation policy
+
+The QA custody pilot requires canonical, anchored success plus **six subsequent Bitcoin burn
+blocks** before advancing: `currentBurn >= transactionBurn + 6`. This is not six Stacks blocks
+or a fixed wall-clock delay. An explorer may show success while custody still reports `signed`.
+Use `nayori_custody_status` to reconcile the saved txid and journal; never delete state, replace
+the permit, change the nonce or re-sign to bypass waiting. This depth is specific to custody,
+not an automatic guarantee from every general SDK confirmation method.
+
+The provider permit must reference the real confirmed, funded and assigned job, not a fixture
+ID. The provider then registers and submits using its own signer. A recorded decision is not a
+payout: respect the actual appeal deadline and verify terminal state, zero escrow and exact
+provider/treasury transfer events. Under the QA 200 bps fee, approved gross 1000 atomic sBTC
+settles as 980 to the provider and 20 to the job-pinned treasury. Do not infer production terms
+from that candidate policy.
+
+See the [QA checkpoint manual](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_CHECKPOINTS.md)
+for the stage-by-stage evidence and recovery checklist. A source guide is not proof that the
+complete funded autonomous E2E or recorded demo has passed.
+
 Keep public network/registry/agent ID/txid evidence, never secrets. Verify registration and the
 chosen role's real job outcome. Do not label unsigned previews or fixture tests as completed
 autonomous E2E. Promote to mainnet only with a separately reviewed deployment configuration,

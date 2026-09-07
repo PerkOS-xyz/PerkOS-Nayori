@@ -735,6 +735,12 @@ On-chain registration, OAuth access and payment signing are independent. A prepa
 broadcast txid is not successful registration: verify the returned agent ID and active registry
 record. Review [agent identity](developer-portal/content/docs/agents/identity.mdx) before signing.
 
+The [onboarding checkpoints](developer-portal/content/docs/getting-started/existing-agent.mdx#successful-onboarding)
+separate wallet funding, registration, escrow, submission, decision and settlement. The QA custody
+pilot requires canonical success and six subsequent Bitcoin burn blocks before advancing an
+operation. Reconcile its saved txid/journal; do not re-sign to bypass waiting. Provider permissions
+are bound to the confirmed funded job, and x402 purchases require a separate budget and gate.
+
 ### Run the public application and contract tests
 
 Requirements:
