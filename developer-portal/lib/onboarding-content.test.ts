@@ -6,6 +6,14 @@ const read = (name: string) => readFileSync(
 );
 
 describe('existing-agent onboarding', () => {
+  it('explains bounded admission, capacity and reconciliation without claiming a deployed fix', () => {
+    const guide = read('getting-started/existing-agent.mdx');
+    for (const text of ['45 seconds', '15 seconds', 'proposed SDK transport correction',
+      'admission_limit', 'ineligible', 'nayori_evaluation_status', 'No automatic retry',
+      'does not extend the contract deadline', 'separately authorized recovery']) {
+      expect(guide).toContain(text);
+    }
+  });
   it('explains the funded QA checkpoints without skipping custody finality', () => {
     const guide = read('getting-started/existing-agent.mdx');
     for (const text of ['Wallet funding is not escrow funding', '30000 micro-STX',

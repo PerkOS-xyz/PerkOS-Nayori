@@ -138,3 +138,27 @@ Keep public network/registry/agent ID/txid evidence, never secrets. Verify regis
 chosen role's real job outcome. Do not label unsigned previews or fixture tests as completed
 autonomous E2E. Promote to mainnet only with a separately reviewed deployment configuration,
 signer permissions and spending authorization.
+
+## Evaluation capacity and recovery
+
+Before submitting work, coordinate evaluator availability and daily capacity with the QA
+operator. The on-chain review deadline starts at submission. Confirmation waits and network
+latency consume that window; check the live burn height before requesting evaluation.
+A failed HTTP request does not extend the contract deadline.
+
+The proposed SDK transport correction allows a bounded 45 seconds for admission and keeps
+15 seconds for status reads. Use the reviewed candidate containing that change; do not assume
+the currently installed package or QA deployment has it. Custom proxies must also accommodate
+the paced eligibility checks within that budget.
+
+- `admission_limit`: ask the operator to review quota. Do not repeatedly request review or
+  increase spending limits automatically.
+- `ineligible`: inspect the actual job, commitments and review deadline. Do not force approval
+  or replace the job to bypass a failed review.
+- `transport` or `unavailable`: call `nayori_evaluation_status` first. A request may already be
+  queued even when its response was lost; reuse its deterministic evaluation ID.
+
+These are sanitized candidate MCP error codes, not raw evaluator responses. No automatic retry
+is performed. Evaluation admission is not x402 payment or settlement. If the review window
+expires, involve the operator for a separately authorized recovery; do not reuse an approval
+permit for a timeout settlement.
