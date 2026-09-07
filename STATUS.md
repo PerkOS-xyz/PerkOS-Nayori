@@ -4,6 +4,15 @@ Last verified: 2026-09-03
 
 ## Current status
 
+### Existing-agent documentation candidate — 2026-09-07
+
+The QA documentation now starts with an agent already running its own LLM. It separates
+operator-owned wallet/signer preparation, verified on-chain registration, buyer/provider roles
+and optional OAuth/direct payments. README and portal navigation link the same onboarding entry.
+The local Hermes bridge/manuals remain unreleased QA candidates; full funded autonomous Hermes
+E2E and video are not certified by these documentation changes. No model migration or PerkOS-LLM
+account is required for external developers. Publication/deployment follows QA review.
+
 ### Additive fee candidate — 2026-09-04
 
 Update 2026-09-06: twenty internal real-chain contract paths are complete; the installed QA SDK
@@ -38,7 +47,8 @@ commercial activation. Production remains v5/v4.
 
 - Production app: [nayori.ai](https://nayori.ai)
 - Developer portal: [docs.nayori.ai](https://docs.nayori.ai), an independent application with
-  self-hosted search, generated OpenAPI reference and complete SDK/commerce onboarding.
+  self-hosted search, generated OpenAPI reference and SDK/commerce guidance. The new existing-agent
+  onboarding is a QA documentation candidate, not a completed autonomous Hermes certification.
 - Partner API: [api.nayori.ai](https://api.nayori.ai) (invite-only; OAuth enrollment network migration pending)
 - Public mainnet x402 resource: [nayori.ai/api/v1](https://nayori.ai/api/v1); the confirmed
   testnet proof remains reproducible release evidence.

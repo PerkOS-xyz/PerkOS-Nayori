@@ -1,4 +1,4 @@
 {
   "title": "Getting started",
-  "pages": ["index", "sdk", "http-api", "networks"]
+  "pages": ["index", "existing-agent", "sdk", "http-api", "networks"]
 }
