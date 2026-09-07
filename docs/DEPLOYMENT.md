@@ -3,9 +3,11 @@
 ## Branch and release model
 
 Every Nayori repository uses `qa` as its protected integration branch and `main` as its protected
-production branch. Feature pull requests target `qa`. A push to `qa` runs the complete repository
-gate, uploads a Git archive through the restricted Nayori deploy identity and builds the exact SHA
-on `perkos-cloud-02`. Only a SHA with a passed VPS receipt may create a `release/<release-id>`
+production branch. Feature pull requests target `qa`. Run the complete repository gate and initiate
+the approved deployment from the operator Mac: upload the exact reviewed Git archive through the
+restricted Nayori deploy identity and build the image on the VPS. GitHub-hosted runners do not
+have the required firewall access; a merge or passing CI alone is not a deployment receipt.
+Do not build deployment images locally. Only a SHA with a passed VPS receipt may create a `release/<release-id>`
 branch and pull request to `main`.
 
 Contract transactions are excluded from both branch workflows. Contract promotion always begins

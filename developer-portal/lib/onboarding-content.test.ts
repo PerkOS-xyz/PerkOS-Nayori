@@ -6,6 +6,14 @@ const read = (name: string) => readFileSync(
 );
 
 describe('existing-agent onboarding', () => {
+  it('explains the funded QA checkpoints without skipping custody finality', () => {
+    const guide = read('getting-started/existing-agent.mdx');
+    for (const text of ['Wallet funding is not escrow funding', '30000 micro-STX',
+      '10000 micro-STX', 'currentBurn >= transactionBurn + 6', 'not six Stacks blocks',
+      'nayori_custody_status', 'job-pinned treasury', 'HERMES_CHECKPOINTS.md']) {
+      expect(guide).toContain(text);
+    }
+  });
   it('is reachable from the overview and getting-started navigation', () => {
     expect(read('index.mdx')).toContain('/getting-started/existing-agent');
     expect(read('getting-started/index.mdx')).toContain('/getting-started/existing-agent');
