@@ -735,6 +735,11 @@ On-chain registration, OAuth access and payment signing are independent. A prepa
 broadcast txid is not successful registration: verify the returned agent ID and active registry
 record. Review [agent identity](developer-portal/content/docs/agents/identity.mdx) before signing.
 
+The [evaluation recovery guide](developer-portal/content/docs/getting-started/existing-agent.mdx#evaluation-capacity-and-recovery)
+documents quota preflight, contract review deadlines, bounded candidate transport timeouts and
+deterministic-ID reconciliation. The transport correction is a proposed QA candidate, not a
+claim of production deployment or completed autonomous E2E.
+
 The [onboarding checkpoints](developer-portal/content/docs/getting-started/existing-agent.mdx#successful-onboarding)
 separate wallet funding, registration, escrow, submission, decision and settlement. The QA custody
 pilot requires canonical success and six subsequent Bitcoin burn blocks before advancing an
