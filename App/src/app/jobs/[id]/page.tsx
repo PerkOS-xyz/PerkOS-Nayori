@@ -18,6 +18,7 @@ import { getBlockHeight, getBurnBlockHeight } from "../../../services/onchain-st
 import StatusBadge from "../../../components/StatusBadge";
 import JobStepper from "../../../components/JobStepper";
 import ServiceFeeBreakdown from "../../../components/ServiceFeeBreakdown";
+import WorkflowTiming from "../../../components/WorkflowTiming";
 import Addr from "../../../components/Addr";
 
 export default function JobDetailPage() {
@@ -93,6 +94,7 @@ export default function JobDetailPage() {
         <JobStepper status={job.status} />
       </div>
       <ServiceFeeBreakdown job={job} />
+      <WorkflowTiming asset={currency} jobId={id} />
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Client"><Addr value={job.client} className="text-mist-200" /></Field>

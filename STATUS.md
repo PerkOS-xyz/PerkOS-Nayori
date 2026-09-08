@@ -4,6 +4,15 @@ Last verified: 2026-09-08 UTC (controlled QA workflow; not a new production veri
 
 ## Current status
 
+### Configurable confirmation and timing disclosure — source candidate
+
+The Jobs panel and read-only workflow-timing endpoint expose selected-contract review/appeal
+windows, active deadline countdowns and non-guaranteed estimates. Operator confirmation baseline
+is configurable with network minimums; it does not enforce or override a wallet's bound permit.
+The matching SDK change adds version-2 testnet custody policy/progress while keeping version-1
+hashes and six-block defaults. No new contracts, npm publication or QA/production deployment
+accompanies this source change. Existing jobs and the ongoing npm 0.8.0-rc.1 run are unchanged.
+
 ### QA SDK prerelease published — 2026-09-08 UTC
 
 npm 0.8.0-rc.1 is published under next; latest remains 0.7.1. Exact registry integrity,
