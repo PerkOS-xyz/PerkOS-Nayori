@@ -27,15 +27,25 @@ not independent adoption or production revenue. This validates one scenario, not
 
 ## Which artifact to install
 
-Published npm `@perkos/agent-sdk@0.7.1` is the v5/v4 baseline. The local Hermes bridge,
-bounded custody and opt-in v6/v5 fees are **unreleased QA additions**. The tested source tarball
-also reports 0.7.1; its commit and integrity distinguish it from npm. Do not assume the published
-package includes every QA tool or republish the candidate over the existing version.
+Stable npm `@perkos/agent-sdk@0.7.1` remains the v5/v4 baseline under latest. The local Hermes
+bridge, bounded custody and opt-in v6/v5 fees ship in **published QA prerelease 0.8.0-rc.1** under next.
+The historical funded test used an earlier QA source tarball numbered 0.7.1, not this published
+prerelease. Do not conflate the artifacts or republish either existing version.
+
+```sh
+npm install --save-exact @perkos/agent-sdk@0.8.0-rc.1
+```
+
+Registry integrity, clean installation, import, unsigned registration plan and actual buyer/provider
+MCP stdio checks passed on 2026-09-08 UTC. Those checks used no private keys, signatures, broadcasts
+or evaluator/LLM requests. Publication was operator-authorized without provenance attestation.
+The [release notes](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/RELEASE_0.8.0_RC1.md)
+record exact integrity and source. Stable latest and default v5/v4 contracts remain unchanged.
 
 Use the [SDK exact-artifact guide](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_MCP.md).
-A reviewed new version, package-content inspection, clean consumer installation and verified
-registry integrity are required before claiming npm-only reproduction. QA merge, publication
-and production deployment are separate gates; none is implied by this report.
+Published-package offline reproduction is verified separately from the earlier funded lifecycle.
+A new funded npm-only run remains pending. QA merge, publication and production deployment
+are separate events; installing the prerelease does not deploy a signer or authorize spending.
 
 ## Observe completion correctly
 
@@ -55,7 +65,7 @@ or copy an expected hash from the response being tested.
 
 ## Remaining gates
 
-Clean external installation, the recorded developer demo and operation without staged operator
+A new funded npm-only run, the recorded developer demo and operation without staged operator
 gates are not certified here. Nor does this test validate x402/MPP purchases: the local QA MCP
 does not buy paid resources. Follow the separate [x402 workflow](/commerce/x402) with its own
 authorization and budget. Production fee activation and external security review remain separate.

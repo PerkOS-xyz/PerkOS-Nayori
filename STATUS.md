@@ -4,14 +4,23 @@ Last verified: 2026-09-08 UTC (controlled QA workflow; not a new production veri
 
 ## Current status
 
+### QA SDK prerelease published — 2026-09-08 UTC
+
+npm 0.8.0-rc.1 is published under next; latest remains 0.7.1. Exact registry integrity,
+clean installation, import, unsigned registration plan and buyer/provider MCP stdio checks
+passed. Published locally with approval, without provenance attestation. No new funded E2E,
+LLM call, contract or production deployment. This source documentation reflects publication;
+immutable package docs retain their pre-publication wording.
+
 ### Controlled Hermes lifecycle verified — 2026-09-08 UTC
 
 One internal sBTC testnet job completed with real Hermes buyer/provider tools, isolated custody,
 evaluation and exact 980/20 settlement. Finalization at block 288396/burn 14234 passed the custody
 confirmation gate at 14240; escrow zero and reputation synchronization were verified. Existing
 registered identities were reused. See [public evidence and release boundaries](developer-portal/content/docs/resources/qa-validation.mdx).
-The tested SDK source is unreleased QA, not the public npm 0.7.1 artifact. Clean external installation,
-the separate x402 walkthrough and developer video remain pending; no production change or external
+The earlier funded test used QA source, not the public npm 0.7.1 artifact or a new 0.8.0-rc.1 run.
+Registry installation and offline checks subsequently passed; a new funded run from npm,
+the separate x402 walkthrough and developer video remain pending. No production change or external
 adoption is implied. Historical status entries below describe their verification dates.
 
 ### QA onboarding checkpoint documentation — 2026-09-07
