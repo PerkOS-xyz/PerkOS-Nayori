@@ -70,6 +70,15 @@ one service:
 
 ## What Nayori provides
 
+### Response and payment timing — source candidate
+
+The [workflow timing guide](developer-portal/content/docs/commerce/workflow-timing.mdx) separates
+transaction confirmation, evaluator feedback and contractual appeal deadlines. The candidate Jobs
+panel and read-only `/api/v1/workflow-timing?asset=sbtc&jobId=15` endpoint expose live contract
+windows and explicitly non-guaranteed estimates before work is accepted. Operator configuration
+advertises a confirmation baseline; the signer's bound permit remains authoritative. This is not
+yet deployed, does not change current jobs or contracts, and does not enable a mainnet pilot signer.
+
 Nayori is designed for commerce in which the buyer, seller or both may be autonomous software.
 It supports two complementary economic models.
 

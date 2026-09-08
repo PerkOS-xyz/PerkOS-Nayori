@@ -60,6 +60,7 @@ import { trackTx, txExplorer, txIdOf } from "../../services/tx";
 import StatusBadge from "../../components/StatusBadge";
 import JobStepper from "../../components/JobStepper";
 import ServiceFeeBreakdown from "../../components/ServiceFeeBreakdown";
+import WorkflowTiming from "../../components/WorkflowTiming";
 import { feeAcceptanceKey, hasServiceFees, verifyFeeAction } from "../../services/service-fees";
 import Addr from "../../components/Addr";
 import { useToast } from "../../components/Toast";
@@ -627,6 +628,7 @@ export default function JobsPage() {
         </button>
       </div>
 
+      <WorkflowTiming asset={currency} />
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-lg border border-white/[0.08] bg-white/[0.02] p-1">
           {(["sbtc", "stx"] as Currency[]).map((value) => (
