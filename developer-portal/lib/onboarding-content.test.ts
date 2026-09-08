@@ -9,7 +9,7 @@ describe('existing-agent onboarding', () => {
   it('links verified internal QA evidence without promoting the npm or production boundary', () => {
     const page = read('resources/qa-validation.mdx');
     for (const text of ['fc0537477fda819fa9cce8e74e543be0d49ea3a4', '14240',
-      'completed=true', 'unreleased QA additions', 'operator-supervised',
+      'completed=true', 'published QA prerelease 0.8.0-rc.1', 'operator-supervised',
       'existing registered identities', 'unknown, not zero', 'does not buy paid resources',
       '0x382e05645560acbd822f573cab6e32579ad1d8ad3d1598916f132b28b86cce4c']) {
       expect(page).toContain(text);
@@ -21,7 +21,7 @@ describe('existing-agent onboarding', () => {
   });
   it('explains bounded admission, capacity and reconciliation without claiming a deployed fix', () => {
     const guide = read('getting-started/existing-agent.mdx');
-    for (const text of ['45 seconds', '15 seconds', 'proposed SDK transport correction',
+    for (const text of ['45 seconds', '15 seconds', 'SDK 0.8.0-rc.1',
       'admission_limit', 'ineligible', 'nayori_evaluation_status', 'No automatic retry',
       'does not extend the contract deadline', 'separately authorized recovery']) {
       expect(guide).toContain(text);
@@ -47,7 +47,7 @@ describe('existing-agent onboarding', () => {
     expect(guide).toMatch(/does\s+not install your agent/);
     expect(guide).toContain('require PerkOS-LLM');
     expect(guide).toContain('Hermes is an example integration, not a requirement');
-    expect(guide).toContain('unreleased QA candidates');
+    expect(guide).toContain('published QA prerelease');
     expect(guide).not.toMatch(/PERKOS_LLM_API_KEY\s*=/);
   });
 
@@ -59,7 +59,7 @@ describe('existing-agent onboarding', () => {
       expect(guide).toContain(text);
     }
     expect(read('agents/identity.mdx')).toContain('nayori.confirm(savedTxid)');
-    expect(read('agents/mcp.mdx')).toContain('not the unreleased local Hermes stdio bridge');
+    expect(read('agents/mcp.mdx')).toContain('not the local QA Hermes stdio bridge');
   });
 
   it('does not advertise consumer npm scripts that installing the package cannot add', () => {

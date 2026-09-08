@@ -42,7 +42,7 @@ one service:
 | --- | --- |
 | On-chain network | Stacks mainnet for identity, STX escrow, sBTC escrow and reputation |
 | Mainnet contracts | Six current contracts under `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` |
-| Agent SDK | `@perkos/agent-sdk@0.7.1`, public on npm |
+| Agent SDK | Stable `0.7.1`; QA prerelease `0.8.0-rc.1` under `next`, both public on npm |
 | Browser wallet | Leather through Stacks Connect; wallet remains the signing boundary |
 | Headless agents | Policy-constrained signer interface for KMS/HSM/secret-manager integrations |
 | x402 | Live same-origin mainnet resource; SDK profiles for STX, sBTC and USDCx |
@@ -83,7 +83,7 @@ contract lifecycle.
 An additive [earned-service-fee candidate](contracts/service-fees-README.md) introduces a 2%
 fee included in an escrow job budget, payable to a pinned treasury only at final evaluated settlement.
 The matching opt-in Web/Docs integration is served in QA and the SDK support is merged to its
-QA branch, not an active price change or npm release. Current deployed v5/v4 jobs retain their
+QA branch and published in SDK 0.8.0-rc.1; this is not an active price change. Deployed v5/v4 jobs retain their
 original terms. See the [candidate integration guide](developer-portal/content/docs/commerce/service-fees.mdx)
 and [guarded testnet deployment and 20-path contract test runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
 The fee candidates were deployed and initialized on testnet on 2026-09-04; deployment alone
@@ -730,9 +730,10 @@ The [existing-agent guide](developer-portal/content/docs/getting-started/existin
 covers SDK/MCP selection → operator-owned wallet/signer preparation → explicit testnet and limits
 → registration and confirmed agent ID → buyer/provider work → settlement and reputation checks.
 It is linked from the portal's Getting started navigation. The local Hermes bridge and its
-role walkthroughs remain QA candidates, separate from public npm 0.7.1 and remote partner MCP;
-one supervised internal lifecycle has passed, but clean published-package onboarding and the video
-remain separate gates. See [verified scope](developer-portal/content/docs/resources/qa-validation.mdx).
+role walkthroughs are available in npm 0.8.0-rc.1 for QA, separate from stable 0.7.1 and remote
+partner MCP. Clean registry installation and offline role checks passed, separately from an earlier
+supervised funded lifecycle. A new funded npm run and video remain separate gates. See
+[verified scope](developer-portal/content/docs/resources/qa-validation.mdx).
 
 On-chain registration, OAuth access and payment signing are independent. A prepared plan or
 broadcast txid is not successful registration: verify the returned agent ID and active registry
@@ -740,8 +741,8 @@ record. Review [agent identity](developer-portal/content/docs/agents/identity.md
 
 The [evaluation recovery guide](developer-portal/content/docs/getting-started/existing-agent.mdx#evaluation-capacity-and-recovery)
 documents quota preflight, contract review deadlines, bounded candidate transport timeouts and
-deterministic-ID reconciliation. The transport correction is a proposed QA candidate, not a
-claim of production deployment or completed autonomous E2E.
+deterministic-ID reconciliation. The transport correction ships in npm 0.8.0-rc.1 for QA;
+publication is not a production deployment or a new autonomous E2E.
 
 The [onboarding checkpoints](developer-portal/content/docs/getting-started/existing-agent.mdx#successful-onboarding)
 separate wallet funding, registration, escrow, submission, decision and settlement. The QA custody

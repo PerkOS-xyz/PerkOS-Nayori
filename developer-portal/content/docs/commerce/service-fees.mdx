@@ -6,7 +6,7 @@ description: Candidate 2% escrow economics, consent, treasury settlement and evi
 <Callout title="QA fee selection — not a production price change">
   STX v6 and sBTC v5 are selected in isolated QA/testnet for controlled integration testing.
   Production v5/v4 contracts and existing jobs retain their original no-service-fee terms.
-  The new SDK methods are unreleased and are not in npm 0.7.1. Production rollout, treasury
+  The new SDK methods ship in QA prerelease 0.8.0-rc.1 and are not in npm 0.7.1. Production rollout, treasury
   custody and the full buyer/provider SDK + evaluator workflow are required before commercial activation.
   The twenty controlled contract paths and installed-SDK public reads have passed; evaluator
   compatibility and explicit v6/v5 selection are deployed in QA. Selection alone does not
@@ -50,7 +50,7 @@ still controlled by the client. No provider marketplace or auto-claim behavior i
 
 ## SDK integration boundary
 
-The unreleased SDK source adds `getServiceFeePolicy`, `getJobServiceFee`, `quoteServiceFee`,
+SDK prerelease 0.8.0-rc.1 adds `getServiceFeePolicy`, `getJobServiceFee`, `quoteServiceFee`,
 `initializeServiceFeeProtocol`, `waiveServiceFee` and `refundServiceFee`. Funding and submission
 require a `serviceFeeAcceptance` containing accepted gross amount, `basisPoints: 200`, pinned
 treasury and `rejectionRefund: 'net-after-evaluation'`. Existing generations do not require it.
