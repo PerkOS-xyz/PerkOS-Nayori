@@ -90,8 +90,10 @@ The fee candidates were deployed and initialized on testnet on 2026-09-04; deplo
 does not select them in the application. The twenty controlled contract paths subsequently passed;
 the packaged QA SDK passed 168 public-state checks against their twenty terminal jobs. Evaluator
 v6/v5 compatibility and explicit selection are deployed in isolated QA/testnet. Production still
-selects v5/v4. These results do not complete the
-real buyer/provider SDK + evaluator workflow. The accounting panel is a separate activation
+selects v5/v4. Separately, one real, operator-supervised Hermes buyer/provider SDK + evaluator
+sBTC lifecycle completed with exact 980/20 settlement and confirmed reputation; see
+[QA validation and release boundaries](developer-portal/content/docs/resources/qa-validation.mdx).
+This does not certify every path or external onboarding. The accounting panel is a separate activation
 prerequisite, not an announcement of production fees.
 
 ### Direct paid resources
@@ -729,7 +731,8 @@ covers SDK/MCP selection → operator-owned wallet/signer preparation → explic
 → registration and confirmed agent ID → buyer/provider work → settlement and reputation checks.
 It is linked from the portal's Getting started navigation. The local Hermes bridge and its
 role walkthroughs remain QA candidates, separate from public npm 0.7.1 and remote partner MCP;
-their availability does not certify a funded autonomous E2E or completed video.
+one supervised internal lifecycle has passed, but clean published-package onboarding and the video
+remain separate gates. See [verified scope](developer-portal/content/docs/resources/qa-validation.mdx).
 
 On-chain registration, OAuth access and payment signing are independent. A prepared plan or
 broadcast txid is not successful registration: verify the returned agent ID and active registry

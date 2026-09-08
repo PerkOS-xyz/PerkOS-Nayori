@@ -1,0 +1,67 @@
+---
+title: QA validation and release boundaries
+description: What the controlled Hermes escrow test proves, and what remains a separate release gate.
+---
+
+## Verified internal scenario
+
+On 2026-09-08 UTC, one operator-supervised Hermes buyer/provider lifecycle completed on
+**Stacks testnet**, using real SDK/MCP tools, separate policy signers and Nayori's evaluator.
+The participants reused existing registered identities; this was not a fresh-registration test.
+
+| Check | Result |
+| --- | --- |
+| SDK source | `fc0537477fda819fa9cce8e74e543be0d49ea3a4` |
+| Contract | `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.sbtc-commerce-v5` |
+| Job | 14; create, budget, fund, assign, work, submit, evaluate and finalize |
+| Settlement | Completed, escrow zero, one 980-atomic-sBTC provider transfer and one 20-unit treasury transfer |
+| Reputation | One completed job; no pending reputation synchronization |
+| Confirmation | Finalization burn 14234, six-burn custody confirmation at 14240 |
+
+[Submission](https://explorer.hiro.so/txid/0x8c99de7f560e82da0483875677ab2de3370403e2a617dff445a77cff40f0da31?chain=testnet) ·
+[Approval](https://explorer.hiro.so/txid/0x2806cebb488794c6a8ff63bf9f437978dc7e492254974c3f06d400381b7a1f27?chain=testnet) ·
+[Settlement at Stacks block 288396](https://explorer.hiro.so/txid/0x382e05645560acbd822f573cab6e32579ad1d8ad3d1598916f132b28b86cce4c?chain=testnet).
+
+Historical test addresses are not funding instructions. These are team-operated testnet actors,
+not independent adoption or production revenue. This validates one scenario, not every E2E path.
+
+## Which artifact to install
+
+Published npm `@perkos/agent-sdk@0.7.1` is the v5/v4 baseline. The local Hermes bridge,
+bounded custody and opt-in v6/v5 fees are **unreleased QA additions**. The tested source tarball
+also reports 0.7.1; its commit and integrity distinguish it from npm. Do not assume the published
+package includes every QA tool or republish the candidate over the existing version.
+
+Use the [SDK exact-artifact guide](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_MCP.md).
+A reviewed new version, package-content inspection, clean consumer installation and verified
+registry integrity are required before claiming npm-only reproduction. QA merge, publication
+and production deployment are separate gates; none is implied by this report.
+
+## Observe completion correctly
+
+- **Conversation:** require explicit `completed=true`, not merely a result envelope. A tool
+  may have executed before the agent reached its conversation limit.
+- **Operation:** preserve the intent, journal and txid. Reconcile a timeout; never re-sign
+  because a conversation did not finish.
+- **Economics:** independently verify canonical success, depth, terminal state, zero escrow,
+  unique exact transfers and reputation. An approval or HTTP 202 does not prove payment.
+- **Usage:** count persisted attempts and received responses separately for buyer, provider and
+  evaluator. Missing usage is unknown, not zero; a configured cap is not actual consumption.
+
+The evaluator's evidence hash covers the canonical evidence list. The SDK submission commitment
+also binds the domain, job, roles and criteria. Recompute both from their respective inputs and
+verify fetched bytes and the explanation hash; do not compare these different hashes for equality
+or copy an expected hash from the response being tested.
+
+## Remaining gates
+
+Clean external installation, the recorded developer demo and operation without staged operator
+gates are not certified here. Nor does this test validate x402/MPP purchases: the local QA MCP
+does not buy paid resources. Follow the separate [x402 workflow](/commerce/x402) with its own
+authorization and budget. Production fee activation and external security review remain separate.
+
+Start with [your existing agent](/getting-started/existing-agent), its own LLM and an
+operator-owned wallet/signer. Follow the
+[buyer](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_BUYER.md) and
+[provider](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_PROVIDER.md)
+manuals. Every new funded scenario needs its own reviewed permissions; never reuse a closed job's permit.

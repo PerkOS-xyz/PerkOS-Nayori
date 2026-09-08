@@ -6,6 +6,19 @@ const read = (name: string) => readFileSync(
 );
 
 describe('existing-agent onboarding', () => {
+  it('links verified internal QA evidence without promoting the npm or production boundary', () => {
+    const page = read('resources/qa-validation.mdx');
+    for (const text of ['fc0537477fda819fa9cce8e74e543be0d49ea3a4', '14240',
+      'completed=true', 'unreleased QA additions', 'operator-supervised',
+      'existing registered identities', 'unknown, not zero', 'does not buy paid resources',
+      '0x382e05645560acbd822f573cab6e32579ad1d8ad3d1598916f132b28b86cce4c']) {
+      expect(page).toContain(text);
+    }
+    expect(JSON.parse(read('resources/meta.json')).pages).toContain('qa-validation');
+    expect(read('getting-started/existing-agent.mdx')).toContain('/resources/qa-validation');
+    expect(read('resources/limitations.mdx')).toContain('/resources/qa-validation');
+    expect(page).not.toMatch(/\/Users\/|\/opt\/|PRIVATE_KEY\s*=|\bM[12]\b/);
+  });
   it('explains bounded admission, capacity and reconciliation without claiming a deployed fix', () => {
     const guide = read('getting-started/existing-agent.mdx');
     for (const text of ['45 seconds', '15 seconds', 'proposed SDK transport correction',
