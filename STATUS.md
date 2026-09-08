@@ -1,8 +1,18 @@
 # Nayori — PerkOS Stacks Agentic Commerce: Project Status
 
-Last verified: 2026-09-03
+Last verified: 2026-09-08 UTC (controlled QA workflow; not a new production verification)
 
 ## Current status
+
+### Controlled Hermes lifecycle verified — 2026-09-08 UTC
+
+One internal sBTC testnet job completed with real Hermes buyer/provider tools, isolated custody,
+evaluation and exact 980/20 settlement. Finalization at block 288396/burn 14234 passed the custody
+confirmation gate at 14240; escrow zero and reputation synchronization were verified. Existing
+registered identities were reused. See [public evidence and release boundaries](developer-portal/content/docs/resources/qa-validation.mdx).
+The tested SDK source is unreleased QA, not the public npm 0.7.1 artifact. Clean external installation,
+the separate x402 walkthrough and developer video remain pending; no production change or external
+adoption is implied. Historical status entries below describe their verification dates.
 
 ### QA onboarding checkpoint documentation — 2026-09-07
 

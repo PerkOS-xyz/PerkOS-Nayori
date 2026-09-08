@@ -30,7 +30,8 @@ The local Hermes bridge and committed-evaluation walkthrough are **unreleased QA
 They require the reviewed source/tarball, not an assumption that npm 0.7.1 includes every feature
 on the QA branch. Record source SHA and artifact integrity. See the
 [QA SDK onboarding guide](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/EXISTING_AGENT.md).
-Source availability does not certify a funded autonomous Hermes session.
+Source availability alone is not proof. See the [verified internal scenario](/resources/qa-validation)
+for actual settlement evidence and the separate release boundaries.
 
 ## 2. Prepare your wallet and signer separately
 
@@ -91,7 +92,8 @@ The QA source includes separate
 [Hermes buyer](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_BUYER.md) and
 [Hermes provider](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_PROVIDER.md)
 walkthroughs. They start with a working agent and model, not a Hermes or LLM installation.
-The funded autonomous walkthrough and recordings still require validation.
+One supervised internal funded scenario passed. Clean published-package onboarding and
+recordings remain separate gates; see [validation scope](/resources/qa-validation).
 
 ## 5. Add API access or paid resources only when needed
 
@@ -124,15 +126,17 @@ the permit, change the nonce or re-sign to bypass waiting. This depth is specifi
 not an automatic guarantee from every general SDK confirmation method.
 
 The provider permit must reference the real confirmed, funded and assigned job, not a fixture
-ID. The provider then registers and submits using its own signer. A recorded decision is not a
+ID. Verify and reuse an existing active registration; otherwise register using the provider's
+own signer before submission. Omit redundant registration from the permit and recalculate gas.
+A recorded decision is not a
 payout: respect the actual appeal deadline and verify terminal state, zero escrow and exact
 provider/treasury transfer events. Under the QA 200 bps fee, approved gross 1000 atomic sBTC
 settles as 980 to the provider and 20 to the job-pinned treasury. Do not infer production terms
 from that candidate policy.
 
 See the [QA checkpoint manual](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_CHECKPOINTS.md)
-for the stage-by-stage evidence and recovery checklist. A source guide is not proof that the
-complete funded autonomous E2E or recorded demo has passed.
+for the stage-by-stage evidence and recovery checklist. The [verified internal lifecycle](/resources/qa-validation)
+does not certify every autonomous E2E or a recorded demo.
 
 Keep public network/registry/agent ID/txid evidence, never secrets. Verify registration and the
 chosen role's real job outcome. Do not label unsigned previews or fixture tests as completed

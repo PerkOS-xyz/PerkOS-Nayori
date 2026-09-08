@@ -17,6 +17,7 @@ const requiredRoutes = [
   '/reference/contracts',
   '/security/trust-boundaries',
   '/resources/troubleshooting',
+  '/resources/qa-validation',
 ];
 
 async function walk(directory) {
