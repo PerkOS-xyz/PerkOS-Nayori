@@ -27,8 +27,22 @@ not independent adoption or production revenue. This validates one scenario, not
 
 ## Which artifact to install
 
+As of 2026-09-09 UTC, `next` points to **0.8.0-rc.2** and stable `latest` remains 0.7.1.
+For configurable confirmation policy in a new QA integration, pin:
+
+```sh
+npm install --save-exact @perkos/agent-sdk@0.8.0-rc.2
+```
+
+See [workflow timing and release boundaries](/commerce/workflow-timing). Registry integrity
+and downloaded bytes match the reviewed rc.2 artifact. Publishing rc.2 does not migrate existing
+permits or certify a funded rc.2 lifecycle. The rc.1 reproduction below remains version-pinned.
+
+### Historical rc.1 installation and verification
+
 Stable npm `@perkos/agent-sdk@0.7.1` remains the v5/v4 baseline under latest. The local Hermes
-bridge, bounded custody and opt-in v6/v5 fees ship in **published QA prerelease 0.8.0-rc.1** under next.
+bridge, bounded custody and opt-in v6/v5 fees shipped in **published QA prerelease 0.8.0-rc.1**,
+which previously held next and remains installable by its exact version.
 The historical funded test used an earlier QA source tarball numbered 0.7.1, not this published
 prerelease. Do not conflate the artifacts or republish either existing version.
 
