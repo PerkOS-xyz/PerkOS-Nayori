@@ -6,6 +6,26 @@ const read = (name: string) => readFileSync(
 );
 
 describe('existing-agent onboarding', () => {
+  it('publishes separate navigable role manuals with explicit non-self-service boundaries', () => {
+    const pages = JSON.parse(read('getting-started/meta.json')).pages;
+    for (const role of ['hermes-buyer', 'hermes-provider']) {
+      expect(pages).toContain(role);
+      const guide = read(`getting-started/${role}.mdx`);
+      for (const text of ['0.8.0-rc.2', 'CLEAN_INSTALL.md', 'own LLM', 'x402', 'outside GitHub'])
+        expect(guide).toContain(text);
+      expect(guide).not.toMatch(/\/Users\/|\/opt\/|PRIVATE_KEY\s*=/);
+    }
+    expect(read('getting-started/hermes-provider.mdx')).toContain('no upload tool');
+    expect(read('getting-started/hermes-buyer.mdx')).toContain('each job requires its own bounded authorization');
+    expect(read('getting-started/existing-agent.mdx')).toContain('workflow0/settlement6');
+  });
+  it('links the completed npmrc.2 economics without claiming new registration', () => {
+    const guide = read('resources/qa-validation.mdx');
+    for (const text of ['npm0.8.0-rc.2', 'job16', '14640', 'existing registered identities', 'Fresh registration',
+      '0x5b4b36234631c8430c3b7540cd1495e6b7a0e9157f2dfd79fa9e58602b0ba6d5'])
+      expect(guide).toContain(text);
+    expect(guide).not.toContain('A new funded npm-only run remains pending');
+  });
   it('distinguishes deployed QA timing from signer and production releases', () => {
     const guide = read('commerce/workflow-timing.mdx');
     for (const text of ['deployed in QA', '0233183efb3e32d09ca0f5bf6c1ac2188921c88d',
@@ -35,7 +55,7 @@ describe('existing-agent onboarding', () => {
   });
   it('explains bounded admission, capacity and reconciliation without claiming a deployed fix', () => {
     const guide = read('getting-started/existing-agent.mdx');
-    for (const text of ['45 seconds', '15 seconds', 'SDK 0.8.0-rc.1',
+    for (const text of ['45 seconds', '15 seconds', 'SDK 0.8.0-rc.2',
       'admission_limit', 'ineligible', 'nayori_evaluation_status', 'No automatic retry',
       'does not extend the contract deadline', 'separately authorized recovery']) {
       expect(guide).toContain(text);

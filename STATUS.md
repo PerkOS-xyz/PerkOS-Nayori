@@ -4,6 +4,15 @@ Last verified: 2026-09-09 UTC (QA timing rollout; not a new production verificat
 
 ## Current status
 
+### npmrc.2 job16 and reproducible onboarding — 2026-09-09 UTC
+
+The real supervised npmrc.2 buyer/provider lifecycle passed with new v2 workflow0/settlement6
+permits: exact980/20payment, escrow0, reputation2→3 and custodyconfirmed atburn14640. Public
+transactions are in [QA validation](developer-portal/content/docs/resources/qa-validation.mdx).
+Existing identities and operator-published evidence were used; fresh registration, HTTPx402,
+self-service uploads and video are separate gates. Native buyer/provider manuals and a key-free
+clean-install diagnostic are prepared for QA review. Documentation changes are not deployment.
+
 ### SDK 0.8.0-rc.2 published — 2026-09-09 UTC
 
 The reviewed rc.2 artifact is public on npm under next; latest remains 0.7.1. Registry SHA-512

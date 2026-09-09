@@ -17,7 +17,7 @@ obtaining OAuth access are different operations.
 | --- | --- |
 | [TypeScript SDK](/getting-started/sdk) | Public npm package; reads, transaction plans and operator-supplied signer interfaces |
 | Existing non-TypeScript agent | Controlled TypeScript sidecar or documented HTTP surfaces; discovery alone does not implement the escrow lifecycle |
-| Local MCP with an existing Hermes | Published QA prerelease 0.8.0-rc.1, separate from stable 0.7.1 and remote partner MCP |
+| Local MCP with an existing Hermes | Published QA prerelease 0.8.0-rc.2, separate from stable 0.7.1 and remote partner MCP |
 | [Remote partner MCP](/agents/mcp) | Invite-only OAuth scopes; no wallet custody or automatic on-chain registration |
 
 Install a reviewed, pinned public package in your agent's integration project:
@@ -29,7 +29,7 @@ npm install --save-exact @perkos/agent-sdk@0.7.1
 For the local Hermes bridge and committed-evaluation QA walkthrough, install the **published QA prerelease** instead:
 
 ```sh
-npm install --save-exact @perkos/agent-sdk@0.8.0-rc.1
+npm install --save-exact @perkos/agent-sdk@0.8.0-rc.2
 ```
 
 Stable latest remains 0.7.1. Keep the lockfile and verify registry integrity. Both role MCP
@@ -37,6 +37,10 @@ installation checks passed without keys, signing or LLM calls; this is not a new
 [QA SDK onboarding guide](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/EXISTING_AGENT.md).
 Source availability alone is not proof. See the [verified internal scenario](/resources/qa-validation)
 for actual settlement evidence and the separate release boundaries.
+
+Run the [clean-install checkpoint](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/CLEAN_INSTALL.md)
+without keys or funds, then follow the [buyer manual](/getting-started/hermes-buyer) or
+[provider manual](/getting-started/hermes-provider).
 
 ## 2. Prepare your wallet and signer separately
 
@@ -97,8 +101,8 @@ The QA source includes separate
 [Hermes buyer](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_BUYER.md) and
 [Hermes provider](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_PROVIDER.md)
 walkthroughs. They start with a working agent and model, not a Hermes or LLM installation.
-One earlier supervised internal funded scenario passed. Clean registry installation and offline
-role checks subsequently passed; a new funded npm run and recordings remain separate gates.
+The supervised npmrc.2 job16 lifecycle passed with workflow0/settlement6 and exact98/2payment.
+Fresh registration, self-service evidence publication, x402 and recordings remain separate gates.
 See [validation scope](/resources/qa-validation).
 
 ## 5. Add API access or paid resources only when needed
@@ -124,8 +128,11 @@ the canonical token before funding. Money in a wallet is not deposited in a job 
 
 ### Wait for the custody confirmation policy
 
-The QA custody pilot requires canonical, anchored success plus **six subsequent Bitcoin burn
-blocks** before advancing: `currentBurn >= transactionBurn + 6`. This is not six Stacks blocks
+The QA custody pilot requires canonical, anchored success plus the bound policy's additional
+Bitcoin burn blocks. Version1/default remains6/6: `currentBurn >= transactionBurn + 6`.
+A new rc.2 version2 testnet permit may use workflow0/settlement6; workflow0 still requires
+canonical success and finalization waits six additional burn blocks. Read `confirmationPolicy`
+and `confirmationProgress`; do not overwrite an active permit. This is not six Stacks blocks
 or a fixed wall-clock delay. An explorer may show success while custody still reports `signed`.
 Use `nayori_custody_status` to reconcile the saved txid and journal; never delete state, replace
 the permit, change the nonce or re-sign to bypass waiting. This depth is specific to custody,
@@ -156,7 +163,7 @@ operator. The on-chain review deadline starts at submission. Confirmation waits 
 latency consume that window; check the live burn height before requesting evaluation.
 A failed HTTP request does not extend the contract deadline.
 
-SDK 0.8.0-rc.1 allows a bounded 45 seconds for admission and keeps
+SDK 0.8.0-rc.2 allows a bounded 45 seconds for admission and keeps
 15 seconds for status reads. Pin that prerelease; do not assume stable 0.7.1 or a hosted
 deployment includes it. Custom proxies must accommodate paced eligibility checks within that budget.
 
