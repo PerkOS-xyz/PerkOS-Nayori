@@ -767,7 +767,7 @@ are bound to the confirmed funded job, and x402 purchases require a separate bud
 
 ### Run the public application and contract tests
 
-Start with the native [buyer manual](developer-portal/content/docs/getting-started/hermes-buyer.mdx)
+Start with the native [consumer manual](developer-portal/content/docs/getting-started/hermes-buyer.mdx)
 and [provider manual](developer-portal/content/docs/getting-started/hermes-provider.mdx), including
 the key-free clean-install checkpoint. Neither onboarding nor QA proof activates production fees.
 

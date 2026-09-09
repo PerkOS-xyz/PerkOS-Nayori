@@ -7,6 +7,8 @@ const read = (name: string) => readFileSync(
 
 describe('existing-agent onboarding', () => {
   it('publishes separate navigable role manuals with explicit non-self-service boundaries', () => {
+    expect(read('getting-started/hermes-buyer.mdx')).toContain('title: Hermes consumer manual');
+    expect(read('getting-started/hermes-buyer.mdx')).toContain('SDK role remains `client`');
     const pages = JSON.parse(read('getting-started/meta.json')).pages;
     for (const role of ['hermes-buyer', 'hermes-provider']) {
       expect(pages).toContain(role);
