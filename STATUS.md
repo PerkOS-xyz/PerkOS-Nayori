@@ -4,6 +4,16 @@ Last verified: 2026-09-09 UTC (QA timing rollout; not a new production verificat
 
 ## Current status
 
+### Native MCP connection checks — 2026-09-09 UTC
+
+OpenClaw 2026.9.3, Codex CLI 0.153.4 and Claude Code via Agent SDK 0.3.266 each connected
+to the published npm SDK 0.8.0-rc.2 as consumer and provider, discovering six exact role tools.
+Codex also passed native context and unsigned preparation checks against the direct SDK API.
+These six network-disabled cases used no model credentials, wallet keys, signatures or payments;
+they do not certify conversations, signer isolation or funded workflows for those clients.
+See [the measured scope](developer-portal/content/docs/agents/mcp-clients.mdx).
+The documentation update is a QA candidate, not a new production release.
+
 ### npmrc.2 job16 and reproducible onboarding — 2026-09-09 UTC
 
 The real supervised npmrc.2 buyer/provider lifecycle passed with new v2 workflow0/settlement6

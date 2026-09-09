@@ -6,6 +6,13 @@ const read = (name: string) => readFileSync(
 );
 
 describe('existing-agent onboarding', () => {
+  it('bounds native MCP connection evidence separately from paid or model-driven E2Es', () => {
+    const guide = read('agents/mcp-clients.mdx');
+    for (const text of ['2026-09-09', 'OpenClaw 2026.9.3', 'Codex CLI 0.153.4',
+      'Agent SDK 0.3.266', 'Zero LLM turns, signatures and transactions',
+      'not six commerce E2Es', 'download or verify artifact bytes', 'openclaw mcp probe nayori_qa --json'])
+      expect(guide).toContain(text);
+  });
   it('separates agent roles from MCP clients without claiming untested E2Es', () => {
     const clients = read('agents/mcp-clients.mdx');
     for (const value of ['Hermes', 'OpenClaw', 'Codex', 'Claude Code',
