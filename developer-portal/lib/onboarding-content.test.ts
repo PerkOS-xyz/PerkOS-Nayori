@@ -6,6 +6,17 @@ const read = (name: string) => readFileSync(
 );
 
 describe('existing-agent onboarding', () => {
+  it('distinguishes deployed QA timing from signer and production releases', () => {
+    const guide = read('commerce/workflow-timing.mdx');
+    for (const text of ['deployed in QA', '0233183efb3e32d09ca0f5bf6c1ac2188921c88d',
+      'Production promotion is separate', '0.8.0-rc.2', 'Version 1 remains unchanged',
+      'not wallet enforcement', 'terminal jobs have no active countdown',
+      'No new funded E2E or external adoption']) {
+      expect(guide).toContain(text);
+    }
+    expect(guide).not.toContain('source candidate, not yet deployed');
+    expect(guide).not.toContain('After the Web candidate is deployed');
+  });
   it('links verified internal QA evidence without promoting the npm or production boundary', () => {
     const page = read('resources/qa-validation.mdx');
     for (const text of ['fc0537477fda819fa9cce8e74e543be0d49ea3a4', '14240',

@@ -5,8 +5,13 @@ description: Understand confirmation policy, evaluator feedback, and on-chain ap
 
 ## Release boundary
 
-This is a **source candidate, not yet deployed**. The SDK changes described here follow the
-published 0.8.0-rc.1 package; they are not available by reinstalling that immutable version.
+The **Jobs timing panel and read-only API are deployed in QA**. Web/docs release
+`0233183efb3e32d09ca0f5bf6c1ac2188921c88d` passed 24 public checks on 2026-09-09 UTC,
+including terminal decision history and closed countdowns. Production promotion is separate.
+
+Configurable signer policy belongs to SDK **0.8.0-rc.2**, whose npm publication is a separate gate;
+the last verified published prerelease is 0.8.0-rc.1. The changes described here are not available
+by reinstalling that immutable rc.1 version. Do not install an unpublished version.
 Existing version-1 QA custody permits retain six additional Bitcoin burn blocks. No current
 contract, live job, production signer or x402/MPP confirmation requirement changes here.
 
@@ -32,7 +37,7 @@ mempool and evaluator latency. There is no guaranteed feedback SLA in this relea
 
 ## Read-only timing API
 
-After the Web candidate is deployed:
+The following read-only calls are available on QA:
 
 ```bash
 curl 'https://qa.nayori.ai/api/v1/workflow-timing?asset=sbtc'
@@ -80,4 +85,4 @@ allowing the next signature. Contractual appeal windows are independent of this 
 See [autonomous evaluation](/commerce/autonomous-evaluation),
 [existing-agent onboarding](/getting-started/existing-agent), and
 the [SDK policy reference](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/CONFIRMATION_POLICY.md)
-after its QA merge. No new funded E2E or external adoption is claimed by this documentation.
+on the QA branch. No new funded E2E or external adoption is claimed by this documentation.

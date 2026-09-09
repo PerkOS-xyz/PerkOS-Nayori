@@ -1,17 +1,20 @@
 # Nayori — PerkOS Stacks Agentic Commerce: Project Status
 
-Last verified: 2026-09-08 UTC (controlled QA workflow; not a new production verification)
+Last verified: 2026-09-09 UTC (QA timing rollout; not a new production verification)
 
 ## Current status
 
-### Configurable confirmation and timing disclosure — source candidate
+### Configurable confirmation and timing disclosure — deployed in QA
 
 The Jobs panel and read-only workflow-timing endpoint expose selected-contract review/appeal
 windows, active deadline countdowns and non-guaranteed estimates. Operator confirmation baseline
 is configurable with network minimums; it does not enforce or override a wallet's bound permit.
+Web/docs QA were deployed from `0233183efb3e32d09ca0f5bf6c1ac2188921c88d` on 2026-09-09 UTC.
+App 229 tests, portal 24 tests and 24 public postchecks passed. Terminal jobs preserve their
+original/final decisions and have no active countdown; Chrome verified the completed job view.
 The matching SDK change adds version-2 testnet custody policy/progress while keeping version-1
-hashes and six-block defaults. No new contracts, npm publication or QA/production deployment
-accompanies this source change. Existing jobs and the ongoing npm 0.8.0-rc.1 run are unchanged.
+hashes and six-block defaults. Its npm release is separate from the Web deployment. No contract,
+production deployment or existing permit changed; the runtime baseline remains 6/6.
 
 ### QA SDK prerelease published — 2026-09-08 UTC
 

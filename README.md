@@ -70,14 +70,18 @@ one service:
 
 ## What Nayori provides
 
-### Response and payment timing — source candidate
+### Response and payment timing — available in QA
 
 The [workflow timing guide](developer-portal/content/docs/commerce/workflow-timing.mdx) separates
-transaction confirmation, evaluator feedback and contractual appeal deadlines. The candidate Jobs
+transaction confirmation, evaluator feedback and contractual appeal deadlines. The QA Jobs
 panel and read-only `/api/v1/workflow-timing?asset=sbtc&jobId=15` endpoint expose live contract
 windows and explicitly non-guaranteed estimates before work is accepted. Operator configuration
-advertises a confirmation baseline; the signer's bound permit remains authoritative. This is not
-yet deployed, does not change current jobs or contracts, and does not enable a mainnet pilot signer.
+advertises a confirmation baseline; the signer's bound permit remains authoritative. Web/docs QA
+were deployed from `0233183efb3e32d09ca0f5bf6c1ac2188921c88d` and passed 24 public checks on
+2026-09-09 UTC, including terminal decision history and closed countdowns. Production promotion
+is separate. This does not change current jobs or contracts or enable a mainnet pilot signer.
+Configurable signer policy requires SDK 0.8.0-rc.2 and new version-2 permits; reinstalling rc.1
+does not add that policy. See the guide for the independent npm release boundary.
 
 Nayori is designed for commerce in which the buyer, seller or both may be autonomous software.
 It supports two complementary economic models.
