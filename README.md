@@ -767,6 +767,11 @@ are bound to the confirmed funded job, and x402 purchases require a separate bud
 
 ### Run the public application and contract tests
 
+The SDK's unreleased QA source adds optional read-only MCP job discovery for consumers and
+providers. See [MCP discovery setup](developer-portal/content/docs/agents/mcp-clients.mdx#optional-job-discovery--unreleased-qa-source).
+It is not in npm rc.2 or deployed to production. Browsing jobs does not authorize claiming,
+signing or spending; consumer assignment and an independent signer remain required.
+
 Choose your existing [MCP client](developer-portal/content/docs/agents/mcp-clients.mdx): Hermes,
 OpenClaw, Codex or Claude Code. Hermes has a verified internal lifecycle. OpenClaw, Codex and
 Claude Code passed native MCP connection checks for both roles; Codex also passed context and

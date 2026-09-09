@@ -6,6 +6,13 @@ const read = (name: string) => readFileSync(
 );
 
 describe('existing-agent onboarding', () => {
+  it('separates source job discovery from published MCP and execution authority', () => {
+    const page = read('agents/mcp-clients.mdx');
+    for (const text of ['--enable-job-discovery', 'nayori_list_jobs', 'Not in npm rc.2',
+      'not deployed to production', 'nextCursor', 'scanLimit', 'missingIds',
+      'not an atomic snapshot', 'Only the consumer assigns a provider', 'mocked',
+      'MCP_JOB_DISCOVERY.md', 'no custody is needed for discovery']) expect(page).toContain(text);
+  });
   it('bounds native MCP connection evidence separately from paid or model-driven E2Es', () => {
     const guide = read('agents/mcp-clients.mdx');
     for (const text of ['2026-09-09', 'OpenClaw 2026.9.3', 'Codex CLI 0.153.4',
