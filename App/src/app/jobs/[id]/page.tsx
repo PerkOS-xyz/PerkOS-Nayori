@@ -111,7 +111,7 @@ export default function JobDetailPage() {
         {job.reviewDeadline !== undefined && (
           <Field label="Bitcoin review deadline">
             <span className="text-mist-200">
-              {reviewDeadlineText(job.reviewDeadline, burnHeight)}
+              {reviewDeadlineText(job.reviewDeadline, burnHeight, job.status)}
             </span>
             {job.submittedAtBurn !== undefined && (
               <span className="mt-1 block font-mono text-xs text-mist-500">

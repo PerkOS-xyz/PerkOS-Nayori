@@ -72,7 +72,7 @@ export async function getCommerceJob(
     currency === "sbtc"
       ? SBTC_COMMERCE_HAS_AUTONOMOUS_DECISIONS
       : STX_COMMERCE_HAS_AUTONOMOUS_DECISIONS;
-  if (hasAutonomousDecisions && (job.status === 7 || job.status === 8)) {
+  if (hasAutonomousDecisions && [3, 4, 7, 8].includes(job.status)) {
     const decision =
       currency === "sbtc" ? await getSbtcDecision(jobId) : await getDecision(jobId);
     if (decision) job.decision = decision;
@@ -294,8 +294,9 @@ export function appealDeadlineText(
 }
 
 
-export function reviewDeadlineText(reviewDeadline?: number, burnBlockHeight?: number) {
+export function reviewDeadlineText(reviewDeadline?: number, burnBlockHeight?: number, status?: number) {
   if (!Number.isSafeInteger(reviewDeadline)) return null;
+  if (status !== undefined && status !== 2) return `Review closed · Bitcoin block #${reviewDeadline}`;
   if (!burnBlockHeight) return `Bitcoin block #${reviewDeadline}`;
   const remaining = reviewDeadline! - burnBlockHeight;
   if (remaining < 0) return `Review timeout available · Bitcoin block #${reviewDeadline}`;

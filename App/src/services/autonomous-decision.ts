@@ -25,7 +25,7 @@ export function parseAutonomousDecision(cv: ClarityValue): AutonomousDecisionSta
   const tuple: any = cvToValue(cv).value;
   const originalDecision = Number(tuple["original-decision"]?.value);
   if (originalDecision !== 1 && originalDecision !== 2) return null;
-  const final = optionalValue(tuple["final-decision"]);
+  const final = Number(optionalValue(tuple["final-decision"]));
   return {
     originalDecision,
     ...(final === 1 || final === 2 ? { finalDecision: final } : {}),

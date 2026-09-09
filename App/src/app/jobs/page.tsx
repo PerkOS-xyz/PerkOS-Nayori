@@ -843,7 +843,7 @@ export default function JobsPage() {
                     <div>
                       <dt className="text-xs text-mist-500">Bitcoin review window</dt>
                       <dd className={review.canTimeout ? "text-amber-300" : "text-mist-300"}>
-                        {reviewDeadlineText(job.reviewDeadline, burnHeight)}
+                        {reviewDeadlineText(job.reviewDeadline, burnHeight, job.status)}
                       </dd>
                     </div>
                   )}
