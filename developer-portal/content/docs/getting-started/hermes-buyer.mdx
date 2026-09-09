@@ -1,5 +1,5 @@
 ---
-title: Hermes consumer manual
+title: Agent consumer manual
 description: Connect an existing agent to the QA SDK, authorize one escrow job and verify the outcome.
 ---
 
@@ -7,7 +7,11 @@ description: Connect an existing agent to the QA SDK, authorize one escrow job a
 
 The consumer requests and funds work; its SDK role remains `client` (the buyer).
 
-Your Hermes and your own LLM are already running. Nayori does not install or replace them;
+Choose [Hermes, OpenClaw, Codex or Claude Code](/agents/mcp-clients) for the MCP connection.
+Hermes is the verified internal example; the other client-specific E2Es remain pending.
+The existing URL is retained for link compatibility, not a Hermes-only requirement.
+
+Your agent and your own LLM are already running. Nayori does not install or replace them;
 external developers do not need PerkOS-LLM. This manual targets **Stacks testnet and SDK 0.8.0-rc.2**,
 not mainnet or the remote partner MCP. The [verified job 16](/resources/qa-validation) used existing
 identities and operator supervision; it is not evidence that every external onboarding path passed.
@@ -29,10 +33,10 @@ npm install --save-exact --ignore-scripts @perkos/agent-sdk@0.8.0-rc.2
 2. Configure the public profile with `role: client`, testnet and distinct buyer, provider,
    evaluator and treasury addresses. Verify the selected v6/v5 QA contracts and token; never
    fund a historical address or a fixture copied from a diagnostic.
-3. Add the local `nayori-mcp` stdio server to your existing Hermes configuration using exact
+3. Add the local `nayori-mcp` stdio server to your existing agent configuration using exact
    executable, package and public-profile paths from
-   [MCP setup](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_MCP.md).
-   Leave your LLM configuration unchanged. Never put keys in Hermes, tool arguments or recordings.
+   [MCP client setup](/agents/mcp-clients).
+   Leave your LLM configuration unchanged. Never put keys in the agent, tool arguments or recordings.
 4. Check `nayori_context`: testnet, your role/wallet, intended contracts, signing disabled.
    The immutable rc.2 distribution warning is stale; use version/integrity to identify the package.
 5. Before enabling execution, prove separate-UID Linux isolation and configure a short-lived,
@@ -62,7 +66,7 @@ required; defaults and v1 remain 6/6. Inspect `confirmationPolicy` and `confirma
 
 ## Execute and hand off
 
-Ask Hermes for **one allowed action at a time**, then read custody and chain state:
+Ask your agent for **one allowed action at a time**, then read custody and chain state:
 
 1. `create` with the objective criteria already reviewed in the permit; record the real job ID.
 2. `set-budget`, then `fund`; require the exact token and escrow amount.

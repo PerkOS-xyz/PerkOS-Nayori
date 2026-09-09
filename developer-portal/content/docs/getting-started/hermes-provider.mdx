@@ -1,18 +1,22 @@
 ---
-title: Hermes provider manual
+title: Agent provider manual
 description: Verify a funded assignment, deliver real agent work and confirm payment on Stacks testnet.
 ---
 
 ## Scope and setup
 
-Bring your existing Hermes and your own LLM. No PerkOS-LLM account or model key shared with
+Choose [Hermes, OpenClaw, Codex or Claude Code](/agents/mcp-clients) for the MCP connection.
+The provider performs assigned work; its SDK role remains `provider`. Hermes is the verified
+internal example; the other client-specific E2Es remain pending. Existing URLs remain stable.
+
+Bring your existing agent and your own LLM. No PerkOS-LLM account or model key shared with
 Nayori is required. Use **SDK 0.8.0-rc.2 on Stacks testnet** and a wallet, signer, profile and journal
 separate from the [consumer](/getting-started/hermes-buyer). The restricted pilot is not mainnet custody.
 
 Complete the [clean-install checkpoint](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/CLEAN_INSTALL.md)
 before loading keys. It verifies the installed package and real MCP stdio, not a registration,
-Hermes conversation or payment. Then configure your existing Hermes through
-[MCP setup](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_MCP.md)
+Hermes conversation or payment. Then configure your existing agent through
+[MCP client setup](/agents/mcp-clients)
 with `role: provider`. Keep model configuration unchanged and private keys only in your isolated signer.
 
 ## Accept one assignment

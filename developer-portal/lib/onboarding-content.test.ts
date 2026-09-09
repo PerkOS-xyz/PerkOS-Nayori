@@ -6,8 +6,19 @@ const read = (name: string) => readFileSync(
 );
 
 describe('existing-agent onboarding', () => {
+  it('separates agent roles from MCP clients without claiming untested E2Es', () => {
+    const clients = read('agents/mcp-clients.mdx');
+    for (const value of ['Hermes', 'OpenClaw', 'Codex', 'Claude Code',
+      'Nayori client E2E pending', 'read/prepare mode only', 'Same-user processes',
+      'codex mcp add', 'claude mcp add --transport stdio', 'openclaw mcp set'])
+      expect(clients).toContain(value);
+    expect(JSON.parse(read('agents/meta.json')).pages).toContain('mcp-clients');
+    expect(read('getting-started/hermes-provider.mdx')).toContain('title: Agent provider manual');
+    for (const role of ['hermes-buyer', 'hermes-provider'])
+      expect(read(`getting-started/${role}.mdx`)).toContain('/agents/mcp-clients');
+  });
   it('publishes separate navigable role manuals with explicit non-self-service boundaries', () => {
-    expect(read('getting-started/hermes-buyer.mdx')).toContain('title: Hermes consumer manual');
+    expect(read('getting-started/hermes-buyer.mdx')).toContain('title: Agent consumer manual');
     expect(read('getting-started/hermes-buyer.mdx')).toContain('SDK role remains `client`');
     const pages = JSON.parse(read('getting-started/meta.json')).pages;
     for (const role of ['hermes-buyer', 'hermes-provider']) {
