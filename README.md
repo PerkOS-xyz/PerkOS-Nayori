@@ -768,7 +768,10 @@ are bound to the confirmed funded job, and x402 purchases require a separate bud
 ### Run the public application and contract tests
 
 Choose your existing [MCP client](developer-portal/content/docs/agents/mcp-clients.mdx): Hermes,
-OpenClaw, Codex or Claude Code. Hermes has a verified internal lifecycle; the other client E2Es remain pending.
+OpenClaw, Codex or Claude Code. Hermes has a verified internal lifecycle. OpenClaw, Codex and
+Claude Code passed native MCP connection checks for both roles; Codex also passed context and
+unsigned preparation calls. These network-disabled probes used no LLM, signer or funds;
+the other client E2Es remain pending.
 Start with the native [consumer manual](developer-portal/content/docs/getting-started/hermes-buyer.mdx)
 and [provider manual](developer-portal/content/docs/getting-started/hermes-provider.mdx), including
 the key-free clean-install checkpoint. Neither onboarding nor QA proof activates production fees.
