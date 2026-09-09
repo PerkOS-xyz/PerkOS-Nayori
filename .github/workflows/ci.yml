@@ -60,6 +60,7 @@ jobs:
           cache: npm
           cache-dependency-path: App/package-lock.json
       - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm test
       - run: npm run lint
       - run: npm run build
