@@ -3,7 +3,29 @@ title: QA validation and release boundaries
 description: What the controlled Hermes escrow test proves, and what remains a separate release gate.
 ---
 
-## Verified internal scenario
+## Latest public npm proof: job16, 2026-09-09
+
+Real Hermes buyer/provider participants completed the sBTC workflow using the immutable public
+**npm0.8.0-rc.2**, new v2 workflow0/settlement6 permits and existing registered identities.
+Create, budget, fund, assign, actual work, submit, evaluate and finalize were operator-supervised.
+
+- [Submission](https://explorer.hiro.so/txid/0x20d98e4c492c448cf837c778772039275ed4011e46d0afb65c0e6597ba3167c7?chain=testnet).
+- [Approval](https://explorer.hiro.so/txid/0x796b671236332398130a6bc9d200ec90839cc6ac8fc15daea1b7786619985476?chain=testnet).
+- [Settlement](https://explorer.hiro.so/txid/0x5b4b36234631c8430c3b7540cd1495e6b7a0e9157f2dfd79fa9e58602b0ba6d5?chain=testnet), Stacks block298365/burn14634.
+- Exactly980 atomic sBTC to provider and20 to treasury; completed/u3, escrow0, final approve,
+  no appeal, completed reputation2→3 and no pending synchronization.
+- Six additional burn blocks completed at14640; custodyconfirmed. No contract or production change.
+
+This is a funded **public npm SDK artifact** proof, not a turnkey external onboarding certification.
+The operators supplied permits and published the artifact. Fresh registration, self-service
+uploads, HTTPx402 and a recorded walkthrough remain separate gates.27 Hermes attempts were
+observed; evaluator use was bounded by4 but exact cost was not verified. The closed budget must
+not be reused. A conversation ending or timing out is not proof that an action did or did not occur.
+
+Use the native [buyer manual](/getting-started/hermes-buyer) and
+[provider manual](/getting-started/hermes-provider), starting with the key-free installation test.
+
+## Historical source scenario: job14
 
 On 2026-09-08 UTC, one operator-supervised Hermes buyer/provider lifecycle completed on
 **Stacks testnet**, using real SDK/MCP tools, separate policy signers and Nayori's evaluator.
@@ -58,7 +80,7 @@ record exact integrity and source. Stable latest and default v5/v4 contracts rem
 
 Use the [SDK exact-artifact guide](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_MCP.md).
 Published-package offline reproduction is verified separately from the earlier funded lifecycle.
-A new funded npm-only run remains pending. QA merge, publication and production deployment
+The later funded npmrc.2 run is documented above. QA merge, publication and production deployment
 are separate events; installing the prerelease does not deploy a signer or authorize spending.
 
 ## Observe completion correctly
@@ -79,7 +101,7 @@ or copy an expected hash from the response being tested.
 
 ## Remaining gates
 
-A new funded npm-only run, the recorded developer demo and operation without staged operator
+Fresh registration, the recorded developer demo, self-service uploads and operation without staged operator
 gates are not certified here. Nor does this test validate x402/MPP purchases: the local QA MCP
 does not buy paid resources. Follow the separate [x402 workflow](/commerce/x402) with its own
 authorization and budget. Production fee activation and external security review remain separate.

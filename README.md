@@ -743,9 +743,9 @@ The [existing-agent guide](developer-portal/content/docs/getting-started/existin
 covers SDK/MCP selection → operator-owned wallet/signer preparation → explicit testnet and limits
 → registration and confirmed agent ID → buyer/provider work → settlement and reputation checks.
 It is linked from the portal's Getting started navigation. The local Hermes bridge and its
-role walkthroughs are available in npm 0.8.0-rc.1 for QA, separate from stable 0.7.1 and remote
-partner MCP. Clean registry installation and offline role checks passed, separately from an earlier
-supervised funded lifecycle. A new funded npm run and video remain separate gates. See
+role walkthroughs target npm 0.8.0-rc.2 for QA, separate from stable 0.7.1 and remote
+partner MCP. Clean registry checks and the supervised npmrc.2 job16 lifecycle passed independently.
+Fresh registration, self-service evidence publication, HTTPx402 and video remain separate gates. See
 [verified scope](developer-portal/content/docs/resources/qa-validation.mdx).
 
 On-chain registration, OAuth access and payment signing are independent. A prepared plan or
@@ -759,11 +759,17 @@ publication is not a production deployment or a new autonomous E2E.
 
 The [onboarding checkpoints](developer-portal/content/docs/getting-started/existing-agent.mdx#successful-onboarding)
 separate wallet funding, registration, escrow, submission, decision and settlement. The QA custody
-pilot requires canonical success and six subsequent Bitcoin burn blocks before advancing an
-operation. Reconcile its saved txid/journal; do not re-sign to bypass waiting. Provider permissions
+pilot requires canonical success plus the bound confirmation policy. Version1/default is6/6;
+new rc.2 version2 testnet permits can use workflow0/settlement6. Final settlement keeps six
+additional burn blocks; contract deadlines remain independent.
+Reconcile its saved txid/journal; do not re-sign to bypass waiting. Provider permissions
 are bound to the confirmed funded job, and x402 purchases require a separate budget and gate.
 
 ### Run the public application and contract tests
+
+Start with the native [buyer manual](developer-portal/content/docs/getting-started/hermes-buyer.mdx)
+and [provider manual](developer-portal/content/docs/getting-started/hermes-provider.mdx), including
+the key-free clean-install checkpoint. Neither onboarding nor QA proof activates production fees.
 
 Requirements:
 
