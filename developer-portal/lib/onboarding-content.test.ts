@@ -14,6 +14,9 @@ describe('existing-agent onboarding', () => {
       'No new funded E2E or external adoption']) {
       expect(guide).toContain(text);
     }
+    expect(guide).toContain('published SDK 0.8.0-rc.2');
+    expect(guide).toContain('npm install --save-exact @perkos/agent-sdk@0.8.0-rc.2');
+    expect(guide).toContain('Stable `latest` remains 0.7.1');
     expect(guide).not.toContain('source candidate, not yet deployed');
     expect(guide).not.toContain('After the Web candidate is deployed');
   });

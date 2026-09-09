@@ -4,6 +4,13 @@ Last verified: 2026-09-09 UTC (QA timing rollout; not a new production verificat
 
 ## Current status
 
+### SDK 0.8.0-rc.2 published — 2026-09-09 UTC
+
+The reviewed rc.2 artifact is public on npm under next; latest remains 0.7.1. Registry SHA-512
+and downloaded tarball SHA-256 match the tested VPS artifact. Publication was authorized from
+the operator Mac without provenance attestation. It adds configurable policy for new version-2
+testnet permits, not migration of existing runs, production activation or a funded rc.2 E2E.
+
 ### Configurable confirmation and timing disclosure — deployed in QA
 
 The Jobs panel and read-only workflow-timing endpoint expose selected-contract review/appeal
