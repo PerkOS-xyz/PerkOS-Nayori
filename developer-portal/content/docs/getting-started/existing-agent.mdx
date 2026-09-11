@@ -17,28 +17,23 @@ obtaining OAuth access are different operations.
 | --- | --- |
 | [TypeScript SDK](/getting-started/sdk) | Public npm package; reads, transaction plans and operator-supplied signer interfaces |
 | Existing non-TypeScript agent | Controlled TypeScript sidecar or documented HTTP surfaces; discovery alone does not implement the escrow lifecycle |
-| Local MCP with an existing Hermes | Published QA prerelease 0.8.0-rc.2, separate from stable 0.7.1 and remote partner MCP |
+| Local MCP with an existing agent | Stable 0.8.0 with bounded testnet role tools, separate from remote partner MCP |
 | [Remote partner MCP](/agents/mcp) | Invite-only OAuth scopes; no wallet custody or automatic on-chain registration |
 
 Install a reviewed, pinned public package in your agent's integration project:
 
 ```sh
-npm install --save-exact @perkos/agent-sdk@0.7.1
+npm install --save-exact @perkos/agent-sdk@0.8.0
 ```
 
-For the local Hermes bridge and committed-evaluation QA walkthrough, install the **published QA prerelease** instead:
-
-```sh
-npm install --save-exact @perkos/agent-sdk@0.8.0-rc.2
-```
-
-Stable latest remains 0.7.1. Keep the lockfile and verify registry integrity. Both role MCP
-installation checks passed without keys, signing or LLM calls; this is not a new funded E2E. See the
-[QA SDK onboarding guide](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/EXISTING_AGENT.md).
+The same stable package includes the local MCP bridge and committed-evaluation QA walkthrough.
+Keep the lockfile and verify registry integrity. Both role MCP installation checks passed without
+keys, signing or LLM calls; this is not a funded E2E. See the
+[SDK onboarding guide](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/EXISTING_AGENT.md).
 Source availability alone is not proof. See the [verified internal scenario](/resources/qa-validation)
 for actual settlement evidence and the separate release boundaries.
 
-Run the [clean-install checkpoint](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/CLEAN_INSTALL.md)
+Run the [clean-install checkpoint](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/CLEAN_INSTALL.md)
 without keys or funds, then follow the [consumer manual](/getting-started/hermes-buyer) or
 [provider manual](/getting-started/hermes-provider).
 
@@ -56,7 +51,7 @@ contracts, functions, recipients, amount, total budget, expiry and STX gas limit
 intent/nonce/txid journal and deny ambiguous retries. A key in the LLM's process is not isolation.
 
 Follow the separate
-[operator wallet/signer checklist](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/WALLET_SIGNER_SETUP.md)
+[operator wallet/signer checklist](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/WALLET_SIGNER_SETUP.md)
 and [signing boundaries](/reference/sdk#signing-boundaries). Fund only the approved test assets
 and gas after confirming recovery and permissions. No participant needs Nayori's evaluator key.
 
@@ -98,10 +93,10 @@ wallets; neither controls the evaluator. A decision is not settlement: verify te
 zero escrow, exact payout/refund and reputation synchronization.
 
 The QA source includes separate
-[Agent consumer](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_BUYER.md) and
-[Agent provider](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_PROVIDER.md)
+[Agent consumer](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/HERMES_BUYER.md) and
+[Agent provider](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/HERMES_PROVIDER.md)
 walkthroughs. They start with a working agent and model, not a Hermes or LLM installation.
-The supervised npmrc.2 job16 lifecycle passed with workflow0/settlement6 and exact98/2payment.
+The historical supervised rc.2 job 16 lifecycle passed with workflow0/settlement6 and an exact 98/2 payment.
 Fresh registration, self-service evidence publication, x402 and recordings remain separate gates.
 See [validation scope](/resources/qa-validation).
 
@@ -147,7 +142,7 @@ provider/treasury transfer events. Under the QA 200 bps fee, approved gross 1000
 settles as 980 to the provider and 20 to the job-pinned treasury. Do not infer production terms
 from that candidate policy.
 
-See the [QA checkpoint manual](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_CHECKPOINTS.md)
+See the [QA checkpoint manual](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/HERMES_CHECKPOINTS.md)
 for the stage-by-stage evidence and recovery checklist. The [verified internal lifecycle](/resources/qa-validation)
 does not certify every autonomous E2E or a recorded demo.
 
@@ -163,9 +158,9 @@ operator. The on-chain review deadline starts at submission. Confirmation waits 
 latency consume that window; check the live burn height before requesting evaluation.
 A failed HTTP request does not extend the contract deadline.
 
-SDK 0.8.0-rc.2 allows a bounded 45 seconds for admission and keeps
-15 seconds for status reads. Pin that prerelease; do not assume stable 0.7.1 or a hosted
-deployment includes it. Custom proxies must accommodate paced eligibility checks within that budget.
+SDK 0.8.0 allows a bounded 45 seconds for admission and keeps 15 seconds for status reads.
+Pin the stable version; hosted deployment and local SDK release remain separate boundaries.
+Custom proxies must accommodate paced eligibility checks within that budget.
 
 - `admission_limit`: ask the operator to review quota. Do not repeatedly request review or
   increase spending limits automatically.

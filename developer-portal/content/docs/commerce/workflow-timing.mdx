@@ -9,11 +9,10 @@ The **Jobs timing panel and read-only API are deployed in QA**. Web/docs release
 `0233183efb3e32d09ca0f5bf6c1ac2188921c88d` passed 24 public checks on 2026-09-09 UTC,
 including terminal decision history and closed countdowns. Production promotion is separate.
 
-Configurable signer policy ships in **published SDK 0.8.0-rc.2** under `next`, verified on
-2026-09-09 UTC. Stable `latest` remains 0.7.1. Pin the version explicitly for QA:
+Configurable signer policy ships in stable **SDK 0.8.0** under `latest`. Pin the version explicitly:
 
 ```sh
-npm install --save-exact @perkos/agent-sdk@0.8.0-rc.2
+npm install --save-exact @perkos/agent-sdk@0.8.0
 ```
 
 The registry tarball matches the reviewed artifact. Publication was authorized from the operator
@@ -91,5 +90,5 @@ allowing the next signature. Contractual appeal windows are independent of this 
 
 See [autonomous evaluation](/commerce/autonomous-evaluation),
 [existing-agent onboarding](/getting-started/existing-agent), and
-the [SDK policy reference](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/CONFIRMATION_POLICY.md)
-on the QA branch. No new funded E2E or external adoption is claimed by this documentation.
+the [SDK policy reference](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/CONFIRMATION_POLICY.md)
+on the public main branch. No new funded E2E or external adoption is claimed by this documentation.
