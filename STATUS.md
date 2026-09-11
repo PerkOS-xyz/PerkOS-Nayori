@@ -1,8 +1,17 @@
 # Nayori — PerkOS Stacks Agentic Commerce: Project Status
 
-Last verified: 2026-09-09 UTC (QA timing rollout; not a new production verification)
+Last verified: 2026-09-11 UTC
 
 ## Current status
+
+### Agent SDK 0.8.0 stable and public — 2026-09-11 UTC
+
+`@perkos/agent-sdk@0.8.0` is published under npm `latest` from merged commit
+`8dc7cc9871858230c401f258cddf005a5c0be637`. Typecheck, build, 415 tests and audit with zero
+vulnerabilities passed. A separate clean registry install verified the exact package, both CLI
+binaries and 12/12 signer-free consumer/provider MCP checks. Stable defaults remain mainnet
+STX v5/sBTC v4; custody and fee-candidate v6/v5 remain explicit testnet-only paths. The clean
+install is internal release evidence, not external adoption or a funded stable-package E2E.
 
 ### Native MCP connection checks — 2026-09-09 UTC
 
@@ -23,9 +32,10 @@ Existing identities and operator-published evidence were used; fresh registratio
 self-service uploads and video are separate gates. Native buyer/provider manuals and a key-free
 clean-install diagnostic are prepared for QA review. Documentation changes are not deployment.
 
-### SDK 0.8.0-rc.2 published — 2026-09-09 UTC
+### Historical SDK 0.8.0-rc.2 publication — 2026-09-09 UTC
 
-The reviewed rc.2 artifact is public on npm under next; latest remains 0.7.1. Registry SHA-512
+At publication time, the reviewed rc.2 artifact was available under `next` while `latest` remained
+0.7.1. Registry SHA-512
 and downloaded tarball SHA-256 match the tested VPS artifact. Publication was authorized from
 the operator Mac without provenance attestation. It adds configurable policy for new version-2
 testnet permits, not migration of existing runs, production activation or a funded rc.2 E2E.
@@ -44,7 +54,7 @@ production deployment or existing permit changed; the runtime baseline remains 6
 
 ### QA SDK prerelease published — 2026-09-08 UTC
 
-npm 0.8.0-rc.1 is published under next; latest remains 0.7.1. Exact registry integrity,
+At publication time, npm 0.8.0-rc.1 was under `next` while `latest` remained 0.7.1. Exact registry integrity,
 clean installation, import, unsigned registration plan and buyer/provider MCP stdio checks
 passed. Published locally with approval, without provenance attestation. No new funded E2E,
 LLM call, contract or production deployment. This source documentation reflects publication;
@@ -251,7 +261,7 @@ npm run verify:mainnet
 - Milestone 1 is approved and complete. Its contracts and transaction evidence remain unchanged;
   the active generation is documented as a later security and liveness improvement.
 - Milestone 2 is in progress in the independent `PerkOS-Nayori-Agent-SDK` repository. The public
-  `@perkos/agent-sdk@0.7.1` package, signer adapters, testnet lifecycle, x402 v2 foundation and MPP
+  `@perkos/agent-sdk@0.8.0` package, signer adapters, testnet lifecycle, x402 v2 foundation and MPP
   PaymentAuth USDCx profile are available.
 - The invite-only API adds wallet-linked OAuth and authenticated MCP to the mainnet confirmation
   and delivery-ledger path. OAuth authorizes API access but cannot sign a payment.

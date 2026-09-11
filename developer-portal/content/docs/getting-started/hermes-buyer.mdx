@@ -12,17 +12,17 @@ Hermes is the verified internal example; the other client-specific E2Es remain p
 The existing URL is retained for link compatibility, not a Hermes-only requirement.
 
 Your agent and your own LLM are already running. Nayori does not install or replace them;
-external developers do not need PerkOS-LLM. This manual targets **Stacks testnet and SDK 0.8.0-rc.2**,
+external developers do not need PerkOS-LLM. This manual targets **Stacks testnet and SDK 0.8.0**,
 not mainnet or the remote partner MCP. The [verified job 16](/resources/qa-validation) used existing
 identities and operator supervision; it is not evidence that every external onboarding path passed.
 
-Start with the [clean-install checkpoint](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/CLEAN_INSTALL.md).
+Start with the [clean-install checkpoint](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/CLEAN_INSTALL.md).
 It installs the exact public package in an empty directory and checks both roles through real
 stdio, with no keys, signing, LLM or registration. The standalone diagnostic comes from reviewed
 QA source, not from the immutable npm rc.2 package. Keep its reviewed commit and your lockfile.
 
 ```sh
-npm install --save-exact --ignore-scripts @perkos/agent-sdk@0.8.0-rc.2
+npm install --save-exact --ignore-scripts @perkos/agent-sdk@0.8.0
 ```
 
 ## One-time operator configuration
@@ -41,7 +41,7 @@ npm install --save-exact --ignore-scripts @perkos/agent-sdk@0.8.0-rc.2
    The immutable rc.2 distribution warning is stale; use version/integrity to identify the package.
 5. Before enabling execution, prove separate-UID Linux isolation and configure a short-lived,
    operator-owned permit, journal and socket using
-   [the custody pilot](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_CUSTODY.md).
+   [the custody pilot](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/HERMES_CUSTODY.md).
    Same-user macOS processes do not provide that isolation. The key remains only in your signer.
 
 This setup is reusable infrastructure, but **each job requires its own bounded authorization**.
