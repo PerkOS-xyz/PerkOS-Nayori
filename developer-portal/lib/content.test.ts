@@ -32,7 +32,7 @@ describe('versioned public references', () => {
       'utf8',
     );
     expect(overview).not.toMatch(/\b(?:M1|M2|Milestone\s*[12])\b/i);
-    expect(overview).toContain('SDK 0.7.1 · Public');
+    expect(overview).toContain('SDK 0.8.0 · Stable');
   });
 
   it('documents the autonomous appeal lifecycle as the active mainnet generation', () => {
@@ -56,7 +56,7 @@ describe('versioned public references', () => {
     );
     expect(guide).toContain('selected in isolated QA/testnet');
     expect(guide).toContain('Production v5/v4 contracts');
-    expect(guide).toContain('not in npm 0.7.1');
+    expect(guide).toContain('SDK methods ship in stable 0.8.0');
     expect(guide).toContain('does not');
     expect(guide).toContain('certify the full two-role SDK/LLM lifecycle');
     expect(guide).not.toContain('consumers have not yet selected v6/v5');

@@ -6,10 +6,10 @@ const read = (name: string) => readFileSync(
 );
 
 describe('existing-agent onboarding', () => {
-  it('separates source job discovery from published MCP and execution authority', () => {
+  it('separates stable job discovery from remote MCP and execution authority', () => {
     const page = read('agents/mcp-clients.mdx');
-    for (const text of ['--enable-job-discovery', 'nayori_list_jobs', 'Not in npm rc.2',
-      'not deployed to production', 'nextCursor', 'scanLimit', 'missingIds',
+    for (const text of ['--enable-job-discovery', 'nayori_list_jobs', 'Stable 0.8.0 includes',
+      'not a remote production permission', 'nextCursor', 'scanLimit', 'missingIds',
       'not an atomic snapshot', 'Only the consumer assigns a provider', 'mocked',
       'MCP_JOB_DISCOVERY.md', 'no custody is needed for discovery']) expect(page).toContain(text);
   });
@@ -38,7 +38,7 @@ describe('existing-agent onboarding', () => {
     for (const role of ['hermes-buyer', 'hermes-provider']) {
       expect(pages).toContain(role);
       const guide = read(`getting-started/${role}.mdx`);
-      for (const text of ['0.8.0-rc.2', 'CLEAN_INSTALL.md', 'own LLM', 'x402', 'outside GitHub'])
+      for (const text of ['0.8.0', 'CLEAN_INSTALL.md', 'own LLM', 'x402', 'outside GitHub'])
         expect(guide).toContain(text);
       expect(guide).not.toMatch(/\/Users\/|\/opt\/|PRIVATE_KEY\s*=/);
     }
@@ -48,7 +48,7 @@ describe('existing-agent onboarding', () => {
   });
   it('links the completed npmrc.2 economics without claiming new registration', () => {
     const guide = read('resources/qa-validation.mdx');
-    for (const text of ['npm0.8.0-rc.2', 'job16', '14640', 'existing registered identities', 'Fresh registration',
+    for (const text of ['npm 0.8.0-rc.2', 'job 16', '14640', 'existing registered identities', 'Fresh registration',
       '0x5b4b36234631c8430c3b7540cd1495e6b7a0e9157f2dfd79fa9e58602b0ba6d5'])
       expect(guide).toContain(text);
     expect(guide).not.toContain('A new funded npm-only run remains pending');
@@ -56,14 +56,13 @@ describe('existing-agent onboarding', () => {
   it('distinguishes deployed QA timing from signer and production releases', () => {
     const guide = read('commerce/workflow-timing.mdx');
     for (const text of ['deployed in QA', '0233183efb3e32d09ca0f5bf6c1ac2188921c88d',
-      'Production promotion is separate', '0.8.0-rc.2', 'Version 1 remains unchanged',
+      'Production promotion is separate', 'SDK 0.8.0', 'Version 1 remains unchanged',
       'not wallet enforcement', 'terminal jobs have no active countdown',
       'No new funded E2E or external adoption']) {
       expect(guide).toContain(text);
     }
-    expect(guide).toContain('published SDK 0.8.0-rc.2');
-    expect(guide).toContain('npm install --save-exact @perkos/agent-sdk@0.8.0-rc.2');
-    expect(guide).toContain('Stable `latest` remains 0.7.1');
+    expect(guide).toContain('stable **SDK 0.8.0** under `latest`');
+    expect(guide).toContain('npm install --save-exact @perkos/agent-sdk@0.8.0');
     expect(guide).not.toContain('source candidate, not yet deployed');
     expect(guide).not.toContain('After the Web candidate is deployed');
   });
@@ -82,7 +81,7 @@ describe('existing-agent onboarding', () => {
   });
   it('explains bounded admission, capacity and reconciliation without claiming a deployed fix', () => {
     const guide = read('getting-started/existing-agent.mdx');
-    for (const text of ['45 seconds', '15 seconds', 'SDK 0.8.0-rc.2',
+    for (const text of ['45 seconds', '15 seconds', 'SDK 0.8.0',
       'admission_limit', 'ineligible', 'nayori_evaluation_status', 'No automatic retry',
       'does not extend the contract deadline', 'separately authorized recovery']) {
       expect(guide).toContain(text);
@@ -108,7 +107,7 @@ describe('existing-agent onboarding', () => {
     expect(guide).toMatch(/does\s+not install your agent/);
     expect(guide).toContain('require PerkOS-LLM');
     expect(guide).toContain('Hermes is an example integration, not a requirement');
-    expect(guide).toContain('published QA prerelease');
+    expect(guide).toContain('same stable package');
     expect(guide).not.toMatch(/PERKOS_LLM_API_KEY\s*=/);
   });
 
