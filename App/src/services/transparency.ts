@@ -14,8 +14,16 @@ import {
   CONTRACT_ADDRESS,
   SBTC_COMMERCE_CONTRACT_NAME,
   STX_COMMERCE_CONTRACT_NAME,
+  STX_COMMERCE_HAS_SERVICE_FEES,
+  SBTC_COMMERCE_HAS_SERVICE_FEES,
 } from "../constants/contract";
 import { NETWORK, NETWORK_NAME } from "../constants/network";
+import { buildFeeEvidence, type FeeEvidence, type FeeEvidenceSelection } from "./fee-evidence";
+
+const feeSelection: FeeEvidenceSelection = {
+  stx: { contract: `${CONTRACT_ADDRESS}.${STX_COMMERCE_CONTRACT_NAME}`, enabled: STX_COMMERCE_HAS_SERVICE_FEES },
+  sbtc: { contract: `${CONTRACT_ADDRESS}.${SBTC_COMMERCE_CONTRACT_NAME}`, enabled: SBTC_COMMERCE_HAS_SERVICE_FEES },
+};
 
 const CHAIN_SOURCE =
   NETWORK_NAME === "testnet"
@@ -91,6 +99,7 @@ export interface ObservedTransparencyMetrics {
 }
 
 export interface TransparencySnapshot {
+  serviceFees: FeeEvidence;
   schemaVersion: number;
   generatedAt: string;
   product: string;
@@ -216,6 +225,7 @@ export function buildTransparencySnapshot({
         };
 
   return {
+    serviceFees: buildFeeEvidence(jobs, feeSelection),
     schemaVersion: evidenceManifest.schemaVersion,
     generatedAt,
     product: evidenceManifest.product,
@@ -274,6 +284,7 @@ export function buildUnavailableTransparencySnapshot(
   generatedAt = new Date().toISOString(),
 ): TransparencySnapshot {
   return {
+    serviceFees: buildFeeEvidence([], feeSelection, false),
     schemaVersion: evidenceManifest.schemaVersion,
     generatedAt,
     product: evidenceManifest.product,

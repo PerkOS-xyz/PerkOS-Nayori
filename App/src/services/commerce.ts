@@ -18,6 +18,7 @@ import {
 } from "./sbtc-commerce";
 import { formatSbtcCompact, formatStx } from "../utils/format";
 import { NETWORK_NAME } from "../constants/network";
+import { getJobServiceFee, hasServiceFees, type FeeDisclosure } from "./service-fees";
 import {
   SBTC_COMMERCE_HAS_REVIEW_TIMEOUT,
   SBTC_COMMERCE_HAS_AUTONOMOUS_DECISIONS,
@@ -27,7 +28,7 @@ import {
 } from "../constants/contract";
 
 export type Currency = "sbtc" | "stx";
-export type CommerceJob = (Job | SbtcJob) & { currency: Currency };
+export type CommerceJob = (Job | SbtcJob) & { currency: Currency } & FeeDisclosure;
 export type RatingAvailability =
   | "checking"
   | "available"
@@ -71,7 +72,7 @@ export async function getCommerceJob(
     currency === "sbtc"
       ? SBTC_COMMERCE_HAS_AUTONOMOUS_DECISIONS
       : STX_COMMERCE_HAS_AUTONOMOUS_DECISIONS;
-  if (hasAutonomousDecisions && (job.status === 7 || job.status === 8)) {
+  if (hasAutonomousDecisions && [3, 4, 7, 8].includes(job.status)) {
     const decision =
       currency === "sbtc" ? await getSbtcDecision(jobId) : await getDecision(jobId);
     if (decision) job.decision = decision;
@@ -92,7 +93,12 @@ export async function getCommerceJob(
       job.reputationSyncOutcome = sync.outcome;
     }
   }
-  return { ...job, currency };
+  const result: CommerceJob = { ...job, currency };
+  if (hasServiceFees(currency)) {
+    try { result.serviceFee = await getJobServiceFee(job, currency); }
+    catch { result.serviceFeeUnavailable = true; }
+  }
+  return result;
 }
 
 export async function getCommerceJobCount(currency: Currency): Promise<number> {
@@ -288,8 +294,9 @@ export function appealDeadlineText(
 }
 
 
-export function reviewDeadlineText(reviewDeadline?: number, burnBlockHeight?: number) {
+export function reviewDeadlineText(reviewDeadline?: number, burnBlockHeight?: number, status?: number) {
   if (!Number.isSafeInteger(reviewDeadline)) return null;
+  if (status !== undefined && status !== 2) return `Review closed · Bitcoin block #${reviewDeadline}`;
   if (!burnBlockHeight) return `Bitcoin block #${reviewDeadline}`;
   const remaining = reviewDeadline! - burnBlockHeight;
   if (remaining < 0) return `Review timeout available · Bitcoin block #${reviewDeadline}`;

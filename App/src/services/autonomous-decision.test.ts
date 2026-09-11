@@ -3,6 +3,17 @@ import { describe, expect, it } from "vitest";
 import { parseAutonomousDecision } from "./autonomous-decision";
 
 describe("parseAutonomousDecision", () => {
+  it.each([1, 2])("preserves finalized optional Clarity uint %i", (decision) => {
+    const state = parseAutonomousDecision(Cl.ok(Cl.tuple({
+      "original-decision": Cl.uint(1),
+      "final-decision": Cl.some(Cl.uint(decision)),
+      "evidence-hash": Cl.bufferFromHex("11".repeat(32)),
+      "explanation-hash": Cl.bufferFromHex("22".repeat(32)),
+      "decided-at-burn": Cl.uint(100),
+      "appeal-deadline": Cl.uint(103),
+    })));
+    expect(state?.finalDecision).toBe(decision);
+  });
   it("parses pending and disputed provenance without inventing optional fields", () => {
     const pending = parseAutonomousDecision(
       Cl.ok(

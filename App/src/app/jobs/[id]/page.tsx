@@ -17,6 +17,8 @@ import {
 import { getBlockHeight, getBurnBlockHeight } from "../../../services/onchain-stats";
 import StatusBadge from "../../../components/StatusBadge";
 import JobStepper from "../../../components/JobStepper";
+import ServiceFeeBreakdown from "../../../components/ServiceFeeBreakdown";
+import WorkflowTiming from "../../../components/WorkflowTiming";
 import Addr from "../../../components/Addr";
 
 export default function JobDetailPage() {
@@ -91,6 +93,8 @@ export default function JobDetailPage() {
       <div className="card mt-6 p-6">
         <JobStepper status={job.status} />
       </div>
+      <ServiceFeeBreakdown job={job} />
+      <WorkflowTiming asset={currency} jobId={id} />
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Client"><Addr value={job.client} className="text-mist-200" /></Field>
@@ -107,7 +111,7 @@ export default function JobDetailPage() {
         {job.reviewDeadline !== undefined && (
           <Field label="Bitcoin review deadline">
             <span className="text-mist-200">
-              {reviewDeadlineText(job.reviewDeadline, burnHeight)}
+              {reviewDeadlineText(job.reviewDeadline, burnHeight, job.status)}
             </span>
             {job.submittedAtBurn !== undefined && (
               <span className="mt-1 block font-mono text-xs text-mist-500">

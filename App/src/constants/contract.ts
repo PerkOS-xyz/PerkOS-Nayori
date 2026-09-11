@@ -42,22 +42,31 @@ export const AGENT_REGISTRY_CONTRACT = `${CONTRACT_ADDRESS}.agent-registry`;
 export const AGENTIC_COMMERCE_CONTRACT =
   `${CONTRACT_ADDRESS}.${STX_COMMERCE_CONTRACT_NAME}`;
 export const STX_COMMERCE_IS_HARDENED =
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v6" ||
   STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v2" ||
   STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v3" ||
   STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v4" ||
   STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v5";
 export const STX_COMMERCE_HAS_REVIEW_TIMEOUT =
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v6" ||
   STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v3" ||
   STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v4" ||
   STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v5";
 export const SBTC_COMMERCE_HAS_REVIEW_TIMEOUT =
+  SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v5" ||
   SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v2" ||
   SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v3" ||
   SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v4";
 export const STX_COMMERCE_HAS_AUTONOMOUS_DECISIONS =
+  STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v6" ||
   STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v5";
 export const SBTC_COMMERCE_HAS_AUTONOMOUS_DECISIONS =
+  SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v5" ||
   SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v4";
+
+// Capability only; current deployed defaults above intentionally do not enable fees.
+export const STX_COMMERCE_HAS_SERVICE_FEES = STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v6";
+export const SBTC_COMMERCE_HAS_SERVICE_FEES = SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v5";
 
 export const NAYORI_EVALUATOR_ADDRESS =
   process.env.NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS ||

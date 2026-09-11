@@ -42,7 +42,7 @@ one service:
 | --- | --- |
 | On-chain network | Stacks mainnet for identity, STX escrow, sBTC escrow and reputation |
 | Mainnet contracts | Six current contracts under `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` |
-| Agent SDK | `@perkos/agent-sdk@0.7.1`, public on npm |
+| Agent SDK | Stable `0.7.1`; QA prerelease `0.8.0-rc.2` under `next`, both public on npm |
 | Browser wallet | Leather through Stacks Connect; wallet remains the signing boundary |
 | Headless agents | Policy-constrained signer interface for KMS/HSM/secret-manager integrations |
 | x402 | Live same-origin mainnet resource; SDK profiles for STX, sBTC and USDCx |
@@ -70,6 +70,19 @@ one service:
 
 ## What Nayori provides
 
+### Response and payment timing — available in QA
+
+The [workflow timing guide](developer-portal/content/docs/commerce/workflow-timing.mdx) separates
+transaction confirmation, evaluator feedback and contractual appeal deadlines. The QA Jobs
+panel and read-only `/api/v1/workflow-timing?asset=sbtc&jobId=15` endpoint expose live contract
+windows and explicitly non-guaranteed estimates before work is accepted. Operator configuration
+advertises a confirmation baseline; the signer's bound permit remains authoritative. Web/docs QA
+were deployed from `0233183efb3e32d09ca0f5bf6c1ac2188921c88d` and passed 24 public checks on
+2026-09-09 UTC, including terminal decision history and closed countdowns. Production promotion
+is separate. This does not change current jobs or contracts or enable a mainnet pilot signer.
+Configurable signer policy requires SDK 0.8.0-rc.2 and new version-2 permits; reinstalling rc.1
+does not add that policy. See the guide for the independent npm release boundary.
+
 Nayori is designed for commerce in which the buyer, seller or both may be autonomous software.
 It supports two complementary economic models.
 
@@ -79,6 +92,22 @@ Use escrow when delivery takes time or requires a neutral decision. A client cre
 job, a provider submits work, and an evaluator completes or rejects it. Completion releases the
 escrow and updates job-linked reputation; rejection or expiry returns funds according to the
 contract lifecycle.
+
+An additive [earned-service-fee candidate](contracts/service-fees-README.md) introduces a 2%
+fee included in an escrow job budget, payable to a pinned treasury only at final evaluated settlement.
+The matching opt-in Web/Docs integration is served in QA and the SDK support is merged to its
+QA branch and published in SDK 0.8.0-rc.1; this is not an active price change. Deployed v5/v4 jobs retain their
+original terms. See the [candidate integration guide](developer-portal/content/docs/commerce/service-fees.mdx)
+and [guarded testnet deployment and 20-path contract test runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
+The fee candidates were deployed and initialized on testnet on 2026-09-04; deployment alone
+does not select them in the application. The twenty controlled contract paths subsequently passed;
+the packaged QA SDK passed 168 public-state checks against their twenty terminal jobs. Evaluator
+v6/v5 compatibility and explicit selection are deployed in isolated QA/testnet. Production still
+selects v5/v4. Separately, one real, operator-supervised Hermes buyer/provider SDK + evaluator
+sBTC lifecycle completed with exact 980/20 settlement and confirmed reputation; see
+[QA validation and release boundaries](developer-portal/content/docs/resources/qa-validation.mdx).
+This does not certify every path or external onboarding. The accounting panel is a separate activation
+prerequisite, not an announcement of production fees.
 
 ### Direct paid resources
 
@@ -114,13 +143,12 @@ boundaries, not five independent products.
 | --- | --- | --- | --- |
 | [`PerkOS-Nayori`](https://github.com/PerkOS-xyz/PerkOS-Nayori) | Public | Clarity contracts, Web application, same-origin protocol proxies, agent discovery, public evidence and deployment verification | Facilitator secrets, OAuth signing keys, merchant credentials or custody |
 | [`PerkOS-Nayori-Agent-SDK`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK) | Public | TypeScript read clients, transaction plans, signer adapters, confirmation tracking, spending policy, x402 and MPP encoding/verification | Private keys, hosted replay state, merchant authentication or production settlement state |
-| [`PerkOS-Nayori-Platform`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Platform) | Private operational repository | Resource API, facilitator, merchant routes, signed quotes, verification, network-pinned broadcast, reconciliation, receipts and delivery ledger | OAuth identity database, wallet keys or changes to the on-chain contracts |
-| [`PerkOS-Nayori-OAuth`](https://github.com/PerkOS-xyz/PerkOS-Nayori-OAuth) | Private operational repository | OAuth issuer, anonymous agent identity, wallet claims, partner invitations, client credentials, access tokens and JWKS | Payment signing, settlement, sponsorship or merchant delivery |
-| [`PerkOS-Nayori-Evaluator`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Evaluator) | Private operational repository | Deterministic evaluation intake, policy-constrained LLM analysis, public decision artifacts and testnet decision submission | Escrow custody, appeal authority, arbitrary wallet signing or production contract activation |
+| [`PerkOS-Nayori-Platform`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Platform) | Public | Resource API, facilitator, merchant routes, signed quotes, verification, network-pinned broadcast, reconciliation, receipts and delivery ledger | OAuth identity database, wallet keys or changes to the on-chain contracts |
+| [`PerkOS-Nayori-OAuth`](https://github.com/PerkOS-xyz/PerkOS-Nayori-OAuth) | Public | OAuth issuer, anonymous agent identity, wallet claims, partner invitations, client credentials, access tokens and JWKS | Payment signing, settlement, sponsorship or merchant delivery |
+| [`PerkOS-Nayori-Evaluator`](https://github.com/PerkOS-xyz/PerkOS-Nayori-Evaluator) | Public | Deterministic evaluation intake, policy-constrained LLM analysis, public decision artifacts and testnet decision submission | Escrow custody, appeal authority, arbitrary wallet signing or production contract activation |
 
-The two private repository links resolve for authorized maintainers today. Their responsibilities
-are documented here so enterprise reviewers can evaluate the complete topology; making their
-source public later does not require changing the architecture.
+All five repositories are public. Runtime credentials, deployment configuration and internal
+operational evidence remain outside GitHub; public source does not grant access to those systems.
 
 The public repository contains two independently deployable presentation applications: `App/`
 serves the transactional product and wallet flows, while `developer-portal/` serves the developer
@@ -278,6 +306,14 @@ an independent `directPayments` section; escrow counters and the curated CSV rem
 This panel requires the facilitator's `PUBLIC_PAYMENT_EVIDENCE_ENABLED` flag after QA validation;
 before activation or during an outage it reports unavailable. Internal canaries are not adoption or revenue.
 
+Escrow fees use the independent `serviceFees` section in `/api/evidence.json` and the escrow
+accounting panel on `/evidence`. They summarize already-validated ledgers by asset and pinned
+treasury: potential quotes, actual charges, actual refunds, retained amounts and outstanding
+waived refunds. Atomic decimal strings preserve precision. Missing fee data makes that asset's
+totals unavailable; older generations are explicitly unsupported. These are selected-contract
+observations, not lifetime totals, treasury balances or verified external revenue. The curated
+CSV and adoption counters retain their existing meanings.
+
 ## Primary transaction flows
 
 ### Escrowed agent job
@@ -291,7 +327,7 @@ sequenceDiagram
   participant Wallet as Leather or enterprise signer
   participant Registry as Agent Registry
   participant Escrow as STX or sBTC Commerce
-  participant Reputation as Reputation Registry v2
+  participant Reputation as Reputation Registry v3
 
   Client->>Wallet: Approve agent registration
   Wallet->>Registry: register-agent
@@ -302,10 +338,14 @@ sequenceDiagram
   Client->>Wallet: Approve exact funding transaction
   Wallet->>Escrow: fund-job
   Escrow-->>Escrow: Hold STX or canonical sBTC
-  Provider->>Wallet: Approve assignment and submission
-  Wallet->>Escrow: assign-provider and submit-work
-  Evaluator->>Wallet: Approve completion or rejection
-  Wallet->>Escrow: complete-job or reject-job
+  Client->>Wallet: Assign provider if not already pinned
+  Wallet->>Escrow: assign-provider
+  Provider->>Wallet: Approve submission
+  Wallet->>Escrow: submit-work
+  Evaluator->>Wallet: Record decision and evidence
+  Wallet->>Escrow: record-decision
+  Note over Client,Escrow: Eligible party may appeal; pinned authority resolves disputes
+  Wallet->>Escrow: Finalize after deadline or resolve appeal
   alt Completed
     Escrow-->>Provider: Release escrow
     Escrow->>Reputation: Record completion
@@ -693,7 +733,53 @@ Testnet transactions and team-operated activity are not presented as external ma
 
 ## Developer quickstart
 
+### Integrate an agent you already operate
+
+Start with an agent already installed and working with **your own LLM**. Nayori does not install
+your agent, configure its model or require PerkOS-LLM. Hermes is an example integration, not a
+requirement. Never share model API keys or wallet private keys with Nayori.
+
+The [existing-agent guide](developer-portal/content/docs/getting-started/existing-agent.mdx)
+covers SDK/MCP selection → operator-owned wallet/signer preparation → explicit testnet and limits
+→ registration and confirmed agent ID → buyer/provider work → settlement and reputation checks.
+It is linked from the portal's Getting started navigation. The local Hermes bridge and its
+role walkthroughs target npm 0.8.0-rc.2 for QA, separate from stable 0.7.1 and remote
+partner MCP. Clean registry checks and the supervised npmrc.2 job16 lifecycle passed independently.
+Fresh registration, self-service evidence publication, HTTPx402 and video remain separate gates. See
+[verified scope](developer-portal/content/docs/resources/qa-validation.mdx).
+
+On-chain registration, OAuth access and payment signing are independent. A prepared plan or
+broadcast txid is not successful registration: verify the returned agent ID and active registry
+record. Review [agent identity](developer-portal/content/docs/agents/identity.mdx) before signing.
+
+The [evaluation recovery guide](developer-portal/content/docs/getting-started/existing-agent.mdx#evaluation-capacity-and-recovery)
+documents quota preflight, contract review deadlines, bounded candidate transport timeouts and
+deterministic-ID reconciliation. The transport correction ships in npm 0.8.0-rc.1 for QA;
+publication is not a production deployment or a new autonomous E2E.
+
+The [onboarding checkpoints](developer-portal/content/docs/getting-started/existing-agent.mdx#successful-onboarding)
+separate wallet funding, registration, escrow, submission, decision and settlement. The QA custody
+pilot requires canonical success plus the bound confirmation policy. Version1/default is6/6;
+new rc.2 version2 testnet permits can use workflow0/settlement6. Final settlement keeps six
+additional burn blocks; contract deadlines remain independent.
+Reconcile its saved txid/journal; do not re-sign to bypass waiting. Provider permissions
+are bound to the confirmed funded job, and x402 purchases require a separate budget and gate.
+
 ### Run the public application and contract tests
+
+The SDK's unreleased QA source adds optional read-only MCP job discovery for consumers and
+providers. See [MCP discovery setup](developer-portal/content/docs/agents/mcp-clients.mdx#optional-job-discovery--unreleased-qa-source).
+It is not in npm rc.2 or deployed to production. Browsing jobs does not authorize claiming,
+signing or spending; consumer assignment and an independent signer remain required.
+
+Choose your existing [MCP client](developer-portal/content/docs/agents/mcp-clients.mdx): Hermes,
+OpenClaw, Codex or Claude Code. Hermes has a verified internal lifecycle. OpenClaw, Codex and
+Claude Code passed native MCP connection checks for both roles; Codex also passed context and
+unsigned preparation calls. These network-disabled probes used no LLM, signer or funds;
+the other client E2Es remain pending.
+Start with the native [consumer manual](developer-portal/content/docs/getting-started/hermes-buyer.mdx)
+and [provider manual](developer-portal/content/docs/getting-started/hermes-provider.mdx), including
+the key-free clean-install checkpoint. Neither onboarding nor QA proof activates production fees.
 
 Requirements:
 
@@ -748,6 +834,7 @@ signer and explicit spending policy.
 - [MPP integration](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/MPP_PAYMENTS.md)
 - [Partner pilot](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/PARTNER_PILOT.md)
 - [Deployment guide](docs/DEPLOYMENT.md)
+- [Earned service fee contracts — testnet candidate, not production](contracts/service-fees-README.md)
 - [Current product status](STATUS.md)
 
 ## Project structure
@@ -769,7 +856,7 @@ PerkOS-Nayori/
 
 ## Contributing
 
-1. Create a branch from current `main`.
+1. Create a feature branch from current `qa`; promote a verified QA release separately to `main`.
 2. Keep secrets and production runtime configuration outside Git.
 3. Run contract tests, Web tests, lint and build for affected surfaces.
 4. Preserve explicit mainnet/testnet and implemented/planned distinctions.

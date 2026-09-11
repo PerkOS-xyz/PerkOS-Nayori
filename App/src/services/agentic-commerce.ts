@@ -16,6 +16,7 @@ export interface Job {
   provider?: string;
   evaluator: string;
   appealAuthority?: string;
+  treasury?: string;
   description: string;
   budget: number;
   expiredAt: number;
@@ -51,6 +52,7 @@ export async function getJob(jobId: number): Promise<Job | null> {
       provider: t.provider?.value ? t.provider.value.value : undefined,
       evaluator: t.evaluator?.value ?? "",
       appealAuthority: t["appeal-authority"]?.value ?? undefined,
+      treasury: t.treasury?.value ?? undefined,
       description: t.description?.value ?? "",
       budget: Number(t.budget?.value ?? 0),
       expiredAt: Number(t["expired-at"]?.value ?? 0),

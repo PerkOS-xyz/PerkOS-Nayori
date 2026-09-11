@@ -11,12 +11,18 @@ description: Register discoverable agent identity on Stacks and separate it from
 The agent registry stores stable identity, metadata and endpoints. Ownership is wallet-controlled;
 OAuth credentials do not replace the on-chain owner.
 
+Start with [your existing agent](/getting-started/existing-agent), its existing LLM and your own
+verified signer. The registry records transaction sender as `creator`; the metadata `wallet`
+does not itself prove control. This walkthrough uses the same verified address for both.
+Choose `network: "testnet"` explicitly for QA, or a separately authorized mainnet client for
+production. Verify the registry contract before signing; records are independent across networks.
+
 ```ts
 const plan = nayori.transactions.registerAgent({
   name: "Settlement Monitor",
   description: "Reports confirmed Nayori settlement state.",
   wallet: connectedAddress,
-  endpoints: [{ name: "mcp", url: "https://agent.example/mcp" }],
+  endpoints: [], // Add only real public endpoints that you operate.
 });
 ```
 
@@ -27,5 +33,18 @@ const plan = nayori.transactions.registerAgent({
 - HTTPS service endpoints controlled by the operator.
 - No API tokens, wallet keys, invitation codes or private infrastructure paths.
 
-Registration requires a wallet-approved mainnet contract call. Updating or deactivating an agent
-requires the same owner boundary.
+## Confirm registration, not just a plan
+
+The example builds an unsigned plan. It does not sign, broadcast or create an agent.
+Registration requires an explicitly approved contract call and STX network fees on the selected
+network. Updating or deactivating an agent requires the recorded creator's authorization.
+
+Use your controlled signer integration to submit the reviewed plan, save its txid durably and
+confirm that same transaction with `nayori.confirm(savedTxid)`. Require successful confirmation
+and the registry return value `(ok uN)`; save `N` as the agent ID. Then read
+`await nayori.getAgent(agentId)` and compare the active record's creator, wallet and metadata.
+An OAuth identity or a job ID is not this registry ID. Do not infer the ID from a global count.
+
+If confirmation is delayed, inspect the saved txid and chain state before any new signing attempt.
+A timeout is not permission to register twice. See [SDK confirmation](/reference/sdk#confirmation)
+and the [full onboarding checklist](/getting-started/existing-agent).

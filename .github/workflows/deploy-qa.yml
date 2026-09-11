@@ -56,8 +56,8 @@ jobs:
         env:
           NEXT_PUBLIC_STACKS_NETWORK: testnet
           NEXT_PUBLIC_CONTRACT_ADDRESS: ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5
-          NEXT_PUBLIC_STX_COMMERCE_CONTRACT: agentic-commerce-v5
-          NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT: sbtc-commerce-v4
+          NEXT_PUBLIC_STX_COMMERCE_CONTRACT: agentic-commerce-v6
+          NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT: sbtc-commerce-v5
           NEXT_PUBLIC_REPUTATION_CONTRACT: reputation-registry-v3
           NEXT_PUBLIC_SITE_URL: https://qa.nayori.ai
           NEXT_PUBLIC_RELEASE_CHANNEL: qa

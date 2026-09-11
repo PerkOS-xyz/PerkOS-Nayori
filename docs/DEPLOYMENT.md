@@ -3,9 +3,11 @@
 ## Branch and release model
 
 Every Nayori repository uses `qa` as its protected integration branch and `main` as its protected
-production branch. Feature pull requests target `qa`. A push to `qa` runs the complete repository
-gate, uploads a Git archive through the restricted Nayori deploy identity and builds the exact SHA
-on `perkos-cloud-02`. Only a SHA with a passed VPS receipt may create a `release/<release-id>`
+production branch. Feature pull requests target `qa`. Run the complete repository gate and initiate
+the approved deployment from the operator Mac: upload the exact reviewed Git archive through the
+restricted Nayori deploy identity and build the image on the VPS. GitHub-hosted runners do not
+have the required firewall access; a merge or passing CI alone is not a deployment receipt.
+Do not build deployment images locally. Only a SHA with a passed VPS receipt may create a `release/<release-id>`
 branch and pull request to `main`.
 
 Contract transactions are excluded from both branch workflows. Contract promotion always begins
@@ -14,6 +16,10 @@ See [`QA_RELEASES.md`](QA_RELEASES.md) for the operational sequence and
 [`the release design`](plans/2026-09-01-qa-first-multi-repo-release-design.md) for trust boundaries.
 
 ## Production
+
+For opt-in earned-service-fee QA selection, follow [the coordinated consumer gate](QA_FEE_CONSUMERS.md).
+Changing `NEXT_PUBLIC_*` values only at runtime is insufficient: the Web embeds them at build
+time. The default production pair in this guide remains v5/v4, without the candidate fee.
 
 PerkOS is deployed on Stacks mainnet under:
 
@@ -283,6 +289,21 @@ successful reputation synchronization and one persisted client rating. This work
 It is internal operational evidence and is never external M2 adoption or revenue.
 
 ## Frontend production variables
+
+### Workflow timing disclosure (deployed in QA; separate production promotion)
+
+`NAYORI_WORKFLOW_BURN_BLOCKS` and `NAYORI_SETTLEMENT_BURN_BLOCKS` are server-runtime disclosure
+settings, defaulting to 6/6. Both accept integers up to 144; mainnet minimum is 6, testnet minimum
+is 0, and settlement cannot be weaker than workflow. Invalid values cause the timing endpoint
+to return 503. These settings do not reconfigure any wallet, existing signer permit, facilitator,
+x402/MPP path or contract. Match the advertised baseline to newly issued operator permits.
+
+Web/docs QA release `0233183efb3e32d09ca0f5bf6c1ac2188921c88d` passed 24 public checks on
+2026-09-09 UTC. Verify `/api/v1/workflow-timing?asset=stx` and `?asset=sbtc` on each target network
+before its separate promotion. Check contract identity, live windows, unavailable behavior,
+terminal decision history and absence of active countdowns on closed jobs. Version-1 SDK permits
+remain six-block; new configurable permits require the separate SDK release and new permissions.
+No active run is migrated and no production deployment accompanies this documentation update.
 
 Configure these values in the target production build environment:
 
