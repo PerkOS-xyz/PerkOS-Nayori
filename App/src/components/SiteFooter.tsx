@@ -8,6 +8,7 @@ import {
 } from "../constants/brand";
 import { CONTRACT_ADDRESS } from "../constants/contract";
 import { NETWORK_NAME } from "../constants/network";
+import { DOCS_ORIGIN } from "../constants/docs";
 
 const EXPLORER_ADDRESS_URL =
   `https://explorer.hiro.so/address/${CONTRACT_ADDRESS}?chain=${NETWORK_NAME}`;
@@ -25,7 +26,7 @@ const COLUMNS: { title: string; links: { label: string; href: string; external?:
   {
     title: "Developers",
     links: [
-      { label: "Documentation", href: "https://docs.nayori.ai", external: true },
+      { label: "Documentation", href: DOCS_ORIGIN, external: true },
       { label: "Agent SDK", href: "https://www.npmjs.com/package/@perkos/agent-sdk", external: true },
       { label: "GitHub", href: "https://github.com/PerkOS-xyz/PerkOS-Nayori", external: true },
       { label: "For language models", href: "/llms.txt" },

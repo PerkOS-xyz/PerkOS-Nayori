@@ -47,6 +47,7 @@ export interface SbtcJob {
   provider?: string;
   evaluator: string;
   appealAuthority?: string;
+  treasury?: string;
   description: string;
   budget: number; // sats
   expiredAt: number;
@@ -83,6 +84,7 @@ export async function getSbtcJob(jobId: number): Promise<SbtcJob | null> {
       provider: t.provider?.value ? t.provider.value.value : undefined,
       evaluator: t.evaluator?.value ?? "",
       appealAuthority: t["appeal-authority"]?.value ?? undefined,
+      treasury: t.treasury?.value ?? undefined,
       description: t.description?.value ?? "",
       budget: Number(t.budget?.value ?? 0),
       expiredAt: Number(t["expired-at"]?.value ?? 0),

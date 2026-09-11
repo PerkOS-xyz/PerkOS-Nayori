@@ -17,6 +17,18 @@ The dashboard separates raw on-chain totals from explicitly attested external ad
 wallets remain unattested. If a complete chain snapshot is unavailable, the API reports
 `unavailable` rather than publishing false zeroes.
 
+## Escrow service-fee accounting
+
+Escrow economics are separate: the dashboard's service-fee accounting panel and JSON `serviceFees`
+section expose validated ledger observations for the selected STX/sBTC contracts. Each asset has
+`live`, `unavailable` or `not-supported` status, nullable totals, per-job entries and groups by pinned
+treasury. All monetary values are atomic decimal strings. `quoted` is not collected money;
+`charged - refunded = retained`, while `refundDue` counts waived fees still requiring an actual
+treasury refund. No ledger means no fee charged. Incomplete data prevents totals for the affected
+asset, and a failed chain source never becomes an empty successful result. This is not a treasury
+balance, all-generation lifetime total, independent transaction-event audit or external revenue.
+Current v5/v4 selections have no service-fee capability; the new QA selection remains a separate gate.
+
 ## Direct x402 and MPP payments
 
 Direct resource payments are **not escrow jobs**. Their separate dashboard panel refreshes every

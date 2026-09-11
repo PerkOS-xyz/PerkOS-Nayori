@@ -68,6 +68,8 @@ describe("transparency snapshot", () => {
     });
 
     expect(snapshot.dataStatus.chain).toBe("live");
+    expect(snapshot.serviceFees.scope).toBe("selected-contract-jobs");
+    expect(() => JSON.stringify(snapshot)).not.toThrow();
     expect(snapshot.observed).toMatchObject({
       registeredAgentsMainnet: 3,
       totalJobsMainnet: 4,
@@ -105,6 +107,7 @@ describe("transparency snapshot", () => {
       code: "chain_source_unavailable",
     });
     expect(snapshot.observed).toBeNull();
+    expect(snapshot.serviceFees.assets.every(asset => asset.totals === null)).toBe(true);
     expect(snapshot.agents).toEqual([]);
     expect(snapshot.jobs).toEqual([]);
     expect(snapshot.transactions).toEqual([]);

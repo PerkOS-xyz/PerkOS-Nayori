@@ -1,14 +1,118 @@
 # Nayori — PerkOS Stacks Agentic Commerce: Project Status
 
-Last verified: 2026-09-03
+Last verified: 2026-09-09 UTC (QA timing rollout; not a new production verification)
 
 ## Current status
+
+### Native MCP connection checks — 2026-09-09 UTC
+
+OpenClaw 2026.9.3, Codex CLI 0.153.4 and Claude Code via Agent SDK 0.3.266 each connected
+to the published npm SDK 0.8.0-rc.2 as consumer and provider, discovering six exact role tools.
+Codex also passed native context and unsigned preparation checks against the direct SDK API.
+These six network-disabled cases used no model credentials, wallet keys, signatures or payments;
+they do not certify conversations, signer isolation or funded workflows for those clients.
+See [the measured scope](developer-portal/content/docs/agents/mcp-clients.mdx).
+The documentation update is a QA candidate, not a new production release.
+
+### npmrc.2 job16 and reproducible onboarding — 2026-09-09 UTC
+
+The real supervised npmrc.2 buyer/provider lifecycle passed with new v2 workflow0/settlement6
+permits: exact980/20payment, escrow0, reputation2→3 and custodyconfirmed atburn14640. Public
+transactions are in [QA validation](developer-portal/content/docs/resources/qa-validation.mdx).
+Existing identities and operator-published evidence were used; fresh registration, HTTPx402,
+self-service uploads and video are separate gates. Native buyer/provider manuals and a key-free
+clean-install diagnostic are prepared for QA review. Documentation changes are not deployment.
+
+### SDK 0.8.0-rc.2 published — 2026-09-09 UTC
+
+The reviewed rc.2 artifact is public on npm under next; latest remains 0.7.1. Registry SHA-512
+and downloaded tarball SHA-256 match the tested VPS artifact. Publication was authorized from
+the operator Mac without provenance attestation. It adds configurable policy for new version-2
+testnet permits, not migration of existing runs, production activation or a funded rc.2 E2E.
+
+### Configurable confirmation and timing disclosure — deployed in QA
+
+The Jobs panel and read-only workflow-timing endpoint expose selected-contract review/appeal
+windows, active deadline countdowns and non-guaranteed estimates. Operator confirmation baseline
+is configurable with network minimums; it does not enforce or override a wallet's bound permit.
+Web/docs QA were deployed from `0233183efb3e32d09ca0f5bf6c1ac2188921c88d` on 2026-09-09 UTC.
+App 229 tests, portal 24 tests and 24 public postchecks passed. Terminal jobs preserve their
+original/final decisions and have no active countdown; Chrome verified the completed job view.
+The matching SDK change adds version-2 testnet custody policy/progress while keeping version-1
+hashes and six-block defaults. Its npm release is separate from the Web deployment. No contract,
+production deployment or existing permit changed; the runtime baseline remains 6/6.
+
+### QA SDK prerelease published — 2026-09-08 UTC
+
+npm 0.8.0-rc.1 is published under next; latest remains 0.7.1. Exact registry integrity,
+clean installation, import, unsigned registration plan and buyer/provider MCP stdio checks
+passed. Published locally with approval, without provenance attestation. No new funded E2E,
+LLM call, contract or production deployment. This source documentation reflects publication;
+immutable package docs retain their pre-publication wording.
+
+### Controlled Hermes lifecycle verified — 2026-09-08 UTC
+
+One internal sBTC testnet job completed with real Hermes buyer/provider tools, isolated custody,
+evaluation and exact 980/20 settlement. Finalization at block 288396/burn 14234 passed the custody
+confirmation gate at 14240; escrow zero and reputation synchronization were verified. Existing
+registered identities were reused. See [public evidence and release boundaries](developer-portal/content/docs/resources/qa-validation.mdx).
+The earlier funded test used QA source, not the public npm 0.7.1 artifact or a new 0.8.0-rc.1 run.
+Registry installation and offline checks subsequently passed; a new funded run from npm,
+the separate x402 walkthrough and developer video remain pending. No production change or external
+adoption is implied. Historical status entries below describe their verification dates.
+
+### QA onboarding checkpoint documentation — 2026-09-07
+
+README and portal clarify separate wallet/escrow funding, bounded buyer/provider gas, custody's
+six-burn confirmation policy and job-bound provider handoff. Signing transport remains an
+operator responsibility. These documentation updates do not certify the complete autonomous
+Hermes E2E, change production contracts, publish npm or claim external adoption.
+
+### Existing-agent documentation candidate — 2026-09-07
+
+The QA documentation now starts with an agent already running its own LLM. It separates
+operator-owned wallet/signer preparation, verified on-chain registration, buyer/provider roles
+and optional OAuth/direct payments. README and portal navigation link the same onboarding entry.
+The local Hermes bridge/manuals remain unreleased QA candidates; full funded autonomous Hermes
+E2E and video are not certified by these documentation changes. No model migration or PerkOS-LLM
+account is required for external developers. Publication/deployment follows QA review.
+
+### Additive fee candidate — 2026-09-04
+
+Update 2026-09-06: twenty internal real-chain contract paths are complete; the installed QA SDK
+passed 168/168 public checks across those jobs. Evaluator compatibility is deployed from QA merge
+`66ae96f`; QA Web/Docs merge `9eee547` and the evaluator now select v6/v5 explicitly. Production
+still selects v5/v4. The new Web accounting integration exposes
+charges/refunds/retained amounts separately from quotes; source availability is not activation.
+Coordinated v6/v5 QA selection is complete; the full two-role SDK/LLM workflow remains pending. No
+production defaults, contracts or npm package change with this integration.
+
+STX `agentic-commerce-v6` and sBTC `sbtc-commerce-v5` implement a fixed 2% earned service fee,
+job-pinned treasury, evidence-backed waivers and treasury-funded refunds. The candidates were
+deployed and initialized on testnet on 2026-09-04 from QA merge `556e90a`; seven transactions
+returned `(ok true)`, and a separate public source/configuration/transaction postcheck passed 13/13.
+The 86 focused simnet cases remain part of the full suite; the reviewed deployment ran 267/267
+tests and the static security gate before signing. The twenty real-chain paths later passed as
+internal contract evidence, separately from the application/SDK/LLM workflow.
+See the [candidate reference](contracts/service-fees-README.md) for the policy and limitations.
+No production contract, SDK package or application default was changed.
+Opt-in Web fee disclosures and wallet/job-scoped acceptance are served in QA; matching SDK
+support is merged to its QA branch, still unreleased. Docs distinguish quotes, charges, waivers
+and actual refunds. Dedicated testnet deployment/E2E runners now cover a 20-path matrix, with
+signer-free preflights and durable single-broadcast journals; their availability is not on-chain
+execution evidence. See [the runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
+QA consumer selection is explicit and operationally separate from source compatibility; no npm
+publication accompanies it. Operational custody/reserves and real QA E2E remain required before
+commercial activation. Production remains v5/v4.
+
+### Deployed baseline (last verified 2026-09-03)
 
 **Live on Stacks mainnet.**
 
 - Production app: [nayori.ai](https://nayori.ai)
 - Developer portal: [docs.nayori.ai](https://docs.nayori.ai), an independent application with
-  self-hosted search, generated OpenAPI reference and complete SDK/commerce onboarding.
+  self-hosted search, generated OpenAPI reference and SDK/commerce guidance. The new existing-agent
+  onboarding is a QA documentation candidate, not a completed autonomous Hermes certification.
 - Partner API: [api.nayori.ai](https://api.nayori.ai) (invite-only; OAuth enrollment network migration pending)
 - Public mainnet x402 resource: [nayori.ai/api/v1](https://nayori.ai/api/v1); the confirmed
   testnet proof remains reproducible release evidence.

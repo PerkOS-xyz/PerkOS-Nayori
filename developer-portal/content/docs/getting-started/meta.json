@@ -1,4 +1,4 @@
 {
   "title": "Getting started",
-  "pages": ["index", "sdk", "http-api", "networks"]
+  "pages": ["index", "existing-agent", "hermes-buyer", "hermes-provider", "sdk", "http-api", "networks"]
 }

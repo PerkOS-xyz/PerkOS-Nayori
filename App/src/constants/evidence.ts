@@ -37,6 +37,8 @@ const m1EvidenceWallets = [
 ] as const;
 
 const qaEvidenceWallets = [
+  { address: "ST3QBWTA0XSA94YDXT13QFH3ZMSZSM1V4Z645YHT9", classification: "team" as const, roles: ["controlled-provider"] },
+  { address: "ST1E7E64H8VSSSGE0RPWF90RRC91MQG7CRQRM1BFX", classification: "team" as const, roles: ["qa-treasury"] },
   {
     address: CONTRACT_ADDRESS,
     classification: "team" as const,

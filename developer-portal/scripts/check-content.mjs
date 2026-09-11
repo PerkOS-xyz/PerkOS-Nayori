@@ -5,6 +5,7 @@ const root = new URL('../content/docs/', import.meta.url);
 const rootPath = root.pathname;
 const requiredRoutes = [
   '/',
+  '/getting-started/existing-agent',
   '/getting-started/sdk',
   '/getting-started/http-api',
   '/agents/oauth',
@@ -16,6 +17,7 @@ const requiredRoutes = [
   '/reference/contracts',
   '/security/trust-boundaries',
   '/resources/troubleshooting',
+  '/resources/qa-validation',
 ];
 
 async function walk(directory) {

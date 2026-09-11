@@ -30,17 +30,27 @@ jobs:
       - run: npm run security:gate
 
   app:
-    name: Frontend
+    name: ${{ matrix.checkName }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - checkName: Frontend
+            stx: agentic-commerce-v5
+            sbtc: sbtc-commerce-v4
+          - checkName: Frontend fees v6/v5
+            stx: agentic-commerce-v6
+            sbtc: sbtc-commerce-v5
     defaults:
       run:
         working-directory: App
     env:
       NEXT_PUBLIC_STACKS_NETWORK: testnet
       NEXT_PUBLIC_CONTRACT_ADDRESS: ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5
-      NEXT_PUBLIC_STX_COMMERCE_CONTRACT: agentic-commerce-v5
-      NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT: sbtc-commerce-v4
+      NEXT_PUBLIC_STX_COMMERCE_CONTRACT: ${{ matrix.stx }}
+      NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT: ${{ matrix.sbtc }}
       NEXT_PUBLIC_REPUTATION_CONTRACT: reputation-registry-v3
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -50,6 +60,7 @@ jobs:
           cache: npm
           cache-dependency-path: App/package-lock.json
       - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm test
       - run: npm run lint
       - run: npm run build
