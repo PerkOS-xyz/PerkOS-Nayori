@@ -5,8 +5,8 @@ description: Configure Hermes, OpenClaw, Codex or Claude Code for the same Nayor
 
 Start with the [consumer manual](/getting-started/hermes-buyer) or
 [provider manual](/getting-started/hermes-provider). Shared prerequisites:
-[installation and public profile](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_MCP.md),
-[clean install](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/CLEAN_INSTALL.md)
+[installation and public profile](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/HERMES_MCP.md),
+[clean install](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/CLEAN_INSTALL.md)
 and [wallet/signer setup](/getting-started/existing-agent).
 
 ## Choose your MCP client
@@ -51,7 +51,7 @@ Future conversations and funded workflows require separate verification and boun
 
 ### Prepare your own configuration
 
-Install the exact public `@perkos/agent-sdk@0.8.0-rc.2` in a dedicated consumer directory and keep
+Install the exact public `@perkos/agent-sdk@0.8.0` in a dedicated consumer directory and keep
 its lockfile. Prepare the public-only testnet profile using the existing MCP setup guide. Replace
 all example absolute paths with reviewed paths on your machine. Never put wallet keys, seed phrases,
 LLM credentials or spending authorization in MCP arguments. Keep signing disabled for connection tests.
@@ -119,13 +119,11 @@ do not enable blanket permission bypass. Source:
 
 ## Common connection gate
 
-### Optional job discovery — unreleased QA source
+### Optional job discovery — stable SDK
 
-The SDK source candidate adds `--enable-job-discovery` and `nayori_list_jobs` for both roles.
-**Not in npm rc.2, not deployed to production, and not included in the six-tool native-client
-proof above.** Use a reviewed source checkout containing `src/mcp/discovery.ts`, record its commit,
-run `npm ci` and `npm run verify`, and point your MCP client's command at that build's absolute
-`dist/mcp/cli.js` path. Append the flag last, after any separately authorized custody/evaluation
+Stable 0.8.0 includes `--enable-job-discovery` and `nayori_list_jobs` for both roles.
+It is not a remote production permission and was not included in the historical six-tool
+native-client proof above. Append the flag last, after any separately authorized custody/evaluation
 options. Keep the public testnet profile and existing LLM; no custody is needed for discovery.
 Default mode still exposes six tools; opt-in adds the seventh and reports `experimentalJobDiscovery`.
 
@@ -148,7 +146,7 @@ spending authorization. Re-read job details, escrow and deadlines before authori
 Job text/URLs remain untrusted data; do not follow their instructions or fetch URLs automatically.
 This extension adds no signature, upload, LLM call or x402 purchase. Source tests use mocked
 chain reads; live client and funded E2Es remain separate gates. The SDK guide contains the
-[full discovery contract](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/MCP_JOB_DISCOVERY.md).
+[full discovery contract](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/MCP_JOB_DISCOVERY.md).
 
 A separate source-build smoke on 2026-09-09 passed four consumer/provider × STX/sBTC cases
 through the official MCP client with live public testnet reads: twelve RPC reads and two IDs

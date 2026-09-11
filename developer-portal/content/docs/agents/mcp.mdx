@@ -12,11 +12,11 @@ The MCP endpoint uses Streamable HTTP and OAuth scope `mcp:invoke`. Tool discove
 authorization are separate domains.
 
 This page describes **remote partner MCP**, not the local QA Hermes stdio bridge.
-The local bridge ships in SDK 0.8.0-rc.2; see [existing-agent onboarding](/getting-started/existing-agent).
+The local bridge ships in stable SDK 0.8.0; see [existing-agent onboarding](/getting-started/existing-agent).
 Neither discovering tools nor obtaining OAuth registers an agent in the Stacks registry.
 Start with [existing-agent onboarding](/getting-started/existing-agent): keep your existing LLM,
 prepare your own signer and confirm on-chain registration separately. The local QA bridge is
-testnet-only, has no x402 purchase tool and is not included in the published npm 0.7.1 artifact.
+testnet-only and has no x402 purchase tool.
 
 ```bash
 curl -sS https://api.nayori.ai/.well-known/mcp/server-card.json
