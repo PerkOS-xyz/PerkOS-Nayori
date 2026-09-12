@@ -11,10 +11,22 @@ See [client versions and measured limits](/agents/mcp-clients).
 No LLM turns, signatures, payments, registration or evidence publication occurred in those probes.
 This does not extend the funded Hermes lifecycle proof below to other clients.
 
-## Latest public npm proof: job16, 2026-09-09
+## Stable 0.8.0 distribution gate — 2026-09-11
+
+`@perkos/agent-sdk@0.8.0` is public under `latest`, built from merged commit
+`8dc7cc9871858230c401f258cddf005a5c0be637`. Typecheck, build, 415 tests and npm audit with
+zero vulnerabilities passed. A separate empty consumer installed the package from the public
+registry and passed both binaries plus 12/12 key-free SDK/MCP consumer/provider checks. Registry
+integrity is `sha512-YJC5Qybv/4vvF1kzP85G2hMd9M/1jwIhtI3JgdWF1GgK7BOauBVZMSLa3YCpXR+3LMhfCTnEoP7HXl62tQe4Eg==`.
+
+That clean install made zero signatures, broadcasts, LLM calls or registrations. It is internal
+release evidence, not external adoption and not a funded stable-package E2E. The funded rc.2 job
+below remains historical evidence for the same feature lineage.
+
+## Historical public prerelease proof: job 16, 2026-09-09
 
 Real Hermes buyer/provider participants completed the sBTC workflow using the immutable public
-**npm0.8.0-rc.2**, new v2 workflow0/settlement6 permits and existing registered identities.
+**npm 0.8.0-rc.2**, new v2 workflow0/settlement6 permits and existing registered identities.
 Create, budget, fund, assign, actual work, submit, evaluate and finalize were operator-supervised.
 
 - [Submission](https://explorer.hiro.so/txid/0x20d98e4c492c448cf837c778772039275ed4011e46d0afb65c0e6597ba3167c7?chain=testnet).
@@ -57,20 +69,19 @@ not independent adoption or production revenue. This validates one scenario, not
 
 ## Which artifact to install
 
-As of 2026-09-09 UTC, `next` points to **0.8.0-rc.2** and stable `latest` remains 0.7.1.
-For configurable confirmation policy in a new QA integration, pin:
+For a new integration, install stable `latest` by its exact version:
 
 ```sh
-npm install --save-exact @perkos/agent-sdk@0.8.0-rc.2
+npm install --save-exact @perkos/agent-sdk@0.8.0
 ```
 
-See [workflow timing and release boundaries](/commerce/workflow-timing). Registry integrity
-and downloaded bytes match the reviewed rc.2 artifact. Publishing rc.2 does not migrate existing
-permits or certify a funded rc.2 lifecycle. The rc.1 reproduction below remains version-pinned.
+See [workflow timing and release boundaries](/commerce/workflow-timing). Installing 0.8.0 does
+not migrate existing permits, deploy custody or authorize spending. The rc.1/rc.2 reproduction
+records below remain version-pinned historical evidence.
 
 ### Historical rc.1 installation and verification
 
-Stable npm `@perkos/agent-sdk@0.7.1` remains the v5/v4 baseline under latest. The local Hermes
+Historical npm `@perkos/agent-sdk@0.7.1` was the v5/v4 baseline under latest. The local Hermes
 bridge, bounded custody and opt-in v6/v5 fees shipped in **published QA prerelease 0.8.0-rc.1**,
 which previously held next and remains installable by its exact version.
 The historical funded test used an earlier QA source tarball numbered 0.7.1, not this published
@@ -83,10 +94,10 @@ npm install --save-exact @perkos/agent-sdk@0.8.0-rc.1
 Registry integrity, clean installation, import, unsigned registration plan and actual buyer/provider
 MCP stdio checks passed on 2026-09-08 UTC. Those checks used no private keys, signatures, broadcasts
 or evaluator/LLM requests. Publication was operator-authorized without provenance attestation.
-The [release notes](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/RELEASE_0.8.0_RC1.md)
+The [release notes](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/RELEASE_0.8.0_RC1.md)
 record exact integrity and source. Stable latest and default v5/v4 contracts remain unchanged.
 
-Use the [SDK exact-artifact guide](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_MCP.md).
+Use the [SDK exact-artifact guide](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/HERMES_MCP.md).
 Published-package offline reproduction is verified separately from the earlier funded lifecycle.
 The later funded npmrc.2 run is documented above. QA merge, publication and production deployment
 are separate events; installing the prerelease does not deploy a signer or authorize spending.
@@ -116,6 +127,6 @@ authorization and budget. Production fee activation and external security review
 
 Start with [your existing agent](/getting-started/existing-agent), its own LLM and an
 operator-owned wallet/signer. Follow the
-[consumer](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_BUYER.md) and
-[provider](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/qa/docs/HERMES_PROVIDER.md)
+[consumer](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/HERMES_BUYER.md) and
+[provider](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/HERMES_PROVIDER.md)
 manuals. Every new funded scenario needs its own reviewed permissions; never reuse a closed job's permit.

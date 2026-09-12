@@ -42,7 +42,7 @@ one service:
 | --- | --- |
 | On-chain network | Stacks mainnet for identity, STX escrow, sBTC escrow and reputation |
 | Mainnet contracts | Six current contracts under `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` |
-| Agent SDK | Stable `0.7.1`; QA prerelease `0.8.0-rc.2` under `next`, both public on npm |
+| Agent SDK | Stable `0.8.0` under `latest`, public on npm with pinned install and MCP onboarding |
 | Browser wallet | Leather through Stacks Connect; wallet remains the signing boundary |
 | Headless agents | Policy-constrained signer interface for KMS/HSM/secret-manager integrations |
 | x402 | Live same-origin mainnet resource; SDK profiles for STX, sBTC and USDCx |
@@ -80,8 +80,8 @@ advertises a confirmation baseline; the signer's bound permit remains authoritat
 were deployed from `0233183efb3e32d09ca0f5bf6c1ac2188921c88d` and passed 24 public checks on
 2026-09-09 UTC, including terminal decision history and closed countdowns. Production promotion
 is separate. This does not change current jobs or contracts or enable a mainnet pilot signer.
-Configurable signer policy requires SDK 0.8.0-rc.2 and new version-2 permits; reinstalling rc.1
-does not add that policy. See the guide for the independent npm release boundary.
+Configurable signer policy requires SDK 0.8.0 and new version-2 permits; existing version-1
+permits remain immutable. See the guide for the independent npm release boundary.
 
 Nayori is designed for commerce in which the buyer, seller or both may be autonomous software.
 It supports two complementary economic models.
@@ -95,8 +95,8 @@ contract lifecycle.
 
 An additive [earned-service-fee candidate](contracts/service-fees-README.md) introduces a 2%
 fee included in an escrow job budget, payable to a pinned treasury only at final evaluated settlement.
-The matching opt-in Web/Docs integration is served in QA and the SDK support is merged to its
-QA branch and published in SDK 0.8.0-rc.1; this is not an active price change. Deployed v5/v4 jobs retain their
+The matching opt-in Web/Docs integration is served in QA and the SDK support is published in
+stable SDK 0.8.0; this is not an active price change. Deployed v5/v4 jobs retain their
 original terms. See the [candidate integration guide](developer-portal/content/docs/commerce/service-fees.mdx)
 and [guarded testnet deployment and 20-path contract test runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
 The fee candidates were deployed and initialized on testnet on 2026-09-04; deployment alone
@@ -743,8 +743,8 @@ The [existing-agent guide](developer-portal/content/docs/getting-started/existin
 covers SDK/MCP selection → operator-owned wallet/signer preparation → explicit testnet and limits
 → registration and confirmed agent ID → buyer/provider work → settlement and reputation checks.
 It is linked from the portal's Getting started navigation. The local Hermes bridge and its
-role walkthroughs target npm 0.8.0-rc.2 for QA, separate from stable 0.7.1 and remote
-partner MCP. Clean registry checks and the supervised npmrc.2 job16 lifecycle passed independently.
+role walkthroughs target stable npm 0.8.0 in QA, separate from remote partner MCP. A clean
+registry install of 0.8.0 and the historical supervised rc.2 job16 lifecycle passed independently.
 Fresh registration, self-service evidence publication, HTTPx402 and video remain separate gates. See
 [verified scope](developer-portal/content/docs/resources/qa-validation.mdx).
 
@@ -754,8 +754,8 @@ record. Review [agent identity](developer-portal/content/docs/agents/identity.md
 
 The [evaluation recovery guide](developer-portal/content/docs/getting-started/existing-agent.mdx#evaluation-capacity-and-recovery)
 documents quota preflight, contract review deadlines, bounded candidate transport timeouts and
-deterministic-ID reconciliation. The transport correction ships in npm 0.8.0-rc.1 for QA;
-publication is not a production deployment or a new autonomous E2E.
+deterministic-ID reconciliation. The transport correction ships in stable npm 0.8.0 for QA;
+SDK publication is not a production deployment or a new autonomous E2E.
 
 The [onboarding checkpoints](developer-portal/content/docs/getting-started/existing-agent.mdx#successful-onboarding)
 separate wallet funding, registration, escrow, submission, decision and settlement. The QA custody
@@ -808,7 +808,7 @@ wallet credential.
 ### Install the agent SDK
 
 ```bash
-npm install @perkos/agent-sdk
+npm install --save-exact @perkos/agent-sdk@0.8.0
 ```
 
 ```ts
