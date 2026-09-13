@@ -2,6 +2,7 @@ import { PRODUCT_DESCRIPTION, PRODUCT_FULL_NAME } from "./brand";
 import {
   COMMERCE_NETWORK_LABEL,
   NAYORI_API_ORIGIN,
+  NAYORI_FACILITATOR_ORIGIN,
   NAYORI_OAUTH_ORIGIN,
 } from "./discovery";
 import { NETWORK_NAME } from "./network";
@@ -87,7 +88,7 @@ Use this skill when an agent needs the public paid report, or an invited partner
 ## Procedure
 
 1. Send GET to [the public paid resource](${SITE_ORIGIN}/api/v1) and decode its PAYMENT-REQUIRED x402 v2 header.
-2. Read [the supported-capabilities response](${NAYORI_API_ORIGIN}/supported) and [OpenAPI document](${NAYORI_API_ORIGIN}/openapi.json) before constructing the ${COMMERCE_NETWORK_LABEL} payment.
+2. Read both role-specific capability documents: [API edge](${NAYORI_API_ORIGIN}/supported) for challenge/resource issuance and [facilitator](${NAYORI_FACILITATOR_ORIGIN}/supported) for verification, settlement, confirmation and delivery. Read [OpenAPI](${NAYORI_API_ORIGIN}/openapi.json), require the same ${COMMERCE_NETWORK_LABEL} network/assets in both services, and fail closed on missing or conflicting flags.
 3. Use the public SDK and a wallet or approved custody signer to review and create PAYMENT-SIGNATURE. Copy the challenge's signed quote into the advertised X-NAYORI-SIGNED-QUOTE extension header.
 4. Resend GET to the same resource with both headers. A 202 response is pending, not paid; follow its Location after Retry-After until a 200 response includes PAYMENT-RESPONSE.
 5. For invited API or MCP access, read [OAuth metadata](${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server), [protected-resource metadata](${SITE_ORIGIN}/.well-known/oauth-protected-resource), and [Auth.md](${SITE_ORIGIN}/auth.md), then use the minimum documented scope.

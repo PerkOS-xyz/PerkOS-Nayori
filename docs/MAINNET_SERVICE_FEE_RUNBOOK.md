@@ -207,10 +207,15 @@ The wrapper checks the exact v6/v5 source hashes, mainnet identity, owners and p
 allowlists, policy, token and current job counts. It neither reads a signer nor constructs or
 broadcasts a transaction.
 
-Armed execution is intentionally unavailable through GitHub Actions. It requires an exact clean
-commit already contained by `origin/main`, the reviewed lockfile hash, separate external regular
+Armed execution is intentionally unavailable through GitHub Actions. Create a fresh detached
+`/private/tmp/nayori-mainnet-e2e-release-*` worktree at the exact reviewed commit already contained
+by `origin/main`; never run it from a persistent checkout. The hardened launcher verifies the
+reviewed lockfile, rebuilds dependencies with `npm ci --ignore-scripts --no-audit --no-fund`, checks
+the tree remains clean, and then uses `env -i` to pass only the documented allowlist into the signer
+process. It also requires separate external regular
 files owned by the operator with exact mode `0600`, and a new receipt path outside Git. The client
-file contains `DEPLOYER_PRIVATE_KEY` and may include `DEPLOYER_ADDRESS`; the actor file contains
+file contains a dedicated canary `CLIENT_PRIVATE_KEY` and may include `CLIENT_ADDRESS`; it must not
+contain or derive the contract-owner/deployer key. The actor file contains
 `PROVIDER_PRIVATE_KEY` and `EVALUATOR_PRIVATE_KEY`; the authority file contains
 `MAINNET_APPEAL_AUTHORITY_PRIVATE_KEY` and may include
 `MAINNET_APPEAL_AUTHORITY_ADDRESS`. Any declared address must match its key. Actor addresses are
@@ -222,26 +227,42 @@ STACKS_NETWORK=mainnet \
 SERVICE_FEE_MAINNET_E2E_ACTION=execute \
 SERVICE_FEE_MAINNET_E2E_REVIEWED_SHA=<exact-merged-main-sha> \
 SERVICE_FEE_MAINNET_E2E_LOCKFILE_SHA256=<reviewed-package-lock-sha256> \
+CONFIRM_SERVICE_FEE_MAINNET_E2E_EPHEMERAL_ROOT="$PWD" \
 SERVICE_FEE_MAINNET_E2E_CLIENT_ENV_PATH=<absolute-client-mode-0600-env> \
 SERVICE_FEE_MAINNET_E2E_ACTOR_ENV_PATH=<absolute-actors-mode-0600-env> \
 SERVICE_FEE_MAINNET_E2E_AUTHORITY_ENV_PATH=<absolute-authority-mode-0600-env> \
+SERVICE_FEE_MAINNET_E2E_CAMPAIGN_PATH=<new-absolute-external-campaign-json> \
 SERVICE_FEE_MAINNET_E2E_STX_RESULT_PATH=<new-absolute-external-stx-receipt-json> \
 SERVICE_FEE_MAINNET_E2E_SBTC_RESULT_PATH=<new-absolute-external-sbtc-receipt-json> \
 CONFIRM_SERVICE_FEE_MAINNET_E2E=execute-controlled-v6-v5-mainnet \
 CONFIRM_SERVICE_FEE_MAINNET_E2E_DEPLOYER=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH \
+CONFIRM_SERVICE_FEE_MAINNET_E2E_CLIENT=<derived-dedicated-client-address> \
 CONFIRM_SERVICE_FEE_MAINNET_E2E_PROVIDER=<derived-provider-address> \
 CONFIRM_SERVICE_FEE_MAINNET_E2E_EVALUATOR=<derived-evaluator-address> \
 CONFIRM_SERVICE_FEE_MAINNET_E2E_AUTHORITY=SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH \
 CONFIRM_SERVICE_FEE_MAINNET_E2E_TREASURY=SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8 \
 CONFIRM_SERVICE_FEE_MAINNET_E2E_MAX_TOP_UP_MICRO_STX=900000 \
+CONFIRM_SERVICE_FEE_MAINNET_E2E_MAX_NETWORK_FEES_MICRO_STX=3500000 \
 npm run e2e:autonomous:mainnet
 ```
 
-Before opening the signer files, the runner repeats the public release check, `security:gate` and
-the full root test suite. It stops on pending nonces, insufficient balances or any identity drift.
-If the provider is below the 900,000-micro-STX gas reserve, the client may make exactly one
-deny-mode top-up to that reserve; the amount cannot exceed the independently typed 900,000 cap and
-is recorded as a complete signed/canonical intent. Other actors must be funded in advance.
+Before opening signer files, the runner repeats the public release check, `security:gate` and the
+full root test suite. The campaign manifest, both receipts and signer files must live in an
+operator-owned private directory outside every Git work tree; signer files and existing artifacts
+must be regular, non-symlink mode-`0600` files. It stops on pending nonces, insufficient balances or
+any identity drift.
+
+One fixed account lock covers STX and sBTC together. The client may make at most one exact,
+deny-mode provider top-up when the STX-first precheck requires it. The independently typed
+`900,000` micro-STX cap is aggregate for the complete two-asset campaign, not a per-asset allowance;
+the coordinator carries the remainder into sBTC and records total use in the manifest. The separate
+`3,500,000` micro-STX network-fee confirmation covers at most 16 contract calls at `200,000` plus
+two possible provider top-up transfers at `150,000`; both numbers are authorization ceilings, not
+spend targets. The coordinator journals and enforces the actual aggregate. Provider
+reserve is calculated from every remaining provider call. Evaluator and authority each need two
+fixed `200,000`-micro-STX calls across the campaign plus a `300,000` post-campaign reserve, so their
+initial minimum is `700,000`; the known `800,000` balance leaves `400,000`. Client and all actors are
+re-read immediately before each new call. Other actors are never automatically funded.
 
 The wrapper always executes STX first and sBTC second, stops immediately if STX fails and requires
 distinct non-overwriting receipts. To investigate one asset without broadcasting, use
@@ -257,3 +278,63 @@ must be classified `internal-team-operated-not-m2-adoption`; they are not extern
 external revenue or an independent audit. Receipts include the txid, exact public intent fields,
 signed-serialization SHA-256 and byte length, but never raw signed transaction bytes or keys. If a
 broadcast is uncertain, reconcile that preserved txid and intent hash—never start a fresh run.
+
+### Interrupted campaign recovery
+
+Every signed intent is journaled before broadcast without retaining raw signed bytes. On an exact
+resume, the runner reconstructs the transaction from the same signer, nonce, arguments, fee and
+post-conditions, checks its txid and serialization hash against the receipt, and accepts it only if
+Hiro reports the exact canonical successful intent. A missing or pending tx is reported for manual
+reconciliation and is **never retransmitted automatically**. A receipt that has ever recorded a
+failed check cannot later be relabeled `passed`; preserve it as evidence and start no replacement
+campaign until an operator has reconciled the failure.
+
+Before starting either child, the coordinator durably records that asset as `started`, together
+with its exact receipt path, ordinal and remaining campaign caps. If that marker exists but its
+receipt is missing, recovery stops for manual reconciliation; it never replaces the evidence or
+starts another job. Each later step uses the receipt's canonical high-water mark. A stage already
+recorded is reconciled against its exact transaction; a new stage re-reads job roles, state and
+escrow and refuses to sign when the job expiry, review, appeal or resolution deadline has closed.
+This prevents a delayed resume from knowingly spending gas on a transaction the contract must
+reject.
+
+A stopped execution deliberately preserves the global lock. After reconciling every receipt txid,
+confirm that the recorded lock owner PID is no longer active, calculate the exact lock hash, and
+resume only the same campaign paths and reviewed SHA:
+
+```bash
+LOCK=/private/tmp/nayori-service-fee-mainnet-SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.lock
+shasum -a 256 "$LOCK"
+
+STACKS_NETWORK=mainnet \
+SERVICE_FEE_MAINNET_E2E_ACTION=execute \
+SERVICE_FEE_MAINNET_E2E_RESUME=reconcile-existing-campaign \
+SERVICE_FEE_MAINNET_E2E_CAMPAIGN_PATH=<same-absolute-campaign-json> \
+CONFIRM_SERVICE_FEE_MAINNET_E2E_RESUME_CAMPAIGN_PATH=<same-absolute-campaign-json> \
+CONFIRM_SERVICE_FEE_MAINNET_E2E_RESUME_GLOBAL_LOCK_PATH="$LOCK" \
+CONFIRM_SERVICE_FEE_MAINNET_E2E_RESUME_GLOBAL_LOCK_SHA256=<exact-printed-lock-sha256> \
+SERVICE_FEE_MAINNET_E2E_STX_RESULT_PATH=<same-absolute-stx-receipt-json> \
+SERVICE_FEE_MAINNET_E2E_SBTC_RESULT_PATH=<same-absolute-sbtc-receipt-json> \
+<all-original-signer-paths-and-exact-confirmations> \
+npm run e2e:autonomous:mainnet
+```
+
+If `$LOCK.executor` also exists, inspect its recorded PID and run
+`shasum -a 256 "$LOCK.executor"`. A dead executor must add both exact confirmations to the command
+above: `CONFIRM_SERVICE_FEE_MAINNET_E2E_RESUME_EXECUTOR_LOCK_PATH="$LOCK.executor"` and
+`CONFIRM_SERVICE_FEE_MAINNET_E2E_RESUME_EXECUTOR_LOCK_SHA256=<exact-sha256>`. A live executor makes
+takeover invalid; wait for it to close or reconcile its outcome. Omit both variables only when the
+executor file does not exist.
+
+Each asset child acquires a PID-bound executor lease before opening signer files and revalidates
+both lock tokens plus the absence of a recovery guard immediately before every broadcast. Executor
+acquisition and takeover use the same atomic recovery sidecar. Takeover rechecks the lock and lease
+hashes/bindings under that guard, refuses either a live coordinator or a live executor, rotates the
+global lock token and PID, and allows only one resume process to win.
+Never delete a lock blindly, change receipt paths or start a second campaign to work around an
+uncertain transaction.
+
+After both asset receipts pass exact schema, classification, binding, hash and all-checks
+validation, the coordinator first persists `transactions-complete`, then releases the lock, then
+persists `passed`. A restart at `transactions-complete` only revalidates those immutable receipts
+and finishes lock cleanup; it cannot broadcast another transaction.

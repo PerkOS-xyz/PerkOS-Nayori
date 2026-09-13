@@ -42,14 +42,24 @@ unchanged and are labelled where necessary instead of rewritten.
 The old autonomous mainnet deploy/E2E commands become generation-qualified `*:legacy-v5-v4:*`
 aliases. This avoids an operator accidentally treating them as the current v6/v5 path while preserving
 reproduction of prior evidence. The generic E2E alias instead invokes a new v6/v5 runner. Its default
-preflight performs only public reads; the execution path requires an exact reviewed merge, a clean tree,
-external mode-0600 signers, distinct role confirmations and a new non-overwriting external receipt. It
+preflight performs only public reads; the execution path requires an exact reviewed merge, a clean
+ephemeral worktree, dependencies rebuilt from the lockfile without lifecycle scripts, an `env -i`
+allowlist, external mode-0600 signers, distinct role confirmations and new non-overwriting external
+receipts. The client uses a dedicated canary wallet and never the contract-owner key. It
 executes an immediate reject/appeal/approve lifecycle for either STX or canonical sBTC, constrains every
 asset movement with deny-mode post-conditions, and proves gross = 98% recipient + 2% treasury, zero
 escrow, one settlement and synchronized reputation. Actor addresses are derived from their keys and
 must match typed confirmations, so the existing key-only actor file is supported without weakening the
-identity binding. A single, exact provider gas top-up per asset is allowed only when needed, capped at 900,000
-micro-STX, independently confirmed and journaled as its own canonical transaction. No deployment,
+identity binding. One exact provider gas top-up is allowed only when needed, capped at 900,000
+micro-STX across the complete STX+sBTC campaign, independently confirmed and journaled as its own
+canonical transaction. One external campaign manifest and an atomic global lock bind strict
+sequencing and safe resume/reconciliation. The coordinator durably marks each asset `started`
+before launching its child, so a missing partial receipt can never be treated as a fresh stage.
+Every signed intent is durably journaled before broadcast, every child holds a PID-bound executor
+lease, and recovery cannot take over while either coordinator or child remains live. Resumes use
+the journal high-water mark, revalidate each still-open contract deadline before a new signature,
+and never retransmit an uncertain transaction. Terminal ordering is also crash-safe:
+`transactions-complete`, lock release, then `passed`. No deployment,
 mainnet E2E or blockchain transaction is part of this consumer-promotion change. The generic
 execution wrapper always runs STX first and sBTC second with distinct receipts and stops before
 sBTC if STX does not pass. Receipts retain the txid, exact intent fields and SHA-256/length of the

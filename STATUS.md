@@ -235,11 +235,13 @@ for new jobs.
 - The four stateful contracts that expose `get-owner` are owned by the mainnet deployer.
 - Production build defaults explicitly select mainnet, the deployer address and the v6/v5/v3
   generation; the previous VPS image and existing Vercel deployment remain rollback paths.
-- The public API validates wallet-linked OAuth tokens issued independently by `oauth.nayori.ai`,
-  plus short-lived scopes, MCP, quotes,
-  payment verification, one network-pinned broadcast, confirmation reconciliation and a delivery
-  ledger for STX, sBTC and USDCx. Mainnet settlement requires an explicit runtime acknowledgement;
-  fee sponsorship remains disabled.
+- The public API edge validates wallet-linked OAuth tokens issued independently by
+  `oauth.nayori.ai`, plus short-lived scopes, MCP, public resources and quote issuance. Its own
+  payment-verification, settlement, confirmation and delivery-ledger flags are disabled by role.
+- The isolated `facilitator.nayori.ai` runtime owns payment verification, one network-pinned
+  broadcast, confirmation reconciliation and the delivery ledger for STX, sBTC and USDCx. Its
+  live `/supported` response is the authority for those economic capabilities; fee sponsorship
+  remains disabled.
 - The web exposes a credential-stripping same-origin `/api/v1` route. It forwards only x402
   protocol headers to `api.nayori.ai/v1`; the API uses a merchant credential over HTTPS to the
   isolated facilitator. A payment returns 202 until confirmation and the fixed capability report

@@ -94,9 +94,11 @@ responses expose discovery `Link` relations, and supporting browsers register th
 WebMCP tools before hydration and again through the client lifecycle. These surfaces link to the
 public [Nayori partner API](https://api.nayori.ai), its
 [`/supported`](https://api.nayori.ai/supported) capability response, OpenAPI schema and JWKS. The
-API runs an invite-only testnet pilot with wallet-linked OAuth, MCP, request-bound quotes,
-verification, one broadcast attempt, confirmation reconciliation and an idempotent delivery
-ledger. Mainnet facilitator settlement and sponsorship remain disabled. The web app also exposes
+mainnet API edge exposes public resources, wallet-linked OAuth, MCP and request-bound quote
+issuance. Its own verification, settlement, confirmation, delivery-ledger and partner-registration
+flags are disabled by service role. Those economic operations run on the isolated
+[`facilitator.nayori.ai`](https://facilitator.nayori.ai/supported) mainnet service; integrations must
+inspect each service's live `/supported` response independently. Sponsorship remains disabled. The web app also exposes
 the canonical protected-resource identity and `Auth.md`, redirects issuer discovery to the
 separate `oauth.nayori.ai` service, and publishes the MCP Server Card, `x402.json` and a versioned
 public evidence manifest. It does not proxy credentials or state-changing requests.
@@ -168,10 +170,12 @@ testnet must be selected explicitly.
 ```env
 NEXT_PUBLIC_STACKS_NETWORK=mainnet
 NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
+NEXT_PUBLIC_CONTRACT_PROFILE=current-v6-v5
 NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v6
 NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v5
 NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3
 NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS=SP2ENKFX2BGX94HC4KYZCCV7KEN7JXJXZDKC3GPGC
+NEXT_PUBLIC_NAYORI_MANAGED_EVALUATOR_ENABLED=false
 NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS=SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH
 NEXT_PUBLIC_SITE_URL=https://nayori.ai
 ```
@@ -182,12 +186,14 @@ domain, DNS and deployment are live; previews should use their own public origin
 For a testnet preview, use the public values in `testnet.env.example` only in that environment.
 Branch-scoped preview variables are preferred so unrelated deployments retain their own
 configuration. Both current environments select the fee-aware v6/v5 commerce generation with
-`reputation-registry-v3` under their respective deployer addresses. Explicit v5/v4 overrides remain
-supported only for reading and operating immutable historical jobs under their original terms.
+`reputation-registry-v3` under their exact reviewed deployer, evaluator and authority addresses.
+The app rejects crossed-network or mixed-generation builds. To inspect immutable v5/v4 jobs, set
+`NEXT_PUBLIC_CONTRACT_PROFILE=legacy-v5-v4-read` together with the exact v5/v4/v3 names; that
+profile is read-only in the Jobs UI and preserves the original economics.
 
-The three contract-name variables are intentionally independent. This keeps preview and rollback
-configuration explicit without recompiling contract names into the service layer. Select a name
-only after its source and post-deployment wiring have been verified on the target network.
+Contract names cannot be mixed independently. `current-v6-v5` and `legacy-v5-v4-read` are the only
+accepted profiles; each binds all three names as one reviewed unit. Any custom name, deployer,
+evaluator or appeal authority fails the build instead of publishing a misleading manifest.
 
 Settlement reads the live escrow rather than assuming the job budget is still held. For
 funded sBTC jobs it also reads `get-job-payment-token` and binds both the trait argument and exact

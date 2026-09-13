@@ -54,8 +54,12 @@ const autonomousEscrowTestnetDeploy = "scripts/deploy-autonomous-escrow-testnet.
 const autonomousEscrowMainnetDeploy = "scripts/deploy-autonomous-escrow-mainnet.mjs";
 const autonomousEscrowMainnetE2e = "scripts/e2e-autonomous-escrow-mainnet.mjs";
 const serviceFeeMainnetE2e = "scripts/e2e-service-fee-mainnet.mjs";
-const serviceFeeMainnetE2eSequential =
-  "scripts/run-service-fee-mainnet-e2e-sequential.sh";
+const serviceFeeMainnetE2eCampaign =
+  "scripts/run-service-fee-mainnet-e2e-campaign.mjs";
+const serviceFeeMainnetE2eLauncher =
+  "scripts/run-service-fee-mainnet-e2e-hardened.sh";
+const serviceFeeMainnetE2eLock = "scripts/mainnet-e2e-campaign-lock.mjs";
+const serviceFeeMainnetE2eExternalPath = "scripts/mainnet-e2e-external-path.mjs";
 const autonomousEscrowTestnetE2e = "scripts/e2e-autonomous-escrow-testnet.mjs";
 const versionedEscrowMainnetDeploy = "scripts/deploy-versioned-escrow-mainnet.mjs";
 const versionedEscrowMainnetE2e = "scripts/e2e-versioned-escrow-mainnet.mjs";
@@ -576,17 +580,47 @@ requirePattern(
 );
 requirePattern(
   "App/src/constants/contract.ts",
-  /NEXT_PUBLIC_STX_COMMERCE_CONTRACT\s*\|\|\s*["']agentic-commerce-v6["']/,
+  /["']current-v6-v5["']:\s*\{[\s\S]*?stx:\s*["']agentic-commerce-v6["'][\s\S]*?sbtc:\s*["']sbtc-commerce-v5["'][\s\S]*?readOnly:\s*false/,
   "the Web default must select the active v6 STX contract",
 );
 requirePattern(
   "App/src/constants/contract.ts",
-  /NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT\s*\|\|\s*["']sbtc-commerce-v5["']/,
+  /const profile = value \|\| ["']current-v6-v5["']/,
   "the Web default must select the active v5 sBTC contract",
+);
+requirePattern(
+  "App/src/constants/contract.ts",
+  /current-v6-v5[\s\S]*?legacy-v5-v4-read[\s\S]*?readOnly:\s*true[\s\S]*?CONTRACT_ADDRESS !== expectedDeployer/,
+  "the Web must expose only exact current and read-only legacy profiles under the reviewed deployer",
+);
+requirePattern(
+  "App/src/constants/contract.ts",
+  /assertCommerceContractsWritable[\s\S]*?historical and read-only/,
+  "historical commerce writes must fail closed below the presentation layer",
+);
+requirePattern(
+  "App/src/constants/contract.ts",
+  /NETWORK_NAME === "mainnet" && NAYORI_MANAGED_EVALUATOR_ENABLED[\s\S]*?cannot be advertised active on mainnet/,
+  "the Web must not advertise an inactive managed evaluator on mainnet",
+);
+requirePattern(
+  "App/src/constants/discovery.ts",
+  /NAYORI_QUOTE_API_SETTLEMENT_ACTIVE = false[\s\S]*?quoteApi:\s*\{[\s\S]*?paymentVerification: NAYORI_QUOTE_API_SETTLEMENT_ACTIVE[\s\S]*?facilitator:\s*\{[\s\S]*?paymentVerification: true[\s\S]*?partnerRegistration: false/,
+  "discovery must distinguish quote-edge gates from the active facilitator runtime on both networks",
+);
+requirePattern(
+  ".github/workflows/ci.yml",
+  /Frontend production mainnet v6\/v5[\s\S]*?network: mainnet[\s\S]*?deployer: SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH[\s\S]*?managedEvaluator: "false"/,
+  "CI must build the exact mainnet v6/v5 consumer configuration",
 );
 for (const variable of [
   "NEXT_PUBLIC_RELEASE_CHANNEL",
+  "NEXT_PUBLIC_CONTRACT_PROFILE",
+  "NEXT_PUBLIC_STX_COMMERCE_CONTRACT",
+  "NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT",
+  "NEXT_PUBLIC_REPUTATION_CONTRACT",
   "NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS",
+  "NEXT_PUBLIC_NAYORI_MANAGED_EVALUATOR_ENABLED",
   "NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS",
   "NEXT_PUBLIC_NAYORI_API_ORIGIN",
   "NEXT_PUBLIC_NAYORI_FACILITATOR_ORIGIN",
@@ -656,12 +690,17 @@ requirePattern(
 );
 requirePattern(
   serviceFeeMainnetE2e,
-  /CONFIRM_SERVICE_FEE_MAINNET_E2E_MAX_TOP_UP_MICRO_STX[\s\S]*?MAX_TOTAL_TOP_UP/,
-  "the active v6/v5 E2E requires an independently typed actor top-up cap",
+  /CONFIRM_SERVICE_FEE_MAINNET_E2E_MAX_TOP_UP_MICRO_STX[\s\S]*?MAX_CAMPAIGN_TOP_UP/,
+  "the active v6/v5 E2E requires an independently typed aggregate top-up cap",
 );
 requirePattern(
   serviceFeeMainnetE2e,
-  /const MAX_TOTAL_TOP_UP = 900_000n[\s\S]*?willSendEq\(amount\)\.ustx\(\)[\s\S]*?makeSTXTokenTransfer/,
+  /CONFIRM_SERVICE_FEE_MAINNET_E2E_MAX_NETWORK_FEES_MICRO_STX[\s\S]*?MAX_CAMPAIGN_NETWORK_FEES/,
+  "the active v6/v5 E2E requires an independently typed aggregate network-fee cap",
+);
+requirePattern(
+  serviceFeeMainnetE2e,
+  /const MAX_CAMPAIGN_TOP_UP = 900_000n[\s\S]*?willSendEq\(amount\)\.ustx\(\)[\s\S]*?makeSTXTokenTransfer/,
   "the active v6/v5 E2E must bound and deny-bind provider gas funding",
 );
 requirePattern(
@@ -690,14 +729,130 @@ forbidPattern(
   "the active v6/v5 E2E receipt must never retain raw signed transactions or signer keys",
 );
 requirePattern(
-  serviceFeeMainnetE2eSequential,
-  /SERVICE_FEE_MAINNET_E2E_ACTION=execute[\s\S]*?SERVICE_FEE_MAINNET_E2E_ASSET=stx[\s\S]*?node scripts\/e2e-service-fee-mainnet\.mjs[\s\S]*?SERVICE_FEE_MAINNET_E2E_ACTION=execute[\s\S]*?SERVICE_FEE_MAINNET_E2E_ASSET=sbtc[\s\S]*?node scripts\/e2e-service-fee-mainnet\.mjs/,
-  "the active mainnet wrapper must execute STX then sBTC strictly sequentially",
+  serviceFeeMainnetE2eCampaign,
+  /\["stx", "stx-first", stxReceipt\][\s\S]*?\["sbtc", "sbtc-second", sbtcReceipt\]/,
+  "the active mainnet campaign must execute STX then sBTC strictly sequentially",
 );
 requirePattern(
-  serviceFeeMainnetE2eSequential,
-  /SERVICE_FEE_MAINNET_E2E_STX_RESULT_PATH[\s\S]*?SERVICE_FEE_MAINNET_E2E_SBTC_RESULT_PATH[\s\S]*?\[ "\$stx_receipt" = "\$sbtc_receipt" \]/,
-  "the active mainnet wrapper must require distinct external receipts",
+  serviceFeeMainnetE2eCampaign,
+  /SERVICE_FEE_MAINNET_E2E_CAMPAIGN_PATH[\s\S]*?new Set\(\[stxReceipt, sbtcReceipt, manifestPath\]\)[\s\S]*?aggregateTopUpUsed[\s\S]*?aggregateNetworkFeesUsed/,
+  "the active mainnet campaign must bind distinct artifacts, top-ups and network fees",
+);
+requirePattern(
+  serviceFeeMainnetE2eCampaign,
+  /adoptStoppedCampaignLock\(GLOBAL_LOCK_PATH[\s\S]*?acquireCampaignLock\(GLOBAL_LOCK_PATH/,
+  "the active mainnet campaign must lock fresh runs and atomically adopt stopped runs",
+);
+requirePattern(
+  serviceFeeMainnetE2eLock,
+  /function acquireRecoveryGuard\(globalLockPath\)[\s\S]*?constants\.O_EXCL[\s\S]*?adoptStoppedCampaignLock\(path, expected\)[\s\S]*?acquireRecoveryGuard\(path\)[\s\S]*?still owned by a live process[\s\S]*?renameSync\(replacement, path\)[\s\S]*?fsyncParent\(path\)/,
+  "mainnet campaign recovery must use an atomic sidecar and rotate ownership",
+);
+requirePattern(
+  serviceFeeMainnetE2eLock,
+  /acquireExecutorLease\(globalLockPath[\s\S]*?acquireRecoveryGuard\(globalLockPath\)[\s\S]*?validateCampaignLock\(globalLockPath, binding\.globalLockToken\)[\s\S]*?constants\.O_EXCL/,
+  "executor lease acquisition must serialize with campaign recovery and bind the global token",
+);
+requirePattern(
+  serviceFeeMainnetE2eLock,
+  /Preserved executor lease is still owned by a live child process/,
+  "campaign recovery must refuse takeover while an executor child remains live",
+);
+requirePattern(
+  serviceFeeMainnetE2eCampaign,
+  /CONFIRM_SERVICE_FEE_MAINNET_E2E_RESUME_EXECUTOR_LOCK_PATH[\s\S]*?CONFIRM_SERVICE_FEE_MAINNET_E2E_RESUME_EXECUTOR_LOCK_SHA256/,
+  "stale executor recovery must require exact path and hash confirmations",
+);
+requirePattern(
+  serviceFeeMainnetE2e,
+  /executionLock\(\)[\s\S]*?acquireExecutorLease\(GLOBAL_LOCK_PATH[\s\S]*?GLOBAL_LOCK_PATH}\.recover[\s\S]*?validateCampaignLock[\s\S]*?GLOBAL_LOCK_PATH}\.recover/,
+  "the mainnet signer child must own an executor lease and fence campaign recovery",
+);
+{
+  const contents = source(serviceFeeMainnetE2e);
+  const broadcasts = [...contents.matchAll(/broadcastTransaction\(\{ transaction, network \}\)/g)];
+  const ownershipChecks = [...contents.matchAll(/accountLock\.assertOwned\(\);/g)];
+  if (broadcasts.length !== 2 || ownershipChecks.length !== 2 ||
+      !broadcasts.every((broadcast, index) => ownershipChecks[index].index < broadcast.index)) {
+    failures.push(
+      `${serviceFeeMainnetE2e}: executor ownership must be revalidated before every broadcast`,
+    );
+  }
+}
+requirePattern(
+  serviceFeeMainnetE2e,
+  /constants\.O_EXCL[\s\S]*?fsyncSync\(fd\)[\s\S]*?renameSync\(temporary, path\)[\s\S]*?fsyncSync\(parentFd\)[\s\S]*?broadcastTransaction/,
+  "signed intents must be durably journaled before any mainnet broadcast",
+);
+requirePattern(
+  serviceFeeMainnetE2eCampaign,
+  /constants\.O_EXCL[\s\S]*?fsyncSync\(fd\)[\s\S]*?renameSync\(temporary, path\)[\s\S]*?fsyncSync\(parentFd\)/,
+  "campaign manifests must be durably replaced and parent-synced",
+);
+requirePattern(
+  serviceFeeMainnetE2eCampaign,
+  /receiptChecksPassed[\s\S]*?checks\.length > 0[\s\S]*?every\(\(entry\) => entry\?\.passed === true\)/,
+  "campaign receipts must reject empty or historically failed check sets",
+);
+requirePattern(
+  serviceFeeMainnetE2eCampaign,
+  /INTERNAL_CLASSIFICATION = "internal-team-operated-not-m2-adoption"[\s\S]*?manifest\.schemaVersion === 1[\s\S]*?manifest\.classification === INTERNAL_CLASSIFICATION[\s\S]*?prior\.schemaVersion === 1[\s\S]*?prior\.classification === INTERNAL_CLASSIFICATION/,
+  "campaign and immutable receipts must preserve internal-only evidence classification",
+);
+requirePattern(
+  serviceFeeMainnetE2eCampaign,
+  /manifest\.result = "transactions-complete"[\s\S]*?atomicSave\(manifestPath, manifest\)[\s\S]*?lock\.releaseSuccess\(\)[\s\S]*?manifest\.result = "passed"[\s\S]*?atomicSave\(manifestPath, manifest\)/,
+  "campaign completion must durably record receipts, release locks, then mark terminal passed",
+);
+requirePattern(
+  serviceFeeMainnetE2eCampaign,
+  /state: "started"[\s\S]*?receiptPath: receipt[\s\S]*?remainingTopUpBeforeAsset[\s\S]*?atomicSave\(manifestPath, manifest\)[\s\S]*?const result = runAsset\(/,
+  "each asset must have a durable immutable stage marker before its signer child starts",
+);
+requirePattern(
+  serviceFeeMainnetE2eCampaign,
+  /receipt exists without an immutable campaign stage marker[\s\S]*?started stage lost its exact receipt or campaign-cap binding/,
+  "missing or unmarked partial receipts must stop instead of starting a fresh asset",
+);
+requirePattern(
+  serviceFeeMainnetE2e,
+  /Existing receipt contains a failed check and can never be promoted to passed[\s\S]*?Receipt contains an unresolved failed check and cannot be promoted to passed/,
+  "an E2E receipt with any failed check must remain permanently non-passing",
+);
+for (const [label, pattern] of [
+  ["create", /if \(!hasTransaction\("create-job"\)\)[\s\S]*?deadlineOpen\(chain\.stacks_tip_height, expiredAt, false\)/],
+  ["fund", /if \(!hasTransaction\("fund-job"\)\)[\s\S]*?Pre-fund job state[\s\S]*?requireStacksExpiryOpen\(preFundJob/],
+  ["assign", /if \(!hasTransaction\("assign-provider"\)\)[\s\S]*?Pre-assign job state[\s\S]*?requireStacksExpiryOpen\(preAssignJob/],
+  ["submit", /if \(!hasTransaction\("submit-work"\)\)[\s\S]*?Pre-submit job state[\s\S]*?requireStacksExpiryOpen\(preSubmitJob/],
+  ["decision", /if \(!hasTransaction\("record-decision"\)\)[\s\S]*?STATUS_SUBMITTED[\s\S]*?requireBurnDeadlineOpen\(job\["review-deadline"\]/],
+  ["appeal", /if \(!hasTransaction\("appeal-decision"\)\)[\s\S]*?STATUS_DECISION_PENDING[\s\S]*?requireBurnDeadlineOpen\(decision\["appeal-deadline"\]/],
+  ["resolution", /if \(!hasTransaction\("resolve-appeal"\)\)[\s\S]*?STATUS_DISPUTED[\s\S]*?requireBurnDeadlineOpen\([\s\S]*?"Resolution deadline"/],
+]) {
+  requirePattern(
+    serviceFeeMainnetE2e,
+    pattern,
+    `new ${label} transactions must revalidate exact state and deadline before signing`,
+  );
+}
+requirePattern(
+  serviceFeeMainnetE2eExternalPath,
+  /realpathSync\(rawParent\)[\s\S]*?rev-parse[\s\S]*?outside every Git work tree/,
+  "mainnet signer and evidence paths must be canonical and outside every Git work tree",
+);
+requirePattern(
+  serviceFeeMainnetE2eLauncher,
+  /\/private\/tmp\/nayori-mainnet-e2e-release-[\s\S]*?npm ci --ignore-scripts --no-audit --no-fund[\s\S]*?exec \/usr\/bin\/env -i/,
+  "armed mainnet E2E must run from an attested ephemeral dependency tree and clean environment",
+);
+requirePattern(
+  serviceFeeMainnetE2e,
+  /CLIENT_PRIVATE_KEY[\s\S]*?Client, contract owner, provider, evaluator, authority and treasury must be distinct/,
+  "the mainnet E2E must use a dedicated client instead of the contract owner key",
+);
+requirePattern(
+  serviceFeeMainnetE2e,
+  /preSettlementBalances[\s\S]*?provider receives exact 98% net[\s\S]*?treasury receives exact 2% fee/,
+  "resume must preserve pre-settlement balance snapshots",
 );
 {
   const contents = source(serviceFeeMainnetE2e);

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -13,11 +13,9 @@ describe("active v6/v5 consumer release", () => {
   it("promotes Web defaults while retaining explicit historical reads", () => {
     const constants = read("App/src/constants/contract.ts");
     expect(constants).toMatch(
-      /NEXT_PUBLIC_STX_COMMERCE_CONTRACT\s*\|\|\s*"agentic-commerce-v6"/,
+      /"current-v6-v5":\s*\{[\s\S]*?stx:\s*"agentic-commerce-v6"[\s\S]*?sbtc:\s*"sbtc-commerce-v5"[\s\S]*?readOnly:\s*false/,
     );
-    expect(constants).toMatch(
-      /NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT\s*\|\|\s*"sbtc-commerce-v5"/,
-    );
+    expect(constants).toContain('value || "current-v6-v5"');
     for (const historical of ["agentic-commerce-v5", "sbtc-commerce-v4"])
       expect(constants).toContain(historical);
     for (const path of ["App/.env.example", "App/Dockerfile", "App/README.md"]) {
@@ -47,6 +45,21 @@ describe("active v6/v5 consumer release", () => {
     );
     expect(suite.contracts.sbtc).toBe(
       "ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.sbtc-commerce-v5",
+    );
+  });
+
+  it("builds each Web channel with its exact isolated service origins", () => {
+    const workflow = read(".github/workflows/ci.yml");
+    expect(workflow.match(/apiOrigin: https:\/\/api\.qa\.nayori\.ai/g)).toHaveLength(2);
+    expect(workflow.match(/facilitatorOrigin: https:\/\/facilitator\.qa\.nayori\.ai/g))
+      .toHaveLength(2);
+    expect(workflow.match(/oauthOrigin: https:\/\/oauth\.qa\.nayori\.ai/g)).toHaveLength(2);
+    expect(workflow.match(/apiOrigin: https:\/\/api\.nayori\.ai/g)).toHaveLength(1);
+    expect(workflow.match(/facilitatorOrigin: https:\/\/facilitator\.nayori\.ai/g))
+      .toHaveLength(1);
+    expect(workflow.match(/oauthOrigin: https:\/\/oauth\.nayori\.ai/g)).toHaveLength(1);
+    expect(workflow).toContain(
+      "NEXT_PUBLIC_NAYORI_FACILITATOR_ORIGIN: ${{ matrix.facilitatorOrigin }}",
     );
   });
 
@@ -87,10 +100,10 @@ describe("controlled v6/v5 mainnet E2E runner", () => {
   it("moves the generic alias to v6/v5 and qualifies every old alias", () => {
     const scripts = json("package.json").scripts;
     expect(scripts["e2e:autonomous:mainnet"]).toContain(
-      "run-service-fee-mainnet-e2e-sequential.sh",
+      "run-service-fee-mainnet-e2e-hardened.sh",
     );
     expect(scripts["preflight:e2e:autonomous:mainnet"]).toContain(
-      "run-service-fee-mainnet-e2e-sequential.sh",
+      "run-service-fee-mainnet-e2e-campaign.mjs",
     );
     expect(scripts["e2e:autonomous:mainnet:asset"]).toContain(
       "e2e-service-fee-mainnet.mjs",
@@ -102,6 +115,24 @@ describe("controlled v6/v5 mainnet E2E runner", () => {
       "e2e-autonomous-escrow-mainnet.mjs",
     );
     expect(scripts["deploy:autonomous:mainnet"]).toBeUndefined();
+    for (const staleAlias of [
+      "deploy:mainnet",
+      "preflight:versioned:mainnet",
+      "deploy:versioned:mainnet",
+      "preflight:e2e:versioned:mainnet",
+      "e2e:versioned:mainnet",
+    ]) expect(scripts[staleAlias]).toBeUndefined();
+    expect(scripts["deploy:bootstrap:legacy-v2:mainnet"]).toContain(
+      "deploy-current-mainnet.mjs",
+    );
+    expect(scripts["deploy:versioned:legacy-v4-v3:mainnet"]).toContain(
+      "deploy-versioned-escrow-mainnet.mjs",
+    );
+    for (const path of [
+      "docs/DEPLOYMENT.md",
+      "scripts/deploy-mainnet.mjs",
+      "scripts/deploy-sbtc-mainnet.mjs",
+    ]) expect(read(path)).not.toContain("npm run deploy:mainnet");
   });
 
   it("requires exact release, custody, economics and external evidence", () => {
@@ -122,8 +153,17 @@ describe("controlled v6/v5 mainnet E2E runner", () => {
       "internal-team-operated-not-m2-adoption",
       "SERVICE_FEE_MAINNET_E2E_RESULT_PATH",
       "CONFIRM_SERVICE_FEE_MAINNET_E2E_MAX_TOP_UP_MICRO_STX",
-      "const MAX_TOTAL_TOP_UP = 900_000n",
-      "provider top-up stays within the typed total cap",
+      "const MAX_CAMPAIGN_TOP_UP = 900_000n",
+      "CONFIRM_SERVICE_FEE_MAINNET_E2E_MAX_NETWORK_FEES_MICRO_STX",
+      "const MAX_CAMPAIGN_NETWORK_FEES = 3_500_000n",
+      "provider top-up stays within the remaining aggregate campaign cap",
+      "SP2ENKFX2BGX94HC4KYZCCV7KEN7JXJXZDKC3GPGC",
+      "reconcile-existing-receipt",
+      "no automatic retransmission is allowed",
+      "executionLock()",
+      "CLIENT_PRIVATE_KEY",
+      "Armed E2E requires the exact ephemeral npm-ci runtime attestation",
+      "preSettlementBalances",
       "getAddressFromPrivateKey(key, \"mainnet\")",
       "Receipt SHA-256",
     ])
@@ -160,15 +200,95 @@ describe("controlled v6/v5 mainnet E2E runner", () => {
     expect(runner).not.toContain("serializedTransaction");
   });
 
-  it("executes STX and sBTC strictly sequentially with distinct receipts", () => {
-    const wrapper = read("scripts/run-service-fee-mainnet-e2e-sequential.sh");
-    const stx = wrapper.indexOf("SERVICE_FEE_MAINNET_E2E_ASSET=stx");
-    const sbtc = wrapper.indexOf("SERVICE_FEE_MAINNET_E2E_ASSET=sbtc", stx + 1);
+  it("coordinates STX and sBTC under one lock, manifest and aggregate cap", () => {
+    const wrapper = read("scripts/run-service-fee-mainnet-e2e-campaign.mjs");
+    const stx = wrapper.indexOf('["stx", "stx-first", stxReceipt]');
+    const sbtc = wrapper.indexOf('["sbtc", "sbtc-second", sbtcReceipt]', stx + 1);
     expect(stx).toBeGreaterThan(0);
     expect(sbtc).toBeGreaterThan(stx);
     expect(wrapper).toContain("SERVICE_FEE_MAINNET_E2E_STX_RESULT_PATH");
     expect(wrapper).toContain("SERVICE_FEE_MAINNET_E2E_SBTC_RESULT_PATH");
-    expect(wrapper).toContain('if [ -z "$stx_receipt" ] || [ -z "$sbtc_receipt" ]');
+    expect(wrapper).toContain("SERVICE_FEE_MAINNET_E2E_CAMPAIGN_PATH");
+    expect(wrapper).toContain("acquireCampaignLock(GLOBAL_LOCK_PATH");
+    expect(wrapper).toContain("aggregateTopUpUsed");
+    expect(wrapper).toContain("aggregateNetworkFeesUsed");
+    expect(wrapper).toContain("reconcile-existing-campaign");
+    expect(wrapper).toContain("validateRecordedAssets(manifest, stages, campaignId)");
+    expect(wrapper).toContain("immutable receipt is missing");
+    expect(wrapper).toContain('state: "started"');
+    const startedMarker = wrapper.indexOf('state: "started"');
+    const markerSave = wrapper.indexOf("atomicSave(manifestPath, manifest)", startedMarker);
+    const childRun = wrapper.indexOf("const result = runAsset(", markerSave);
+    expect(markerSave).toBeGreaterThan(startedMarker);
+    expect(childRun).toBeGreaterThan(markerSave);
+    expect(wrapper).toContain("CONFIRM_SERVICE_FEE_MAINNET_E2E_RESUME_EXECUTOR_LOCK_PATH");
+    expect(wrapper).toContain("receiptChecksPassed");
+    const lock = read("scripts/mainnet-e2e-campaign-lock.mjs");
+    expect(lock).toContain("acquireExecutorLease");
+    expect(lock).toContain("executorLeasePath");
+    expect(lock).toContain("Preserved executor lease is still owned by a live child process");
+    expect(lock.match(/acquireRecoveryGuard\(/g)?.length).toBeGreaterThanOrEqual(3);
+    const runner = read("scripts/e2e-service-fee-mainnet.mjs");
+    expect(runner.match(/accountLock\.assertOwned\(\);/g)?.length).toBe(2);
+    expect(runner.match(/GLOBAL_LOCK_PATH}\.recover/g)?.length).toBe(2);
+    expect(runner).toContain("can never be promoted to passed");
+    const transactionsComplete = wrapper.indexOf('manifest.result = "transactions-complete"');
+    const release = wrapper.indexOf("lock.releaseSuccess()", transactionsComplete);
+    const passed = wrapper.indexOf('manifest.result = "passed"', release);
+    expect(transactionsComplete).toBeGreaterThan(0);
+    expect(release).toBeGreaterThan(transactionsComplete);
+    expect(passed).toBeGreaterThan(release);
+  });
+
+  it("opens signers only through an exact ephemeral dependency runtime", () => {
+    const launcher = read("scripts/run-service-fee-mainnet-e2e-hardened.sh");
+    expect(launcher).toContain("/private/tmp/nayori-mainnet-e2e-release-");
+    expect(launcher).toContain("npm ci --ignore-scripts --no-audit --no-fund");
+    expect(launcher).toContain("exec /usr/bin/env -i");
+    expect(launcher).toContain("SERVICE_FEE_MAINNET_E2E_RUNTIME_ATTESTATION");
+    expect(launcher).toContain("CONFIRM_SERVICE_FEE_MAINNET_E2E_CLIENT");
+    expect(launcher).toContain(
+      "CONFIRM_SERVICE_FEE_MAINNET_E2E_MAX_NETWORK_FEES_MICRO_STX",
+    );
+    expect(launcher).toContain(
+      "CONFIRM_SERVICE_FEE_MAINNET_E2E_RESUME_EXECUTOR_LOCK_SHA256",
+    );
+  });
+
+  it("uses high-water-mark resume checks and never retransmits uncertainty", () => {
+    const runner = read("scripts/e2e-service-fee-mainnet.mjs");
+    expect(runner).toContain('if (!hasTransaction("assign-provider"))');
+    expect(runner).toContain('if (!hasTransaction("record-decision"))');
+    expect(runner).toContain('if (!hasTransaction("appeal-decision"))');
+    expect(runner).toContain('if (!hasTransaction("resolve-appeal"))');
+    expect(runner).toContain("receipt intent differs from the deterministically reconstructed transaction");
+    expect(runner).toContain("no automatic retransmission is allowed");
+    for (const label of [
+      "Persisted job expiration reached before create-job",
+      "Budget stage",
+      "Funding stage",
+      "Assignment stage",
+      "Submission stage",
+      "Review deadline",
+      "Appeal deadline",
+      "Resolution deadline",
+    ]) expect(runner).toContain(label);
+    expect(runner).toMatch(
+      /if \(!hasTransaction\("resolve-appeal"\)\)[\s\S]*?STATUS_DISPUTED[\s\S]*?BUDGET[\s\S]*?requireBurnDeadlineOpen[\s\S]*?"resolve-appeal"/,
+    );
+  });
+
+  it("makes intent journals, campaign manifests and global locks durable", () => {
+    const runner = read("scripts/e2e-service-fee-mainnet.mjs");
+    const campaign = read("scripts/run-service-fee-mainnet-e2e-campaign.mjs");
+    const lock = read("scripts/mainnet-e2e-campaign-lock.mjs");
+    for (const content of [runner, campaign, lock]) {
+      expect(content).toContain("constants.O_EXCL");
+      expect(content).toContain("fsyncSync");
+    }
+    expect(runner).toMatch(/fsyncSync\(fd\)[\s\S]*?renameSync\(temporary, path\)[\s\S]*?fsyncSync\(parentFd\)/);
+    expect(campaign).toMatch(/fsyncSync\(fd\)[\s\S]*?renameSync\(temporary, path\)[\s\S]*?fsyncSync\(parentFd\)/);
+    expect(lock).toContain("fsyncParent(path)");
   });
 });
 
@@ -214,5 +334,94 @@ describe("public production language", () => {
     expect(read("docs/TESTNET_SERVICE_FEE_RUNBOOK.md")).toContain(
       "Historical activation record",
     );
+  });
+
+  it("does not send new SDK users to historical commerce defaults", () => {
+    const quickstart = read("developer-portal/content/docs/getting-started/sdk.mdx");
+    const rootQuickstart = read("README.md");
+    expect(quickstart).toContain("@perkos/agent-sdk@0.8.0");
+    expect(quickstart).toContain("agentic-commerce-v6");
+    expect(quickstart).toContain("sbtc-commerce-v5");
+    expect(quickstart).toContain("serviceFeeAcceptance");
+    expect(quickstart).toContain("implicit mainnet defaults");
+    expect(rootQuickstart).toContain("agentic-commerce-v6");
+    expect(rootQuickstart).toContain("sbtc-commerce-v5");
+    expect(rootQuickstart).toContain("serviceFeeAcceptance");
+    expect(rootQuickstart).toContain("unpublished `0.9.0` candidate");
+    for (const content of [
+      quickstart,
+      read("developer-portal/content/docs/reference/sdk.mdx"),
+      read("developer-portal/content/docs/commerce/autonomous-evaluation.mdx"),
+    ]) {
+      expect(content).not.toContain("must remain read-only/inert for v6/v5");
+      expect(content).not.toContain("must remain disabled with npm `0.8.0`");
+      expect(content).not.toContain("fee-term acceptance arrives in `0.9.0`");
+    }
+    expect(read("docs/DEPLOYMENT.md")).toContain(
+      "NEXT_PUBLIC_CONTRACT_PROFILE=current-v6-v5",
+    );
+  });
+
+  it("keeps documented local npm commands resolvable in a repository package", () => {
+    const knownScripts = new Set([
+      ...Object.keys(json("package.json").scripts),
+      ...Object.keys(json("App/package.json").scripts),
+      ...Object.keys(json("developer-portal/package.json").scripts),
+    ]);
+    const localDocs = [
+      "README.md",
+      "App/README.md",
+      ...readdirSync(resolve(root, "docs"))
+        .filter((entry) => entry.endsWith(".md"))
+        .map((entry) => `docs/${entry}`),
+    ];
+    for (const path of localDocs) {
+      for (const match of read(path).matchAll(/npm run ([A-Za-z0-9:_-]+)/g)) {
+        expect(knownScripts.has(match[1]), `${path}: npm run ${match[1]}`).toBe(true);
+      }
+    }
+  });
+
+  it("does not overstate the separately gated mainnet Platform rollout", () => {
+    const discovery = read("App/src/constants/discovery.ts");
+    expect(discovery).toContain(
+      "NAYORI_QUOTE_API_SETTLEMENT_ACTIVE = false",
+    );
+    expect(discovery).toContain('`${NETWORK_NAME}-challenge-issuance-only`');
+    expect(discovery).toContain(
+      "own payment verification, settlement, confirmation, delivery-ledger and partner-registration flags are disabled",
+    );
+    expect(discovery).toContain("settlementProvider: NAYORI_FACILITATOR_ORIGIN");
+    expect(discovery).toContain("settlementProvider: NAYORI_FACILITATOR_ORIGIN");
+    const deployments = read(
+      "developer-portal/content/docs/reference/deployments.mdx",
+    );
+    expect(deployments).toContain(
+      "economic and partner-registration flags are disabled by service role",
+    );
+    expect(deployments).not.toContain("Testnet pilot");
+    expect(deployments).not.toContain("Testnet settlement");
+    expect(read("App/README.md")).not.toContain("API runs an invite-only testnet pilot");
+    expect(read("docs/DEPLOYMENT.md")).not.toContain("as a separate, testnet-only");
+    expect(read("docs/DEPLOYMENT.md")).not.toContain("Mainnet settlement stays disabled");
+    expect(read("docs/DEPLOYMENT.md")).not.toContain("@perkos/agent-sdk@0.5.1");
+    expect(deployments).not.toContain("pending coordinated Platform release");
+    const skill = read("App/src/constants/agent-readiness.ts");
+    expect(skill).toContain("API edge");
+    expect(skill).toContain("facilitator");
+    expect(skill).toContain("fail closed on missing or conflicting flags");
+    const httpQuickstart = read(
+      "developer-portal/content/docs/getting-started/http-api.mdx",
+    );
+    expect(httpQuickstart).toContain("https://api.nayori.ai/supported");
+    expect(httpQuickstart).toContain("https://facilitator.nayori.ai/supported");
+    const status = read("STATUS.md");
+    expect(status).toContain("disabled by role");
+    expect(status).toContain("facilitator.nayori.ai");
+    const autonomous = read(
+      "developer-portal/content/docs/commerce/autonomous-evaluation.mdx",
+    );
+    expect(autonomous).toContain("SDK contract-selection boundary");
+    expect(autonomous).toContain("implicit defaults remain historical v5/v4");
   });
 });

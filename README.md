@@ -815,7 +815,15 @@ npm install --save-exact @perkos/agent-sdk@0.8.0
 ```ts
 import { PerkOSClient } from "@perkos/agent-sdk";
 
-const nayori = new PerkOSClient({ network: "mainnet" });
+const nayori = new PerkOSClient({
+  network: "mainnet",
+  contracts: {
+    stxCommerce:
+      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v6",
+    sbtcCommerce:
+      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v5",
+  },
+});
 
 const agentCount = await nayori.getAgentCount();
 const job = await nayori.getJob("sbtc", 1n);
@@ -824,8 +832,14 @@ const reputation = await nayori.getReputation(
 );
 ```
 
-Read-only operations require no wallet. State changes require a configured browser or enterprise
-signer and explicit spending policy.
+Read-only operations require no wallet. Stable SDK `0.8.0` retains the historical v5/v4
+defaults, so a current-generation integration must keep the explicit v6/v5 IDs above; changing
+only `network` is not sufficient. SDK `0.8.0` can execute v6/v5 writes when those IDs are pinned,
+but funding and submission additionally require the exact live `serviceFeeAcceptance` described
+in the [earned service fee guide](https://docs.nayori.ai/commerce/service-fees). State changes
+also require a configured browser or enterprise signer and an explicit spending policy. The
+unpublished `0.9.0` candidate promotes v6/v5 to SDK defaults; do not install it until npm
+publication and provenance are independently verified.
 
 ### Component documentation
 

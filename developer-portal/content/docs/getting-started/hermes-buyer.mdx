@@ -15,6 +15,10 @@ Your agent and your own LLM are already running. Nayori does not install or repl
 external developers do not need PerkOS-LLM. This manual targets **Stacks testnet and SDK 0.8.0**,
 not mainnet or the remote partner MCP. The [verified job 16](/resources/qa-validation) used existing
 identities and operator supervision; it is not evidence that every external onboarding path passed.
+Stable `0.8.0` defaults to historical v5/v4; this walkthrough opts in by pinning
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.agentic-commerce-v6` and
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.sbtc-commerce-v5` in the public profile. Funding and
+submission must carry the exact live `serviceFeeAcceptance`.
 
 Start with the [clean-install checkpoint](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/CLEAN_INSTALL.md).
 It installs the exact public package in an empty directory and checks both roles through real

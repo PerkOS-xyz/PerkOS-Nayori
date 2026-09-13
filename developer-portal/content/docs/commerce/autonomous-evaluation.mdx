@@ -8,14 +8,18 @@ description: Integrate Nayori's explainable evaluator, appeal window and human r
   <StatusBadge tone="public">Active contracts v6/v5</StatusBadge>
 </StatusRow>
 
-Nayori evaluates submitted agent work without allowing a model to move funds directly. The
-dedicated evaluator validates evidence, obtains structured primary and verifier assessments from
-PerkOS-LLM, persists an explainable decision artifact and submits only an allowlisted decision
-call. Escrow moves later according to the on-chain appeal lifecycle.
+The contracts support explainable autonomous evaluation without allowing a model to move funds
+directly. In QA, Nayori's dedicated evaluator validates evidence, obtains structured primary and
+verifier assessments from PerkOS-LLM, persists an explainable decision artifact and submits only an
+allowlisted decision call. Escrow moves later according to the on-chain appeal lifecycle.
 
 This lifecycle is active on Stacks mainnet in `agentic-commerce-v6` for STX and
 `sbtc-commerce-v5` for canonical PoX-5 sBTC. The same source generation remains deployed
 in isolated testnet QA for pre-production validation.
+
+The managed evaluator runtime is not yet activated in production. Mainnet clients must confirm an
+evaluator's availability before creating work; the Web keeps the reviewed Nayori address editable.
+The contracts and SDK do not depend on that managed runtime and may use another qualified evaluator.
 
 ## State machine
 
@@ -59,6 +63,14 @@ in isolated testnet QA for pre-production validation.
 QA uses a three-Bitcoin-burn-block appeal window. Mainnet is fixed at 144 burn blocks.
 Clients must read the authoritative block deadline and must not present it as a wall-clock guarantee.
 
+<Callout title="SDK contract-selection boundary">
+  Published `@perkos/agent-sdk@0.8.0` supports these v6/v5 reads and writes only when callers pin
+  the exact same-network contract IDs. Its implicit defaults remain historical v5/v4. Funding and
+  submission also require a live, exact `serviceFeeAcceptance`; an x402 quote or adapter is not
+  that acceptance. Candidate `0.9.0` promotes v6/v5 defaults but remains unavailable until its npm
+  release and provenance are independently verified.
+</Callout>
+
 ## Configure the SDK for mainnet
 
 ```ts
@@ -66,7 +78,6 @@ import { PerkOSClient } from "@perkos/agent-sdk";
 
 const nayori = new PerkOSClient({
   network: "mainnet",
-  signer,
   contracts: {
     stxCommerce:
       "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v6",
@@ -74,6 +85,8 @@ const nayori = new PerkOSClient({
       "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v5",
   },
 });
+
+// Stable 0.8.0 supports these explicit IDs. A signer remains host-controlled.
 
 const appealWindow = await nayori.getAppealWindow("sbtc");
 const decision = await nayori.getDecision("sbtc", 1n);
@@ -87,6 +100,11 @@ For QA, change `network` to `testnet` and use the same contract names under
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`.
 
 ## Record and inspect a decision
+
+The write call is available in stable `0.8.0` only through the explicit v6/v5 configuration above.
+Construct a separate write client with the host-controlled evaluator signer. Fee acceptance is
+required on funding/submission, not on this evaluator-only call; see
+[earned service fees](/commerce/service-fees).
 
 The evaluator commits two non-zero 32-byte SHA-256 digests: one for normalized evidence and one for
 the public, criteria-based explanation. Raw private evidence and model reasoning do not belong
@@ -109,6 +127,9 @@ Recording a decision creates `decision-pending`; it does not pay or refund escro
 
 ## Appeal and human resolution
 
+These write calls are available in stable `0.8.0` only through the exact v6/v5 override and the
+appropriate job-party or appeal-authority signer.
+
 ```ts
 await nayori.appealDecision({
   asset: "sbtc",
@@ -128,6 +149,8 @@ await nayori.resolveAppeal({
 original decision. The final economic recipient is always derived from the funded job.
 
 ## Permissionless liveness
+
+These finalizer calls are available in stable `0.8.0` only through the exact v6/v5 override.
 
 ```ts
 // No appeal: call only after appealDeadline.

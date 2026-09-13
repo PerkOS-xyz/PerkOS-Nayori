@@ -38,20 +38,65 @@ jobs:
       matrix:
         include:
           - checkName: Frontend legacy v5/v4 compatibility
+            channel: qa
+            site: https://qa.nayori.ai
+            network: testnet
+            deployer: ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5
+            profile: legacy-v5-v4-read
             stx: agentic-commerce-v5
             sbtc: sbtc-commerce-v4
-          - checkName: Frontend active v6/v5
+            evaluator: STBTXHXFXFGMNPXST7A6XQ1WNGC0V6TB6CDDQZB4
+            managedEvaluator: "true"
+            authority: ST256E5DAXM7RDFZ76ECCTPTBYHRXXJQ29H16DN69
+            apiOrigin: https://api.qa.nayori.ai
+            facilitatorOrigin: https://facilitator.qa.nayori.ai
+            oauthOrigin: https://oauth.qa.nayori.ai
+          - checkName: Frontend QA testnet v6/v5
+            channel: qa
+            site: https://qa.nayori.ai
+            network: testnet
+            deployer: ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5
+            profile: current-v6-v5
             stx: agentic-commerce-v6
             sbtc: sbtc-commerce-v5
+            evaluator: STBTXHXFXFGMNPXST7A6XQ1WNGC0V6TB6CDDQZB4
+            managedEvaluator: "true"
+            authority: ST256E5DAXM7RDFZ76ECCTPTBYHRXXJQ29H16DN69
+            apiOrigin: https://api.qa.nayori.ai
+            facilitatorOrigin: https://facilitator.qa.nayori.ai
+            oauthOrigin: https://oauth.qa.nayori.ai
+          - checkName: Frontend production mainnet v6/v5
+            channel: production
+            site: https://nayori.ai
+            network: mainnet
+            deployer: SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
+            profile: current-v6-v5
+            stx: agentic-commerce-v6
+            sbtc: sbtc-commerce-v5
+            evaluator: SP2ENKFX2BGX94HC4KYZCCV7KEN7JXJXZDKC3GPGC
+            managedEvaluator: "false"
+            authority: SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH
+            apiOrigin: https://api.nayori.ai
+            facilitatorOrigin: https://facilitator.nayori.ai
+            oauthOrigin: https://oauth.nayori.ai
     defaults:
       run:
         working-directory: App
     env:
-      NEXT_PUBLIC_STACKS_NETWORK: testnet
-      NEXT_PUBLIC_CONTRACT_ADDRESS: ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5
+      NEXT_PUBLIC_RELEASE_CHANNEL: ${{ matrix.channel }}
+      NEXT_PUBLIC_SITE_URL: ${{ matrix.site }}
+      NEXT_PUBLIC_STACKS_NETWORK: ${{ matrix.network }}
+      NEXT_PUBLIC_CONTRACT_ADDRESS: ${{ matrix.deployer }}
+      NEXT_PUBLIC_CONTRACT_PROFILE: ${{ matrix.profile }}
       NEXT_PUBLIC_STX_COMMERCE_CONTRACT: ${{ matrix.stx }}
       NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT: ${{ matrix.sbtc }}
       NEXT_PUBLIC_REPUTATION_CONTRACT: reputation-registry-v3
+      NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS: ${{ matrix.evaluator }}
+      NEXT_PUBLIC_NAYORI_MANAGED_EVALUATOR_ENABLED: ${{ matrix.managedEvaluator }}
+      NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS: ${{ matrix.authority }}
+      NEXT_PUBLIC_NAYORI_API_ORIGIN: ${{ matrix.apiOrigin }}
+      NEXT_PUBLIC_NAYORI_FACILITATOR_ORIGIN: ${{ matrix.facilitatorOrigin }}
+      NEXT_PUBLIC_NAYORI_OAUTH_ORIGIN: ${{ matrix.oauthOrigin }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4

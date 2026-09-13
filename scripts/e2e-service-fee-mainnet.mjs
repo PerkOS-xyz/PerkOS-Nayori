@@ -7,14 +7,18 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import {
+  closeSync,
+  constants,
   existsSync,
+  fsyncSync,
   lstatSync,
+  openSync,
   readFileSync,
   realpathSync,
   renameSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, isAbsolute, relative, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   Cl,
@@ -44,11 +48,20 @@ import {
   SERVICE_FEE_BPS,
   SOURCE_HASHES,
   TREASURY,
+  GLOBAL_LOCK_PATH,
+  RUNTIME_ATTESTATION_VERSION,
   ensure,
   plain,
   sha256,
   source,
 } from "./service-fee-mainnet-core.mjs";
+import {
+  acquireCampaignLock,
+  acquireExecutorLease,
+  executorLeasePath,
+  validateCampaignLock,
+} from "./mainnet-e2e-campaign-lock.mjs";
+import { canonicalExternalPath } from "./mainnet-e2e-external-path.mjs";
 
 const ROOT = realpathSync(resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 const ACTION = process.env.SERVICE_FEE_MAINNET_E2E_ACTION || "preflight";
@@ -64,14 +77,18 @@ const FEE = BUDGET / 50n;
 const NET = BUDGET - FEE;
 const CALL_FEE = 200_000n;
 const TOP_UP_TRANSFER_FEE = 150_000n;
-const MAX_TOTAL_TOP_UP = 900_000n;
-const MINIMUM_GAS = Object.freeze({
-  client: 1_500_000n,
-  provider: 900_000n,
-  evaluator: 700_000n,
-  authority: 700_000n,
-});
+const MAX_CAMPAIGN_TOP_UP = 900_000n;
+// Two assets x eight contract calls x 200k, plus at most one bounded provider
+// top-up transfer per asset x 150k. This is an authorization ceiling, not a quote.
+const MAX_CAMPAIGN_NETWORK_FEES = 3_500_000n;
+const PROVIDER_POST_CAMPAIGN_RESERVE = 500_000n;
+// Evaluator and authority each make exactly two campaign calls. From a known 800k balance,
+// two fixed 200k fees leave 400k, which exceeds this independently enforced 300k reserve.
+const ACTOR_POST_CAMPAIGN_RESERVE = 300_000n;
+const EXPECTED_EVALUATOR = "SP2ENKFX2BGX94HC4KYZCCV7KEN7JXJXZDKC3GPGC";
 const FINALITY_DEPTH = 2n;
+const STATUS_OPEN = 0n;
+const STATUS_FUNDED = 1n;
 const STATUS_SUBMITTED = 2n;
 const STATUS_COMPLETED = 3n;
 const STATUS_DECISION_PENDING = 7n;
@@ -91,6 +108,12 @@ const EXPECTED_SOURCE_HASHES = Object.freeze({
 
 const sleep = (milliseconds) =>
   new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds));
+
+export function deadlineOpen(currentHeight, deadlineHeight, inclusive) {
+  const current = BigInt(currentHeight);
+  const deadline = BigInt(deadlineHeight);
+  return inclusive ? current <= deadline : current < deadline;
+}
 
 async function resilientFetch(input, options = {}) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -231,11 +254,7 @@ async function verifyPublicRelease() {
 }
 
 function outsideWorktree(path, label) {
-  ensure(path && isAbsolute(path), `${label} must be an absolute path`);
-  const candidate = resolve(path);
-  const relation = relative(ROOT, candidate);
-  ensure(relation.startsWith("..") && !isAbsolute(relation), `${label} must be outside Git`);
-  return candidate;
+  return canonicalExternalPath(ROOT, path, label);
 }
 
 function secretFile(path, label) {
@@ -247,13 +266,82 @@ function secretFile(path, label) {
   return realpathSync(candidate);
 }
 
-function newReceiptPath(path) {
+function receiptPath(path) {
   const candidate = outsideWorktree(path, "SERVICE_FEE_MAINNET_E2E_RESULT_PATH");
-  ensure(!existsSync(candidate), "Mainnet E2E receipt already exists; reconcile it, never overwrite it");
+  if (existsSync(candidate)) {
+    ensure(
+      process.env.SERVICE_FEE_MAINNET_E2E_RESUME === "reconcile-existing-receipt" &&
+        process.env.CONFIRM_SERVICE_FEE_MAINNET_E2E_RESUME_RESULT_PATH === candidate,
+      "Existing receipt requires exact reconcile-existing-receipt confirmation",
+    );
+    const stat = lstatSync(candidate);
+    ensure(
+      stat.isFile() && !stat.isSymbolicLink() && (stat.mode & 0o777) === 0o600 &&
+        stat.uid === process.getuid(),
+      "Existing mainnet E2E receipt must be an operator-owned mode-0600 regular file",
+    );
+  }
   const parent = lstatSync(realpathSync(dirname(candidate)));
   ensure(parent.isDirectory() && parent.uid === process.getuid(),
     "Mainnet E2E receipt parent must be an operator-owned directory");
   return candidate;
+}
+
+function executionLock() {
+  const inheritedToken = process.env.SERVICE_FEE_MAINNET_E2E_CAMPAIGN_LOCK_TOKEN;
+  const campaignId = process.env.SERVICE_FEE_MAINNET_E2E_CAMPAIGN_ID || "single-asset";
+  let campaignToken = inheritedToken;
+  let campaignLock;
+  if (inheritedToken) {
+    const metadata = validateCampaignLock(GLOBAL_LOCK_PATH, inheritedToken);
+    ensure(
+      metadata.reviewedSha === REVIEWED_SHA && metadata.campaignId === campaignId,
+      "Inherited mainnet campaign lock belongs to another release",
+    );
+  } else {
+    campaignLock = acquireCampaignLock(GLOBAL_LOCK_PATH, {
+      reviewedSha: REVIEWED_SHA,
+      campaignId,
+      asset: ASSET,
+      executionMode: "single-asset",
+    });
+    campaignToken = campaignLock.token;
+  }
+  const leasePath = executorLeasePath(GLOBAL_LOCK_PATH);
+  const executorLease = acquireExecutorLease(GLOBAL_LOCK_PATH, {
+    globalLockToken: campaignToken,
+    reviewedSha: REVIEWED_SHA,
+    campaignId,
+    asset: ASSET,
+  });
+  const assertOwned = () => {
+    ensure(
+      !existsSync(`${GLOBAL_LOCK_PATH}.recover`),
+      "Mainnet campaign recovery is in progress; executor may not broadcast",
+    );
+    const global = validateCampaignLock(GLOBAL_LOCK_PATH, campaignToken);
+    const executor = executorLease.validate();
+    ensure(
+      global.reviewedSha === REVIEWED_SHA && global.campaignId === campaignId &&
+        executor.globalLockToken === campaignToken && executor.reviewedSha === REVIEWED_SHA &&
+        executor.campaignId === campaignId && executor.asset === ASSET,
+      "Mainnet executor lease no longer matches this exact campaign asset",
+    );
+    ensure(
+      !existsSync(`${GLOBAL_LOCK_PATH}.recover`),
+      "Mainnet campaign recovery began while validating the executor lease",
+    );
+  };
+  assertOwned();
+  return {
+    inherited: Boolean(inheritedToken),
+    assertOwned,
+    close() {
+      assertOwned();
+      executorLease.releaseSuccess();
+      campaignLock?.releaseSuccess();
+    },
+  };
 }
 
 function parseEnv(path) {
@@ -341,22 +429,51 @@ async function waitForFinality(transaction) {
 }
 
 function createJournal(path, binding) {
-  const data = {
-    schemaVersion: 1,
-    classification: "internal-team-operated-not-m2-adoption",
-    binding,
-    transactions: {},
-    checks: [],
-    result: "running",
-    startedAt: new Date().toISOString(),
-  };
+  const existing = existsSync(path);
+  const data = existing
+    ? JSON.parse(readFileSync(path, "utf8"))
+    : {
+        schemaVersion: 1,
+        classification: "internal-team-operated-not-m2-adoption",
+        binding,
+        transactions: {},
+        checks: [],
+        result: "running",
+        startedAt: new Date().toISOString(),
+      };
+  if (existing) {
+    ensure(data.schemaVersion === 1, "Existing receipt schema is unsupported");
+    ensure(
+      data.classification === "internal-team-operated-not-m2-adoption" &&
+        JSON.stringify(data.binding) === JSON.stringify(binding),
+      "Existing receipt binding differs from this exact mainnet E2E",
+    );
+    ensure(data.result !== "passed", "Completed receipt is immutable and cannot be resumed");
+    ensure(
+      Array.isArray(data.checks) && data.checks.every((entry) => entry.passed === true),
+      "Existing receipt contains a failed check and can never be promoted to passed",
+    );
+  }
   const save = () => {
     const temporary = `${path}.${process.pid}.tmp`;
-    writeFileSync(temporary, `${JSON.stringify(data, null, 2)}\n`, {
-      mode: 0o600,
-      flag: "wx",
-    });
+    const fd = openSync(
+      temporary,
+      constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY | constants.O_NOFOLLOW,
+      0o600,
+    );
+    try {
+      writeFileSync(fd, `${JSON.stringify(data, null, 2)}\n`);
+      fsyncSync(fd);
+    } finally {
+      closeSync(fd);
+    }
     renameSync(temporary, path);
+    const parentFd = openSync(dirname(path), constants.O_RDONLY);
+    try {
+      fsyncSync(parentFd);
+    } finally {
+      closeSync(parentFd);
+    }
     ensure((lstatSync(path).mode & 0o777) === 0o600, "Receipt mode changed from 0600");
   };
   const check = (name, condition, detail = "") => {
@@ -364,6 +481,8 @@ function createJournal(path, binding) {
     save();
     ensure(condition, name);
   };
+  data.result = "running";
+  data.resumedAt = existing ? new Date().toISOString() : undefined;
   save();
   return { data, save, check };
 }
@@ -372,10 +491,10 @@ function tokenArgs() {
   return ASSET === "sbtc" ? [Cl.contractPrincipal(SBTC_ADDRESS, SBTC_NAME)] : [];
 }
 
-function fundingPostCondition() {
+function fundingPostCondition(clientAddress) {
   return ASSET === "stx"
-    ? Pc.principal(DEPLOYER).willSendEq(BUDGET).ustx()
-    : Pc.principal(DEPLOYER).willSendEq(BUDGET).ft(SBTC, SBTC_ASSET_NAME);
+    ? Pc.principal(clientAddress).willSendEq(BUDGET).ustx()
+    : Pc.principal(clientAddress).willSendEq(BUDGET).ft(SBTC, SBTC_ASSET_NAME);
 }
 
 function settlementPostCondition() {
@@ -417,6 +536,29 @@ function selectedAssetTransfer(event) {
 }
 
 async function execute(publicState) {
+  const campaignStage = process.env.SERVICE_FEE_MAINNET_E2E_CAMPAIGN_STAGE || "single-asset";
+  ensure(
+    ["single-asset", "stx-first", "sbtc-second"].includes(campaignStage),
+    "Unsupported mainnet E2E campaign stage",
+  );
+  const remainingTopUpText =
+    process.env.SERVICE_FEE_MAINNET_E2E_REMAINING_TOP_UP_MICRO_STX;
+  ensure(/^\d+$/.test(remainingTopUpText || ""),
+    "Exact remaining aggregate campaign top-up budget is required");
+  const remainingTopUp = BigInt(remainingTopUpText);
+  ensure(
+    remainingTopUp <= MAX_CAMPAIGN_TOP_UP,
+    "Remaining top-up exceeds the reviewed campaign cap",
+  );
+  const remainingNetworkFeesText =
+    process.env.SERVICE_FEE_MAINNET_E2E_REMAINING_NETWORK_FEES_MICRO_STX;
+  ensure(/^\d+$/.test(remainingNetworkFeesText || ""),
+    "Exact remaining aggregate campaign network-fee budget is required");
+  const remainingNetworkFees = BigInt(remainingNetworkFeesText);
+  ensure(
+    remainingNetworkFees <= MAX_CAMPAIGN_NETWORK_FEES,
+    "Remaining network-fee budget exceeds the reviewed campaign cap",
+  );
   ensure(
     process.env.CONFIRM_SERVICE_FEE_MAINNET_E2E === "execute-controlled-v6-v5-mainnet",
     "Missing exact v6/v5 mainnet E2E confirmation",
@@ -429,11 +571,23 @@ async function execute(publicState) {
     "Mainnet E2E treasury is not explicitly confirmed");
   ensure(
     process.env.CONFIRM_SERVICE_FEE_MAINNET_E2E_MAX_TOP_UP_MICRO_STX ===
-      String(MAX_TOTAL_TOP_UP),
-    `Mainnet E2E actor top-up cap must be explicitly confirmed as ${MAX_TOTAL_TOP_UP}`,
+      String(MAX_CAMPAIGN_TOP_UP),
+    `Mainnet E2E aggregate campaign top-up cap must be explicitly confirmed as ${MAX_CAMPAIGN_TOP_UP}`,
+  );
+  ensure(
+    process.env.CONFIRM_SERVICE_FEE_MAINNET_E2E_MAX_NETWORK_FEES_MICRO_STX ===
+      String(MAX_CAMPAIGN_NETWORK_FEES),
+    `Mainnet E2E network-fee cap must be explicitly confirmed as ${MAX_CAMPAIGN_NETWORK_FEES}`,
   );
   ensure(process.env.SERVICE_FEE_MAINNET_E2E_LOCKFILE_SHA256 === LOCK_HASH,
     "package-lock.json differs from the reviewed E2E release");
+  ensure(
+    ROOT.startsWith("/private/tmp/nayori-mainnet-e2e-release-") &&
+      process.env.CONFIRM_SERVICE_FEE_MAINNET_E2E_EPHEMERAL_ROOT === ROOT &&
+      process.env.SERVICE_FEE_MAINNET_E2E_RUNTIME_ATTESTATION ===
+        `${RUNTIME_ATTESTATION_VERSION}:${REVIEWED_SHA}:${LOCK_HASH}:${ROOT}`,
+    "Armed E2E requires the exact ephemeral npm-ci runtime attestation",
+  );
   ensure(
     !process.env.NODE_OPTIONS && !process.env.NODE_PATH && !process.env.NPM_CONFIG_NODE_OPTIONS,
     "Mainnet E2E must not inherit Node preload options",
@@ -454,6 +608,11 @@ async function execute(publicState) {
     "Validation changed the reviewed E2E tree",
   );
 
+  const resultPath = receiptPath(process.env.SERVICE_FEE_MAINNET_E2E_RESULT_PATH);
+  // The fixed, asset-independent lock is acquired before signer files are opened. A campaign
+  // coordinator holds it across STX and sBTC; the single-asset primitive acquires it itself.
+  const accountLock = executionLock();
+
   // Signer files are deliberately opened only after release, chain and local gates pass.
   const clientEnv = parseEnv(secretFile(
     process.env.SERVICE_FEE_MAINNET_E2E_CLIENT_ENV_PATH,
@@ -467,9 +626,14 @@ async function execute(publicState) {
     process.env.SERVICE_FEE_MAINNET_E2E_AUTHORITY_ENV_PATH,
     "SERVICE_FEE_MAINNET_E2E_AUTHORITY_ENV_PATH",
   ));
-  const client = requireSigner(clientEnv, "DEPLOYER_PRIVATE_KEY", "DEPLOYER_ADDRESS", DEPLOYER);
+  const client = requireSigner(clientEnv, "CLIENT_PRIVATE_KEY", "CLIENT_ADDRESS");
   const provider = requireSigner(actorEnv, "PROVIDER_PRIVATE_KEY", "PROVIDER_ADDRESS");
-  const evaluator = requireSigner(actorEnv, "EVALUATOR_PRIVATE_KEY", "EVALUATOR_ADDRESS");
+  const evaluator = requireSigner(
+    actorEnv,
+    "EVALUATOR_PRIVATE_KEY",
+    "EVALUATOR_ADDRESS",
+    EXPECTED_EVALUATOR,
+  );
   const authority = requireSigner(
     authorityEnv,
     "MAINNET_APPEAL_AUTHORITY_PRIVATE_KEY",
@@ -477,15 +641,23 @@ async function execute(publicState) {
     AUTHORITY,
   );
   ensure(
-    new Set([client.address, provider.address, evaluator.address, authority.address, TREASURY]).size === 5,
-    "Client, provider, evaluator, authority and treasury must be distinct",
+    new Set([
+      client.address,
+      provider.address,
+      evaluator.address,
+      authority.address,
+      TREASURY,
+      DEPLOYER,
+    ]).size === 6,
+    "Client, contract owner, provider, evaluator, authority and treasury must be distinct",
   );
+  ensure(process.env.CONFIRM_SERVICE_FEE_MAINNET_E2E_CLIENT === client.address,
+    "Mainnet E2E client is not explicitly confirmed");
   ensure(process.env.CONFIRM_SERVICE_FEE_MAINNET_E2E_PROVIDER === provider.address,
     "Mainnet E2E provider is not explicitly confirmed");
   ensure(process.env.CONFIRM_SERVICE_FEE_MAINNET_E2E_EVALUATOR === evaluator.address,
     "Mainnet E2E evaluator is not explicitly confirmed");
 
-  const resultPath = newReceiptPath(process.env.SERVICE_FEE_MAINNET_E2E_RESULT_PATH);
   const journal = createJournal(resultPath, {
     network: "mainnet",
     reviewedSha: REVIEWED_SHA,
@@ -503,6 +675,12 @@ async function execute(publicState) {
     gross: String(BUDGET),
     net: String(NET),
     serviceFee: String(FEE),
+    campaignId: process.env.SERVICE_FEE_MAINNET_E2E_CAMPAIGN_ID || "single-asset",
+    campaignStage,
+    aggregateTopUpCap: String(MAX_CAMPAIGN_TOP_UP),
+    remainingTopUpBeforeAsset: String(remainingTopUp),
+    aggregateNetworkFeeCap: String(MAX_CAMPAIGN_NETWORK_FEES),
+    remainingNetworkFeesBeforeAsset: String(remainingNetworkFees),
   });
 
   const balances = {
@@ -511,38 +689,109 @@ async function execute(publicState) {
     evaluator: await account(evaluator.address),
     authority: await account(authority.address),
   };
-  const providerTopUp =
-    balances.provider.stx < MINIMUM_GAS.provider
-      ? MINIMUM_GAS.provider - balances.provider.stx
-      : 0n;
-  journal.check(
-    "provider top-up stays within the typed total cap",
-    providerTopUp <= MAX_TOTAL_TOP_UP,
-    `${providerTopUp}/${MAX_TOTAL_TOP_UP} micro-STX`,
-  );
-  for (const role of ["evaluator", "authority"]) {
-    journal.check(
-      `${role} has bounded gas reserve`,
-      balances[role].stx >= MINIMUM_GAS[role],
-      `${balances[role].stx} micro-STX`,
+  const hasTransaction = (label) => Boolean(journal.data.transactions[label]);
+  const requireStacksExpiryOpen = async (job, label) => {
+    const chain = await get("/v2/info");
+    ensure(
+      Number.isSafeInteger(chain.stacks_tip_height) &&
+        deadlineOpen(chain.stacks_tip_height, uint(job["expired-at"]), false),
+      `${label}: job expiration reached; do not sign or transmit`,
     );
+  };
+  const requireBurnDeadlineOpen = async (deadline, label) => {
+    const chain = await get("/v2/info");
+    ensure(
+      Number.isSafeInteger(chain.burn_block_height) &&
+        deadlineOpen(chain.burn_block_height, uint(deadline), true),
+      `${label} passed; do not sign or transmit`,
+    );
+  };
+  const remainingCalls = (labels, future) =>
+    BigInt(labels.filter((label) => !hasTransaction(label)).length + future);
+  const futureAsset = campaignStage === "stx-first" ? 1 : 0;
+  const providerRequired =
+    PROVIDER_POST_CAMPAIGN_RESERVE +
+    remainingCalls(["submit-work", "appeal-decision"], futureAsset * 2) * CALL_FEE;
+  const plannedTopUp = journal.data.topUp
+    ? BigInt(journal.data.topUp.amount)
+    : balances.provider.stx < providerRequired
+      ? providerRequired - balances.provider.stx
+      : 0n;
+  if (!journal.data.topUp) {
+    journal.data.topUp = {
+      aggregateCap: String(MAX_CAMPAIGN_TOP_UP),
+      remainingBeforeAsset: String(remainingTopUp),
+      amount: String(plannedTopUp),
+      remainingAfterAsset: String(remainingTopUp - plannedTopUp),
+    };
+    journal.save();
   }
   journal.check(
-    "client has escrow asset and bounded gas/top-up reserve",
-    balances.client.stx >=
-      MINIMUM_GAS.client + providerTopUp + (providerTopUp > 0n ? TOP_UP_TRANSFER_FEE : 0n) +
-        (ASSET === "stx" ? BUDGET : 0n) &&
-      (ASSET === "stx" || balances.client.sbtc >= BUDGET),
-    `STX=${balances.client.stx}; sBTC=${balances.client.sbtc}`,
+    "provider top-up stays within the remaining aggregate campaign cap",
+    plannedTopUp <= remainingTopUp &&
+      journal.data.topUp.remainingBeforeAsset === String(remainingTopUp) &&
+      journal.data.topUp.remainingAfterAsset === String(remainingTopUp - plannedTopUp),
+    `${plannedTopUp}/${remainingTopUp}/${MAX_CAMPAIGN_TOP_UP} micro-STX`,
   );
-  await Promise.all(
-    [client.address, provider.address, evaluator.address, authority.address].map(nextNonce),
+  const expectedAssetNetworkFees =
+    8n * CALL_FEE + (plannedTopUp > 0n ? TOP_UP_TRANSFER_FEE : 0n);
+  journal.check(
+    "all asset transaction fees fit the remaining aggregate campaign fee cap",
+    expectedAssetNetworkFees <= remainingNetworkFees,
+    `${expectedAssetNetworkFees}/${remainingNetworkFees}/${MAX_CAMPAIGN_NETWORK_FEES} micro-STX`,
+  );
+  const evaluatorRequired =
+    ACTOR_POST_CAMPAIGN_RESERVE +
+    remainingCalls(["record-decision"], futureAsset) * CALL_FEE;
+  const authorityRequired =
+    ACTOR_POST_CAMPAIGN_RESERVE +
+    remainingCalls(["resolve-appeal"], futureAsset) * CALL_FEE;
+  journal.check(
+    "evaluator has bounded gas reserve for every remaining campaign call",
+    balances.evaluator.stx >= evaluatorRequired,
+    `${balances.evaluator.stx}/${evaluatorRequired} micro-STX`,
+  );
+  journal.check(
+    "authority has bounded gas reserve for every remaining campaign call",
+    balances.authority.stx >= authorityRequired,
+    `${balances.authority.stx}/${authorityRequired} micro-STX`,
+  );
+  const remainingClientCalls = remainingCalls(
+    ["create-job", "set-budget", "fund-job", "assign-provider"],
+    futureAsset * 4,
+  );
+  const clientPostCampaignReserve = 500_000n;
+  const freshTopUp = hasTransaction("top-up-provider-gas") ? 0n : plannedTopUp;
+  const clientRequiredStx =
+    clientPostCampaignReserve + remainingClientCalls * CALL_FEE + freshTopUp +
+    (freshTopUp > 0n ? TOP_UP_TRANSFER_FEE : 0n) +
+    (ASSET === "stx" && !hasTransaction("fund-job") ? BUDGET : 0n);
+  journal.check(
+    "client has escrow assets and bounded reserve for every remaining campaign call",
+    balances.client.stx >= clientRequiredStx &&
+      (campaignStage !== "stx-first" || balances.client.sbtc >= 1_000n) &&
+      (ASSET !== "sbtc" || balances.client.sbtc >= BUDGET),
+    `STX=${balances.client.stx}/${clientRequiredStx}; sBTC=${balances.client.sbtc}`,
   );
 
   async function call(label, functionName, functionArgs, signer, options = {}) {
-    ensure(!journal.data.transactions[label], `Duplicate transaction label ${label}`);
-    const nonce = await nextNonce(signer.address);
     const postConditions = options.postConditions ?? [];
+    const encodedArgs = functionArgs.map((argument) => serializeCV(argument));
+    const existing = journal.data.transactions[label];
+    if (!existing) {
+      const roleReserve =
+        signer.address === evaluator.address || signer.address === authority.address
+          ? ACTOR_POST_CAMPAIGN_RESERVE
+          : 500_000n;
+      const liveSigner = await account(signer.address);
+      const stxAssetOutflow =
+        ASSET === "stx" && functionName === "fund-job" ? BUDGET : 0n;
+      ensure(
+        liveSigner.stx >= CALL_FEE + roleReserve + stxAssetOutflow,
+        `${label} signer no longer has the fixed fee plus post-call reserve`,
+      );
+    }
+    const nonce = existing ? BigInt(existing.nonce) : await nextNonce(signer.address);
     const transaction = await makeContractCall({
       contractAddress: DEPLOYER,
       contractName: CONTRACT_NAME,
@@ -557,36 +806,62 @@ async function execute(publicState) {
     });
     const serialized = serializeTransaction(transaction).replace(/^0x/, "");
     const txid = `0x${transaction.txid().replace(/^0x/, "")}`;
-    journal.data.transactions[label] = {
-      state: "signed-intent",
-      txid,
-      sender: signer.address,
-      nonce: String(nonce),
-      fee: String(CALL_FEE),
-      contract: CONTRACT,
-      functionName,
-      args: functionArgs.map((argument) => serializeCV(argument)),
-      postConditionMode: "deny",
-      postConditionCount: postConditions.length,
-      serializedSha256: sha256(Buffer.from(serialized, "hex")),
-      serializedLengthBytes: serialized.length / 2,
-    };
-    journal.save();
-    let broadcast;
-    try {
-      broadcast = await broadcastTransaction({ transaction, network });
-    } catch {
-      journal.data.transactions[label].state = "broadcast-uncertain";
+    const serializedSha256 = sha256(Buffer.from(serialized, "hex"));
+    if (existing) {
+      ensure(
+        existing.txid === txid &&
+          existing.sender === signer.address &&
+          existing.nonce === String(nonce) &&
+          existing.fee === String(CALL_FEE) &&
+          existing.contract === CONTRACT &&
+          existing.functionName === functionName &&
+          JSON.stringify(existing.args) === JSON.stringify(encodedArgs) &&
+          existing.postConditionMode === "deny" &&
+          existing.postConditionCount === postConditions.length &&
+          existing.serializedSha256 === serializedSha256 &&
+          existing.serializedLengthBytes === serialized.length / 2,
+        `${label} receipt intent differs from the deterministically reconstructed transaction`,
+      );
+    } else {
+      journal.data.transactions[label] = {
+        state: "signed-intent",
+        txid,
+        sender: signer.address,
+        nonce: String(nonce),
+        fee: String(CALL_FEE),
+        contract: CONTRACT,
+        functionName,
+        args: encodedArgs,
+        postConditionMode: "deny",
+        postConditionCount: postConditions.length,
+        serializedSha256,
+        serializedLengthBytes: serialized.length / 2,
+      };
       journal.save();
-      throw new Error("Mainnet broadcast uncertain; reconcile the preserved txid and intent hash");
+      accountLock.assertOwned();
+      let broadcast;
+      try {
+        broadcast = await broadcastTransaction({ transaction, network });
+      } catch {
+        journal.data.transactions[label].state = "broadcast-uncertain";
+        journal.save();
+        throw new Error("Mainnet broadcast uncertain; reconcile the preserved txid and intent hash");
+      }
+      const broadcastTxid =
+        typeof broadcast.txid === "string" ? `0x${broadcast.txid.replace(/^0x/, "")}` : "";
+      ensure(!broadcast.error && broadcastTxid === txid,
+        `${label} broadcast was rejected or returned a different txid`);
+      journal.data.transactions[label].state = "broadcast-accepted";
+      journal.save();
     }
-    const broadcastTxid =
-      typeof broadcast.txid === "string" ? `0x${broadcast.txid.replace(/^0x/, "")}` : "";
-    ensure(!broadcast.error && broadcastTxid === txid,
-      `${label} broadcast was rejected or returned a different txid`);
-    journal.data.transactions[label].state = "broadcast-accepted";
-    journal.save();
-    const confirmed = await waitForTransaction(txid);
+    const observed = existing ? await get(`/extended/v1/tx/${txid}`, true) : null;
+    if (existing) {
+      ensure(
+        observed && observed.tx_status !== "pending",
+        `${label} is missing or pending; no automatic retransmission is allowed`,
+      );
+    }
+    const confirmed = observed || await waitForTransaction(txid);
     const expectedResult = options.jobId ? /^\(ok u\d+\)$/ : /^\(ok true\)$/;
     ensure(
       confirmed.tx_id === txid &&
@@ -622,13 +897,14 @@ async function execute(publicState) {
     if (amount === 0n) {
       journal.check(
         "provider requires no automatic top-up",
-        balances.provider.stx >= MINIMUM_GAS.provider,
-        `${balances.provider.stx} micro-STX`,
+        balances.provider.stx >= providerRequired,
+        `${balances.provider.stx}/${providerRequired} micro-STX`,
       );
       return;
     }
     const label = "top-up-provider-gas";
-    const nonce = await nextNonce(client.address);
+    const existing = journal.data.transactions[label];
+    const nonce = existing ? BigInt(existing.nonce) : await nextNonce(client.address);
     const postConditions = [Pc.principal(client.address).willSendEq(amount).ustx()];
     const transaction = await makeSTXTokenTransfer({
       recipient: provider.address,
@@ -643,35 +919,56 @@ async function execute(publicState) {
     });
     const serialized = serializeTransaction(transaction).replace(/^0x/, "");
     const txid = `0x${transaction.txid().replace(/^0x/, "")}`;
-    journal.data.transactions[label] = {
-      state: "signed-intent",
-      txid,
-      sender: client.address,
-      recipient: provider.address,
-      amount: String(amount),
-      nonce: String(nonce),
-      fee: String(TOP_UP_TRANSFER_FEE),
-      postConditionMode: "deny",
-      postConditionCount: postConditions.length,
-      serializedSha256: sha256(Buffer.from(serialized, "hex")),
-      serializedLengthBytes: serialized.length / 2,
-    };
-    journal.save();
-    let broadcast;
-    try {
-      broadcast = await broadcastTransaction({ transaction, network });
-    } catch {
-      journal.data.transactions[label].state = "broadcast-uncertain";
+    const serializedSha256 = sha256(Buffer.from(serialized, "hex"));
+    if (existing) {
+      ensure(
+        existing.txid === txid && existing.sender === client.address &&
+          existing.recipient === provider.address && existing.amount === String(amount) &&
+          existing.nonce === String(nonce) && existing.fee === String(TOP_UP_TRANSFER_FEE) &&
+          existing.postConditionMode === "deny" && existing.postConditionCount === 1 &&
+          existing.serializedSha256 === serializedSha256 &&
+          existing.serializedLengthBytes === serialized.length / 2,
+        "Existing provider top-up differs from its deterministic receipt intent",
+      );
+    } else {
+      journal.data.transactions[label] = {
+        state: "signed-intent",
+        txid,
+        sender: client.address,
+        recipient: provider.address,
+        amount: String(amount),
+        nonce: String(nonce),
+        fee: String(TOP_UP_TRANSFER_FEE),
+        postConditionMode: "deny",
+        postConditionCount: postConditions.length,
+        serializedSha256,
+        serializedLengthBytes: serialized.length / 2,
+      };
       journal.save();
-      throw new Error("Mainnet top-up broadcast uncertain; reconcile the txid and intent hash");
+      accountLock.assertOwned();
+      let broadcast;
+      try {
+        broadcast = await broadcastTransaction({ transaction, network });
+      } catch {
+        journal.data.transactions[label].state = "broadcast-uncertain";
+        journal.save();
+        throw new Error("Mainnet top-up broadcast uncertain; reconcile the txid and intent hash");
+      }
+      const broadcastTxid =
+        typeof broadcast.txid === "string" ? `0x${broadcast.txid.replace(/^0x/, "")}` : "";
+      ensure(!broadcast.error && broadcastTxid === txid,
+        "Provider top-up was rejected or returned a different txid");
+      journal.data.transactions[label].state = "broadcast-accepted";
+      journal.save();
     }
-    const broadcastTxid =
-      typeof broadcast.txid === "string" ? `0x${broadcast.txid.replace(/^0x/, "")}` : "";
-    ensure(!broadcast.error && broadcastTxid === txid,
-      "Provider top-up was rejected or returned a different txid");
-    journal.data.transactions[label].state = "broadcast-accepted";
-    journal.save();
-    const confirmed = await waitForTransaction(txid);
+    const observed = existing ? await get(`/extended/v1/tx/${txid}`, true) : null;
+    if (existing) {
+      ensure(
+        observed && observed.tx_status !== "pending",
+        "Provider top-up is missing or pending; no automatic retransmission is allowed",
+      );
+    }
+    const confirmed = observed || await waitForTransaction(txid);
     ensure(
       confirmed.tx_id === txid &&
         confirmed.canonical === true &&
@@ -701,24 +998,45 @@ async function execute(publicState) {
     const fundedProvider = await account(provider.address);
     journal.check(
       "provider reaches the bounded gas reserve after one exact top-up",
-      fundedProvider.stx >= MINIMUM_GAS.provider &&
-        fundedProvider.stx - balances.provider.stx === amount,
-      `${balances.provider.stx} + ${amount} = ${fundedProvider.stx} micro-STX`,
+      fundedProvider.stx >= providerRequired &&
+        (existing || fundedProvider.stx - balances.provider.stx === amount),
+      `${fundedProvider.stx}/${providerRequired} micro-STX`,
     );
   }
 
-  await topUpProvider(providerTopUp);
+  await topUpProvider(plannedTopUp);
 
-  const initialCount = BigInt(publicState.jobCounts[CONTRACT_NAME]);
   const tip = await get("/v2/info");
+  const description = "Controlled mainnet validation: signed data-quality report";
+  if (!journal.data.jobTerms) {
+    journal.data.jobTerms = {
+      description,
+      expiredAt: String(BigInt(tip.stacks_tip_height) + 500n),
+    };
+    journal.save();
+  }
+  ensure(
+    journal.data.jobTerms.description === description &&
+      /^\d+$/.test(journal.data.jobTerms.expiredAt),
+    "Existing receipt job terms differ from the fixed scenario",
+  );
+  const expiredAt = BigInt(journal.data.jobTerms.expiredAt);
+  if (!hasTransaction("create-job")) {
+    const chain = await get("/v2/info");
+    ensure(
+      Number.isSafeInteger(chain.stacks_tip_height) &&
+        deadlineOpen(chain.stacks_tip_height, expiredAt, false),
+      "Persisted job expiration reached before create-job; do not sign or transmit",
+    );
+  }
   const created = await call(
     "create-job",
     "create-job",
     [
       Cl.none(),
       Cl.principal(evaluator.address),
-      Cl.uint(BigInt(tip.stacks_tip_height) + 500n),
-      Cl.stringAscii("Controlled mainnet validation: signed data-quality report"),
+      Cl.uint(expiredAt),
+      Cl.stringAscii(description),
     ],
     client,
     { jobId: true },
@@ -727,29 +1045,82 @@ async function execute(publicState) {
   ensure(jobMatch, "create-job did not return a job identifier");
   const jobId = BigInt(jobMatch[1]);
   journal.data.jobId = String(jobId);
-  journal.check("created job is the next active-generation id", jobId === initialCount + 1n);
+  const createdJob = ok(
+    await read(CONTRACT_NAME, "get-job", [Cl.uint(jobId)]),
+    "get-job after create",
+  );
+  const observedCount = uint(
+    ok(await read(CONTRACT_NAME, "get-job-count"), "get-job-count after create"),
+  );
+  journal.check(
+    "returned job id identifies this exact client/evaluator/terms on-chain",
+    jobId > 0n && observedCount >= jobId && createdJob.client === client.address &&
+      createdJob.evaluator === evaluator.address && createdJob.description === description &&
+      uint(createdJob["expired-at"]) === expiredAt,
+    `job=${jobId}; count=${observedCount}`,
+  );
 
+  if (!hasTransaction("set-budget")) {
+    ensure(
+      uint(createdJob.status) === STATUS_OPEN && createdJob.client === client.address &&
+        createdJob.evaluator === evaluator.address && uint(createdJob["expired-at"]) === expiredAt,
+      "Pre-budget job state, roles or terms changed",
+    );
+    await requireStacksExpiryOpen(createdJob, "Budget stage");
+  }
   await call("set-budget", "set-budget", [Cl.uint(jobId), Cl.uint(BUDGET)], client);
+  if (!hasTransaction("fund-job")) {
+    const preFundJob = ok(
+      await read(CONTRACT_NAME, "get-job", [Cl.uint(jobId)]),
+      "get-job before fund",
+    );
+    const preFundEscrow = uint(ok(
+      await read(CONTRACT_NAME, "get-escrow-balance", [Cl.uint(jobId)]),
+      "get-escrow-balance before fund",
+    ));
+    ensure(
+      uint(preFundJob.status) === STATUS_OPEN && preFundJob.client === client.address &&
+        preFundJob.evaluator === evaluator.address && uint(preFundJob.budget) === BUDGET &&
+        preFundEscrow === 0n,
+      "Pre-fund job state, roles, budget or escrow changed",
+    );
+    await requireStacksExpiryOpen(preFundJob, "Funding stage");
+  }
   await call(
     "fund-job",
     "fund-job",
     [Cl.uint(jobId), ...tokenArgs()],
     client,
-    { postConditions: [fundingPostCondition()] },
+    { postConditions: [fundingPostCondition(client.address)] },
   );
   const fundedEscrow = uint(
     ok(await read(CONTRACT_NAME, "get-escrow-balance", [Cl.uint(jobId)]), "get-escrow-balance"),
   );
-  journal.check(
-    "funding creates exact gross escrow",
-    fundedEscrow === BUDGET,
-    `${fundedEscrow}/${BUDGET} atomic units`,
-  );
+  if (!hasTransaction("assign-provider")) {
+    journal.check(
+      "funding creates exact gross escrow",
+      fundedEscrow === BUDGET,
+      `${fundedEscrow}/${BUDGET} atomic units`,
+    );
+  }
   if (ASSET === "sbtc") {
     journal.check(
       "job pins canonical mainnet sBTC",
       ok(await read(CONTRACT_NAME, "get-job-payment-token", [Cl.uint(jobId)]), "get-job-payment-token") === SBTC,
     );
+  }
+  if (!hasTransaction("assign-provider")) {
+    const preAssignJob = ok(
+      await read(CONTRACT_NAME, "get-job", [Cl.uint(jobId)]),
+      "get-job before assign",
+    );
+    ensure(
+      uint(preAssignJob.status) === STATUS_FUNDED && preAssignJob.client === client.address &&
+        preAssignJob.evaluator === evaluator.address && preAssignJob.provider === null &&
+        fundedEscrow === BUDGET,
+      "Pre-assign job state, roles or escrow changed",
+    );
+    await requireStacksExpiryOpen(preAssignJob, "Assignment stage");
   }
   await call(
     "assign-provider",
@@ -757,6 +1128,23 @@ async function execute(publicState) {
     [Cl.uint(jobId), Cl.principal(provider.address)],
     client,
   );
+  if (!hasTransaction("submit-work")) {
+    const preSubmitJob = ok(
+      await read(CONTRACT_NAME, "get-job", [Cl.uint(jobId)]),
+      "get-job before submit",
+    );
+    const preSubmitEscrow = uint(ok(
+      await read(CONTRACT_NAME, "get-escrow-balance", [Cl.uint(jobId)]),
+      "get-escrow-balance before submit",
+    ));
+    ensure(
+      uint(preSubmitJob.status) === STATUS_FUNDED && preSubmitJob.client === client.address &&
+        preSubmitJob.evaluator === evaluator.address && preSubmitJob.provider === provider.address &&
+        preSubmitEscrow === BUDGET,
+      "Pre-submit job state, roles or escrow changed",
+    );
+    await requireStacksExpiryOpen(preSubmitJob, "Submission stage");
+  }
   await call(
     "submit-work",
     "submit-work",
@@ -764,11 +1152,19 @@ async function execute(publicState) {
     provider,
   );
   let job = ok(await read(CONTRACT_NAME, "get-job", [Cl.uint(jobId)]), "get-job");
-  journal.check("provider submission reaches u2", uint(job.status) === STATUS_SUBMITTED);
-  journal.check(
-    "submission preserves gross escrow",
-    uint(ok(await read(CONTRACT_NAME, "get-escrow-balance", [Cl.uint(jobId)]), "get-escrow-balance")) === BUDGET,
-  );
+  if (!hasTransaction("record-decision")) {
+    journal.check("provider submission reaches u2", uint(job.status) === STATUS_SUBMITTED);
+    journal.check(
+      "submission preserves gross escrow",
+      uint(ok(await read(CONTRACT_NAME, "get-escrow-balance", [Cl.uint(jobId)]), "get-escrow-balance")) === BUDGET,
+    );
+    ensure(
+      job.client === client.address && job.provider === provider.address &&
+        job.evaluator === evaluator.address,
+      "Pre-decision job roles changed",
+    );
+    await requireBurnDeadlineOpen(job["review-deadline"], "Review deadline");
+  }
 
   await call(
     "record-decision",
@@ -782,20 +1178,32 @@ async function execute(publicState) {
     evaluator,
   );
   job = ok(await read(CONTRACT_NAME, "get-job", [Cl.uint(jobId)]), "get-job");
-  const pendingFee = ok(
-    await read(CONTRACT_NAME, "get-job-service-fee", [Cl.uint(jobId)]),
-    "get-job-service-fee",
-  );
-  journal.check(
-    "decision records service without settlement",
-    uint(job.status) === STATUS_DECISION_PENDING &&
-      pendingFee["service-recorded"] === true &&
-      pendingFee.settlement === null,
-  );
+  if (!hasTransaction("appeal-decision")) {
+    const pendingFee = ok(
+      await read(CONTRACT_NAME, "get-job-service-fee", [Cl.uint(jobId)]),
+      "get-job-service-fee",
+    );
+    journal.check(
+      "decision records service without settlement",
+      uint(job.status) === STATUS_DECISION_PENDING &&
+        pendingFee["service-recorded"] === true &&
+        pendingFee.settlement === null,
+    );
+  }
   const decision = ok(await read(CONTRACT_NAME, "get-decision", [Cl.uint(jobId)]), "get-decision");
-  const currentBurn = BigInt((await get("/v2/info")).burn_block_height);
-  ensure(currentBurn <= BigInt(decision["appeal-deadline"]),
-    "Appeal deadline passed; do not transmit another transaction");
+  if (!hasTransaction("appeal-decision")) {
+    const appealEscrow = uint(ok(
+      await read(CONTRACT_NAME, "get-escrow-balance", [Cl.uint(jobId)]),
+      "get-escrow-balance before appeal",
+    ));
+    ensure(
+      uint(job.status) === STATUS_DECISION_PENDING && job.provider === provider.address &&
+        decision["original-decision"] === String(DECISION_REJECT) &&
+        decision["appealed-by"] === null && appealEscrow === BUDGET,
+      "Pre-appeal job, decision or escrow changed",
+    );
+    await requireBurnDeadlineOpen(decision["appeal-deadline"], "Appeal deadline");
+  }
 
   await call(
     "appeal-decision",
@@ -804,14 +1212,52 @@ async function execute(publicState) {
     provider,
   );
   job = ok(await read(CONTRACT_NAME, "get-job", [Cl.uint(jobId)]), "get-job");
-  journal.check("provider appeal reaches u8", uint(job.status) === STATUS_DISPUTED);
-  journal.check(
-    "appeal preserves gross escrow",
-    uint(ok(await read(CONTRACT_NAME, "get-escrow-balance", [Cl.uint(jobId)]), "get-escrow-balance")) === BUDGET,
-  );
+  if (!hasTransaction("resolve-appeal")) {
+    journal.check("provider appeal reaches u8", uint(job.status) === STATUS_DISPUTED);
+    journal.check(
+      "appeal preserves gross escrow",
+      uint(ok(await read(CONTRACT_NAME, "get-escrow-balance", [Cl.uint(jobId)]), "get-escrow-balance")) === BUDGET,
+    );
+    const disputedDecision = ok(
+      await read(CONTRACT_NAME, "get-decision", [Cl.uint(jobId)]),
+      "get-decision before resolution",
+    );
+    ensure(
+      job.client === client.address && job.provider === provider.address &&
+        job.evaluator === evaluator.address && job["appeal-authority"] === authority.address &&
+        disputedDecision["original-decision"] === String(DECISION_REJECT) &&
+        disputedDecision["appealed-by"] === provider.address,
+      "Pre-resolution job roles or appealed decision changed",
+    );
+    await requireBurnDeadlineOpen(
+      disputedDecision["resolution-deadline"],
+      "Resolution deadline",
+    );
+  }
 
-  const providerBefore = await account(provider.address);
-  const treasuryBefore = await account(TREASURY);
+  if (!journal.data.preSettlementBalances) {
+    const providerBefore = await account(provider.address);
+    const treasuryBefore = await account(TREASURY);
+    journal.data.preSettlementBalances = {
+      provider: String(providerBefore[ASSET]),
+      treasury: String(treasuryBefore[ASSET]),
+    };
+    journal.save();
+  }
+  ensure(
+    /^\d+$/.test(journal.data.preSettlementBalances.provider) &&
+      /^\d+$/.test(journal.data.preSettlementBalances.treasury),
+    "Pre-settlement balance snapshots are invalid",
+  );
+  if (!journal.data.transactions["resolve-appeal"]) {
+    const providerNow = await account(provider.address);
+    const treasuryNow = await account(TREASURY);
+    ensure(
+      providerNow[ASSET] === BigInt(journal.data.preSettlementBalances.provider) &&
+        treasuryNow[ASSET] === BigInt(journal.data.preSettlementBalances.treasury),
+      "Settlement participants changed balances after the persisted pre-settlement snapshot",
+    );
+  }
   const settlement = await call(
     "resolve-appeal",
     "resolve-appeal",
@@ -829,8 +1275,10 @@ async function execute(publicState) {
   journal.save();
   const providerAfter = await account(provider.address);
   const treasuryAfter = await account(TREASURY);
-  const providerDelta = providerAfter[ASSET] - providerBefore[ASSET];
-  const treasuryDelta = treasuryAfter[ASSET] - treasuryBefore[ASSET];
+  const providerDelta =
+    providerAfter[ASSET] - BigInt(journal.data.preSettlementBalances.provider);
+  const treasuryDelta =
+    treasuryAfter[ASSET] - BigInt(journal.data.preSettlementBalances.treasury);
   journal.check("provider receives exact 98% net", providerDelta === NET, String(providerDelta));
   journal.check("treasury receives exact 2% fee", treasuryDelta === FEE, String(treasuryDelta));
 
@@ -902,12 +1350,32 @@ async function execute(publicState) {
     new Set(Object.values(journal.data.transactions).map((entry) => entry.txid)).size ===
       Object.keys(journal.data.transactions).length,
   );
+  const actualNetworkFees = Object.values(journal.data.transactions)
+    .reduce((total, entry) => total + BigInt(entry.fee), 0n);
+  journal.data.networkFees = {
+    campaignCap: String(MAX_CAMPAIGN_NETWORK_FEES),
+    remainingBeforeAsset: String(remainingNetworkFees),
+    expectedAsset: String(expectedAssetNetworkFees),
+    actual: String(actualNetworkFees),
+  };
+  journal.save();
+  journal.check(
+    "asset network fees equal the pre-authorized exact total",
+    actualNetworkFees === expectedAssetNetworkFees && actualNetworkFees <= remainingNetworkFees,
+    `${actualNetworkFees}/${expectedAssetNetworkFees}/${remainingNetworkFees} micro-STX`,
+  );
+  ensure(
+    journal.data.checks.length > 0 &&
+      journal.data.checks.every((entry) => entry.passed === true),
+    "Receipt contains an unresolved failed check and cannot be promoted to passed",
+  );
   journal.data.result = "passed";
   journal.data.completedAt = new Date().toISOString();
   journal.save();
   console.log(`PASS ${journal.data.checks.length}/${journal.data.checks.length}`);
   console.log(`Receipt: ${resultPath}`);
   console.log(`Receipt SHA-256: ${sha256(readFileSync(resultPath))}`);
+  accountLock.close();
 }
 
 export async function main() {
@@ -938,6 +1406,22 @@ export async function main() {
     treasury: TREASURY,
     appealAuthority: AUTHORITY,
     publicState,
+    executionFundingRequirements: {
+      dedicatedClient: {
+        minimumMicroStxWithMaximumTopUp: "3250000",
+        minimumSbtcSats: "1000",
+        mustDifferFromContractOwner: true,
+      },
+      provider: {
+        minimumMicroStxBeforeMaximumTopUp: "400000",
+        targetMicroStxBeforeBothAssets: "1300000",
+      },
+      evaluator: { address: EXPECTED_EVALUATOR, minimumMicroStx: "700000" },
+      appealAuthority: { address: AUTHORITY, minimumMicroStx: "700000" },
+      fixedContractCallFeeMicroStx: String(CALL_FEE),
+      aggregateTopUpCapMicroStx: String(MAX_CAMPAIGN_TOP_UP),
+      aggregateNetworkFeeCapMicroStx: String(MAX_CAMPAIGN_NETWORK_FEES),
+    },
     ready: true,
   };
   console.log(JSON.stringify(preflight, null, 2));
