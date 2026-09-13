@@ -227,7 +227,7 @@ verify_public_origin_for_service() {
       # Evaluator intentionally does not expose its commit. Exact release identity is proven
       # by the image ID/tag and live RELEASE_SHA; these public checks prove role and readiness.
       verify_public_json https://evaluator.qa.nayori.ai/healthz evaluator-health "" \
-        '. == {ok:true,service:"nayori-evaluator",version:"0.1.0"}'
+        '. == {ok:true,service:"nayori-evaluator",version:"0.2.0"}'
       verify_public_json https://evaluator.qa.nayori.ai/readyz evaluator-ready "" '
         .ok == true and .environment == "qa" and .network == "testnet" and
         .commerceGeneration == "service-fee-v6-v5" and .earnedServiceFeeBps == 200 and
