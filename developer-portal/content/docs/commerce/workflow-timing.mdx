@@ -5,9 +5,10 @@ description: Understand confirmation policy, evaluator feedback, and on-chain ap
 
 ## Release boundary
 
-The **Jobs timing panel and read-only API are deployed in QA**. Web/docs release
-`0233183efb3e32d09ca0f5bf6c1ac2188921c88d` passed 24 public checks on 2026-09-09 UTC,
-including terminal decision history and closed countdowns. Production promotion is separate.
+The **Jobs timing panel and read-only API are live in production**. Web/docs release
+`e4b0e24422631c11c77c1a7945e8b7ece7e1e5af` passed its controlled rollout and public postchecks
+on 2026-09-13 UTC. Earlier QA validation passed 24 public checks, including terminal decision
+history and closed countdowns.
 
 Configurable signer policy ships in stable **SDK 0.9.0** under `latest`. Pin the version explicitly:
 
@@ -16,10 +17,11 @@ npm install --save-exact @perkos/agent-sdk@0.9.0
 ```
 
 The registry tarball matches the reviewed artifact. Publication was authorized from the operator
-Mac without provenance attestation; it is not a production rollout or funded E2E certification.
+Mac without provenance attestation; package publication is distinct from the production Web/docs
+rollout and is not funded E2E certification.
 The immutable rc.1 package does not gain this policy by reinstalling it.
-Existing version-1 QA custody permits retain six additional Bitcoin burn blocks. No current
-contract, live job, production signer or x402/MPP confirmation requirement changes here.
+Existing version-1 QA custody permits retain six additional Bitcoin burn blocks. The Web/docs
+rollout does not modify a contract, live job, hosted signer or x402/MPP confirmation requirement.
 
 ## Know the three clocks before accepting a job
 
@@ -43,16 +45,17 @@ mempool and evaluator latency. There is no guaranteed feedback SLA in this relea
 
 ## Read-only timing API
 
-The following read-only calls are available on QA:
+The following read-only calls are available in production and QA:
 
 ```bash
 curl 'https://qa.nayori.ai/api/v1/workflow-timing?asset=sbtc'
 curl 'https://qa.nayori.ai/api/v1/workflow-timing?asset=sbtc&jobId=15'
+curl 'https://nayori.ai/api/v1/workflow-timing?asset=sbtc'
 ```
 
-Use the production origin only after its separate promotion. `asset` must be `stx` or `sbtc`;
-`jobId` is optional and must be a positive safe integer. No credentials or wallet signatures
-are required. This route cannot execute an action or accept a payment.
+`asset` must be `stx` or `sbtc`; `jobId` is optional and must be a positive safe integer. No
+credentials or wallet signatures are required. This route cannot execute an action or accept a
+payment.
 
 - `network`, `contract`, `observedAt`, `observedBurnHeight`: source and observation context.
 - `confirmationPolicy`: advertised operator baseline; **not wallet enforcement**.

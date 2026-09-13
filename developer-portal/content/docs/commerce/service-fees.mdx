@@ -49,13 +49,12 @@ still controlled by the client. No provider marketplace or auto-claim behavior i
 
 ## SDK integration boundary
 
-Stable SDK 0.8.0 includes opt-in v6/v5 support when callers provide the exact same-network
-contract IDs. It exposes `getServiceFeePolicy`, `getJobServiceFee`, `quoteServiceFee`,
+Stable SDK 0.9.0 uses v6/v5 as its mainnet defaults. It exposes `getServiceFeePolicy`,
+`getJobServiceFee`, `quoteServiceFee`,
 `initializeServiceFeeProtocol`, `waiveServiceFee` and `refundServiceFee`. Funding and submission
 require a `serviceFeeAcceptance` containing accepted gross amount, `basisPoints: 200`, pinned
-treasury and `rejectionRefund: 'net-after-evaluation'`. SDK 0.9.0 promotes v6/v5 to defaults but
-remains an unpublished candidate until npm provenance is independently verified. Existing
-generations do not require this acceptance.
+treasury and `rejectionRefund: 'net-after-evaluation'`. It is published under npm `latest`;
+existing generations do not require this acceptance.
 
 Pin the exact published SDK version and verify its release notes before use; do not infer package
 state from a deployed contract or portal page.
