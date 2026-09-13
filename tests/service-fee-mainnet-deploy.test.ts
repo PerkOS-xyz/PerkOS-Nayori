@@ -8,12 +8,15 @@ import {
   vi,
 } from "vitest";
 import {
+  chmodSync,
   existsSync,
   mkdtempSync,
   readFileSync,
   realpathSync,
   rmSync,
   statSync,
+  symlinkSync,
+  writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
@@ -23,8 +26,10 @@ import {
   getAddressFromPrivateKey,
   makeContractCall,
   makeContractDeploy,
+  privateKeyToPublic,
   randomPrivateKey,
   serializeCV,
+  signStructuredData,
 } from "@stacks/transactions";
 import { STACKS_MAINNET } from "@stacks/network";
 import {
@@ -52,15 +57,15 @@ import {
   send,
   sha256,
   source,
+  treasuryCustodyClarity,
   validateBuiltTransaction,
   validateTransaction,
-  verifyTreasuryCustody,
+  verifyTreasuryAttestation,
   verifyRuntimeAttestation,
   verifyNodeInfo,
   verifyConfig,
 } from "../scripts/service-fee-mainnet-core.mjs";
 import { main as deployMain } from "../scripts/deploy-service-fee-mainnet.mjs";
-import { main as createTreasury } from "../scripts/create-service-fee-treasury.mjs";
 
 const isolation = realpathSync(
   mkdtempSync(join(tmpdir(), "nayori-mainnet-fee-suite-")),
@@ -102,6 +107,7 @@ describe("mainnet promotion policy", () => {
     });
     expect(NETWORK_ID).toBe(1);
     expect(API).toBe("https://api.hiro.so");
+    expect(TREASURY).toBe("SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8");
     expect(APPEAL_WINDOW).toBe(144n);
     expect(SERVICE_FEE_BPS).toBe(200n);
     expect(MAXIMUM_TOTAL_FEES).toBe(3_000_000n);
@@ -146,8 +152,9 @@ describe("mainnet promotion policy", () => {
       CONFIRM_SERVICE_FEE_MAINNET_AUTHORITY: AUTHORITY,
       CONFIRM_SERVICE_FEE_MAINNET_TREASURY: treasury,
       SERVICE_FEE_MAINNET_DEPLOYER_ENV_PATH: "/external/deployer.env",
-      SERVICE_FEE_MAINNET_TREASURY_ENV_PATH: "/external/treasury.env",
-      CONFIRM_SERVICE_FEE_MAINNET_TREASURY_ENV_PATH: "/external/treasury.env",
+      SERVICE_FEE_MAINNET_TREASURY_ATTESTATION_PATH: "/external/treasury-attestation.json",
+      CONFIRM_SERVICE_FEE_MAINNET_TREASURY_ATTESTATION_PATH:
+        "/external/treasury-attestation.json",
       SERVICE_FEE_MAINNET_RECEIPT_PATH: "/external/deployment-receipt.json",
       CONFIRM_SERVICE_FEE_MAINNET_RECEIPT_PATH: "/external/deployment-receipt.json",
       SERVICE_FEE_MAINNET_STATE_DIR: "/external/campaign-state",
@@ -168,7 +175,7 @@ describe("mainnet promotion policy", () => {
       "CONFIRM_SERVICE_FEE_MAINNET_DEPLOYER",
       "CONFIRM_SERVICE_FEE_MAINNET_AUTHORITY",
       "CONFIRM_SERVICE_FEE_MAINNET_TREASURY",
-      "CONFIRM_SERVICE_FEE_MAINNET_TREASURY_ENV_PATH",
+      "CONFIRM_SERVICE_FEE_MAINNET_TREASURY_ATTESTATION_PATH",
       "CONFIRM_SERVICE_FEE_MAINNET_RECEIPT_PATH",
       "CONFIRM_SERVICE_FEE_MAINNET_STATE_DIR",
       "CONFIRM_SERVICE_FEE_MAINNET_MAX_FEES_MICRO_STX",
@@ -241,44 +248,179 @@ describe("mainnet promotion policy", () => {
   });
 });
 
-describe("dedicated treasury custody", () => {
-  it("creates one external mode-0600 key without printing it or overwriting", () => {
-    const path = join(temporaryDirectory(), "mainnet-treasury.env");
-    const messages: string[] = [];
-    vi.spyOn(console, "log").mockImplementation((message) => messages.push(String(message)));
-    const result = createTreasury({
-      STACKS_NETWORK: "mainnet",
-      CONFIRM_CREATE_MAINNET_TREASURY: "create-dedicated-mainnet-treasury",
-      SERVICE_FEE_MAINNET_TREASURY_ENV_PATH: path,
+describe("Leather SIP-018 treasury custody", () => {
+  const reviewedSha = "a".repeat(40);
+  const now = Date.parse("2026-09-13T12:00:00.000Z");
+  const testPrivateKey = `${randomPrivateKey().slice(0, 64)}01`;
+  const testPublicKey = privateKeyToPublic(testPrivateKey);
+  const testTreasury = getAddressFromPrivateKey(testPrivateKey, "mainnet");
+
+  function signedAttestation(overrides: Record<string, unknown> = {}) {
+    const attestation = {
+      schemaVersion: 1,
+      scheme: "SIP-018-RSV",
+      domain: {
+        name: "Nayori Mainnet Treasury Custody",
+        version: "1",
+        chainId: 1,
+      },
+      message: {
+        action: "prove-control-of-nayori-mainnet-treasury",
+        treasury: testTreasury,
+        deployer: DEPLOYER,
+        appealAuthority: AUTHORITY,
+        stxContract: CONTRACTS.stx,
+        sbtcContract: CONTRACTS.sbtc,
+        stxSourceHash: SOURCE_HASHES[CONTRACTS.stx],
+        sbtcSourceHash: SOURCE_HASHES[CONTRACTS.sbtc],
+        reviewedSha,
+        challenge: "c".repeat(64),
+        issuedAt: new Date(now - 60_000).toISOString(),
+        expiresAt: new Date(now + 3_600_000).toISOString(),
+      },
+      publicKey: testPublicKey,
+      signature: "0".repeat(130),
+      ...overrides,
+    };
+    const clarity = treasuryCustodyClarity(attestation);
+    attestation.signature = signStructuredData({
+      ...clarity,
+      privateKey: testPrivateKey,
     });
-    const contents = readFileSync(path, "utf8");
-    const key = contents.match(/NAYORI_MAINNET_TREASURY_PRIVATE_KEY=(.+)/)?.[1];
-    expect(result.address).toMatch(/^SP/);
-    expect(contents).toContain(`NAYORI_MAINNET_TREASURY_ADDRESS=${result.address}`);
-    expect(key).toMatch(/^[a-f0-9]+$/);
+    return attestation;
+  }
+
+  function writeAttestation(attestation = signedAttestation()) {
+    const path = join(temporaryDirectory(), "treasury-attestation.json");
+    writeFileSync(path, `${JSON.stringify(attestation, null, 2)}\n`, {
+      flag: "wx",
+      mode: 0o600,
+    });
+    return path;
+  }
+
+  const verify = (path: string, expectedReviewedSha = reviewedSha) =>
+    verifyTreasuryAttestation(path, {
+      expectedTreasury: testTreasury,
+      expectedReviewedSha,
+      now: () => now,
+    });
+
+  it("accepts a current signed attestation bound to its mainnet address and release", () => {
+    const path = writeAttestation();
+    const result = verify(path);
+    expect(result.treasury).toBe(testTreasury);
+    expect(result.reviewedSha).toBe(reviewedSha);
+    expect(result.publicKey).toBe(testPublicKey);
+    expect(result.signatureHash).toMatch(/^[a-f0-9]{64}$/);
     expect(statSync(path).mode & 0o777).toBe(0o600);
-    expect(messages.join("\n")).not.toContain(key);
-    expect(verifyTreasuryCustody(path, result.address)).toBe(true);
-    expect(() => verifyTreasuryCustody(path, otherTreasury)).toThrow(/address differs/);
-    expect(() =>
-      createTreasury({
-        STACKS_NETWORK: "mainnet",
-        CONFIRM_CREATE_MAINNET_TREASURY: "create-dedicated-mainnet-treasury",
-        SERVICE_FEE_MAINNET_TREASURY_ENV_PATH: path,
-      }),
-    ).toThrow();
   });
 
-  it("rejects non-mainnet creation before touching the target", () => {
-    const path = join(temporaryDirectory(), "must-not-exist.env");
-    expect(() =>
-      createTreasury({
-        STACKS_NETWORK: "testnet",
-        CONFIRM_CREATE_MAINNET_TREASURY: "create-dedicated-mainnet-treasury",
-        SERVICE_FEE_MAINNET_TREASURY_ENV_PATH: path,
-      }),
-    ).toThrow(/mainnet/);
-    expect(existsSync(path)).toBe(false);
+  it("rejects a wrong treasury address or public key", () => {
+    const wrongAddress = signedAttestation({
+      message: { ...signedAttestation().message, treasury: otherTreasury },
+    });
+    expect(() => verify(writeAttestation(wrongAddress))).toThrow(/treasury|address/i);
+
+    const wrongKey = signedAttestation();
+    wrongKey.publicKey = privateKeyToPublic(`${"12".repeat(32)}01`);
+    expect(() => verify(writeAttestation(wrongKey))).toThrow(/public key|signature/i);
+  });
+
+  it("rejects a message changed after signing and a different reviewed release", () => {
+    const tampered = signedAttestation();
+    tampered.message.challenge = "d".repeat(64);
+    expect(() => verify(writeAttestation(tampered))).toThrow(/signature/i);
+    expect(() => verify(writeAttestation(), "b".repeat(40))).toThrow(/reviewed/i);
+  });
+
+  it.each([
+    [
+      "expired",
+      new Date(now - 7_200_000).toISOString(),
+      new Date(now - 3_600_000).toISOString(),
+    ],
+    [
+      "not yet valid",
+      new Date(now + 300_001).toISOString(),
+      new Date(now + 600_000).toISOString(),
+    ],
+    [
+      "excess lifetime",
+      new Date(now - 60_000).toISOString(),
+      new Date(now + 86_400_001).toISOString(),
+    ],
+  ])("rejects an %s attestation", (_case, issuedAt, expiresAt) => {
+    const base = signedAttestation();
+    const attestation = signedAttestation({
+      message: { ...base.message, issuedAt, expiresAt },
+    });
+    expect(() => verify(writeAttestation(attestation))).toThrow(/issued|expires|lifetime/i);
+  });
+
+  it("rejects an invalid recovery id or an invalid signature", () => {
+    const recovery = signedAttestation();
+    recovery.signature = `${recovery.signature.slice(0, -2)}04`;
+    expect(() => verify(writeAttestation(recovery))).toThrow(/signature|recovery/i);
+
+    const signature = signedAttestation();
+    signature.signature = `${signature.signature[0] === "0" ? "1" : "0"}${signature.signature.slice(1)}`;
+    expect(() => verify(writeAttestation(signature))).toThrow(/signature|public key/i);
+  });
+
+  it("rejects a symlink or a file not owned with exact mode 0600", () => {
+    const path = writeAttestation();
+    const link = join(temporaryDirectory(), "treasury-attestation-link.json");
+    symlinkSync(path, link);
+    expect(() => verify(link)).toThrow(/symlink|absolute/i);
+
+    chmodSync(path, 0o644);
+    expect(() => verify(path)).toThrow(/0600|mode/i);
+  });
+
+  it.each([
+    ["extra top-level field", (value: any) => ({ ...value, extra: true })],
+    [
+      "missing top-level field",
+      (value: any) => {
+        const { scheme: _scheme, ...rest } = value;
+        return rest;
+      },
+    ],
+    [
+      "extra domain field",
+      (value: any) => ({ ...value, domain: { ...value.domain, extra: true } }),
+    ],
+    [
+      "missing message field",
+      (value: any) => {
+        const { challenge: _challenge, ...message } = value.message;
+        return { ...value, message };
+      },
+    ],
+  ])("rejects JSON with an %s", (_case, mutate) => {
+    expect(() => verify(writeAttestation(mutate(signedAttestation())))).toThrow(
+      /schema|field|attestation/i,
+    );
+  });
+
+  it("rejects duplicate member names and non-canonical JSON", () => {
+    const attestation = signedAttestation();
+    const canonical = `${JSON.stringify(attestation, null, 2)}\n`;
+    const duplicate = canonical.replace(
+      '  "scheme": "SIP-018-RSV",',
+      '  "scheme": "SIP-018-RSV",\n  "scheme": "SIP-018-RSV",',
+    );
+    const duplicatePath = join(temporaryDirectory(), "duplicate-attestation.json");
+    writeFileSync(duplicatePath, duplicate, { flag: "wx", mode: 0o600 });
+    expect(() => verify(duplicatePath)).toThrow(/canonical JSON/i);
+
+    const compactPath = join(temporaryDirectory(), "compact-attestation.json");
+    writeFileSync(compactPath, `${JSON.stringify(attestation)}\n`, {
+      flag: "wx",
+      mode: 0o600,
+    });
+    expect(() => verify(compactPath)).toThrow(/canonical JSON/i);
   });
 });
 
