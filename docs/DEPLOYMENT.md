@@ -15,6 +15,46 @@ with a signer-free preflight and requires a separately authorized, typed-confirm
 See [`QA_RELEASES.md`](QA_RELEASES.md) for the operational sequence and
 [`the release design`](plans/2026-09-01-qa-first-multi-repo-release-design.md) for trust boundaries.
 
+### QA controller receipts and quarantine
+
+The VPS controller serializes all repositories with one host-wide lock. A successful runtime
+receipt binds the exact commit to the complete container set, SHA-derived image tags, immutable
+Docker image IDs and an authoritative current-release pointer. `verify` rechecks that live state;
+an older receipt is historical evidence and cannot authorize promotion after a newer deployment.
+The controller force-disables inherited shell tracing and streams Compose output only into narrow
+postconditions; do not wrap it in tooling that logs Compose or environment-file contents. The VPS
+runtime must provide Docker Compose 2.40.3 or newer with `config --no-env-resolution`; the controller
+checks this capability before reading release state and fails closed after a host downgrade.
+Before committing a receipt it also verifies the affected public HTTPS readiness and capability
+endpoints with bounded timeouts and exact release identities where those endpoints expose one.
+Platform checks distinguish the API edge from the facilitator execution role. The facilitator
+worker has no health endpoint and must remain `running` with zero restarts across two observations;
+the controller does not describe that as application health. Non-applicable receipt checks remain
+explicitly null rather than being reported as successful.
+
+The controller never overwrites a receipt for the same repository and commit. If an interrupted or
+superseded controller produced an invalid receipt, inspect the live Compose model and containers
+first, then move—not delete—the receipt into the private VPS quarantine. Move the current pointer
+only when its `commit` is the same invalid commit. For example, in a root operator session:
+
+```bash
+NAYORI_QA_REPO=PerkOS-Nayori-Evaluator
+NAYORI_QA_SHA=0123456789abcdef0123456789abcdef01234567
+NAYORI_QA_RECEIPTS=/opt/perkos-nayori-qa/automation/receipts
+sudo install -d -m 700 "$NAYORI_QA_RECEIPTS/invalid"
+sudo mv "$NAYORI_QA_RECEIPTS/$NAYORI_QA_REPO-$NAYORI_QA_SHA.json" \
+  "$NAYORI_QA_RECEIPTS/invalid/$NAYORI_QA_REPO-$NAYORI_QA_SHA.invalid.json"
+if sudo jq -e --arg sha "$NAYORI_QA_SHA" '.commit == $sha' \
+  "$NAYORI_QA_RECEIPTS/$NAYORI_QA_REPO-current.json" >/dev/null; then
+  sudo mv "$NAYORI_QA_RECEIPTS/$NAYORI_QA_REPO-current.json" \
+    "$NAYORI_QA_RECEIPTS/invalid/$NAYORI_QA_REPO-current-$NAYORI_QA_SHA.invalid.json"
+fi
+```
+
+Record the reason and observed live tag/image ID in the private incident evidence. Do not copy
+Compose files, environment values or credentials into GitHub. A retry must then create a new
+version-2 receipt and current pointer through the normal controller.
+
 ## Production
 
 Changing `NEXT_PUBLIC_*` values only at runtime is insufficient: the Web embeds them at build

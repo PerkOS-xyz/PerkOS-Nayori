@@ -939,8 +939,78 @@ requirePattern(
 );
 requirePattern(
   "ops/vps/nayori-qa-release",
-  /replace_compose_environment NAYORI_RELEASE_SHA "\$SHA"[\s\S]*?replace_compose_environment NAYORI_DOCS_RELEASE "\$SHA"/,
+  /replace_compose_environment web NAYORI_RELEASE_SHA "\$SHA"[\s\S]*?replace_compose_environment docs NAYORI_DOCS_RELEASE "\$SHA"/,
   "QA Web and Docs rollout must publish the exact runtime release SHA",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /^#![^\n]+\n(?:#[^\n]*\n)*\{ set \+x; \} 2>\/dev\/null[\s\S]*?unset BASH_XTRACEFD/,
+  "QA controller must disable inherited xtrace before processing release state",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /config --help \| grep -Fq -- '--no-env-resolution'[\s\S]*?compose_json\(\)[\s\S]*?config --format json --no-env-resolution[\s\S]*?compose_json "\$profile" \| jq -e/,
+  "QA semantic Compose checks must stream directly into narrow jq postconditions",
+);
+forbidPattern(
+  "ops/vps/nayori-qa-release",
+  /compose_model=/,
+  "QA controller must not retain the full Compose model in a traced shell variable",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /canonical QA Compose must be a JSON object[\s\S]*?jq --arg service "\$service" --arg image "\$image"[\s\S]*?\.services\[\$service\]\.image = \$image/,
+  "QA must require canonical JSON Compose and update images structurally with jq",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /validate_canonical_compose\n\nif \[\[ "\$ACTION" == "verify" \]\]; then\n  verify_current_release/,
+  "QA current verification must reject noncanonical Compose before receipt checks",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /verify_compose_image web "\$WEB_IMAGE"[\s\S]*?docker compose -f "\$COMPOSE" up -d web docs[\s\S]*?wait_healthy nayori-qa-web[\s\S]*?verify_running_image nayori-qa-web "\$WEB_IMAGE"/,
+  "QA rollout must verify desired and running images around restart",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /replace_evaluator_migration_mount "\$RELEASE\/migrations\/001_initial\.sql"[\s\S]*?verify_compose_migration_mount "\$RELEASE\/migrations\/001_initial\.sql"[\s\S]*?verify_running_migration_mount nayori-qa-evaluator-postgres/,
+  "QA Evaluator rollout must bind and verify its exact migration mount",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /verify_running_image nayori-qa-evaluator "\$IMAGE" "\$IMAGE_ID"[\s\S]*?assert_complete_verified_runtime_set[\s\S]*?schemaVersion: 2/,
+  "QA passed receipts must be written only after exact Evaluator runtime verification",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /flock -n 9[\s\S]*?another Nayori QA release operation is active/,
+  "all QA repository releases must share one VPS-wide controller lock",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /docker image inspect --format '\{\{\.Id\}\}'[\s\S]*?docker inspect --format '\{\{\.Image\}\}'[\s\S]*?VERIFIED_RUNTIME_IMAGES\+=\("\$container\|\$image\|\$image_id"\)/,
+  "QA runtime verification must bind immutable image IDs as well as tags",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /current_pointer_path[\s\S]*?verify_current_release[\s\S]*?receiptSha256[\s\S]*?current container image binding mismatch/,
+  "QA promotion verification must bind the authoritative pointer to live runtime state",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /trap on_error ERR[\s\S]*?trap 'exit 130' INT[\s\S]*?trap 'exit 129' HUP[\s\S]*?trap 'exit 143' TERM[\s\S]*?trap on_exit EXIT/,
+  "QA release interruption and exit paths must share verified rollback",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /PREVIOUS_RUNTIME_IMAGES[\s\S]*?PREVIOUS_RELEASE_IDENTITIES[\s\S]*?verify_running_environment "\$container" "\$key" "\$value" \|\| failed=1[\s\S]*?wait_healthy nayori-qa-evaluator-postgres \|\| failed=1[\s\S]*?QA RELEASE ROLLBACK VERIFICATION FAILED[\s\S]*?deployment_commit_is_durable/,
+  "QA rollback must prove restoration of the previous runtime",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /psql --single-transaction -v ON_ERROR_STOP=1/,
+  "QA Evaluator migrations must fail atomically",
 );
 requirePattern(
   "ops/vps/nayori-qa-release",
@@ -949,8 +1019,28 @@ requirePattern(
 );
 requirePattern(
   "ops/vps/nayori-qa-release",
-  /for item in "\$\{ENV_BACKUPS\[@\]\}"; do[\s\S]*?cp "\$backup" "\$file"/,
+  /rollback\(\)[\s\S]*?ENV_BACKUPS\[@\][\s\S]*?cp "\$backup" "\$file"/,
   "QA rollback must restore release identity environment files",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /api\.qa\.nayori\.ai\/supported[\s\S]*?paymentVerificationEnabled == false[\s\S]*?facilitator\.qa\.nayori\.ai\/supported[\s\S]*?paymentVerificationEnabled == true/,
+  "QA public checks must distinguish the API edge from the facilitator execution role",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /verify_worker_runtime\(\)[\s\S]*?State\.Status[\s\S]*?State\.Running[\s\S]*?RestartCount[\s\S]*?esac\n\nverify_public_origins "\$SHA"\nif \[\[ "\$REPOSITORY" == "PerkOS-Nayori-Platform" \]\]; then\n  verify_worker_runtime\nfi\nassert_complete_verified_runtime_set[\s\S]*?RECEIPT_TEMP=/,
+  "QA receipts must follow public-origin and stable-worker runtime checks",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /PerkOS-Nayori-Agent-SDK" then[\s\S]*?publicReadiness:null,publicReleaseIdentity:null,workerRuntime:null[\s\S]*?PerkOS-Nayori-Evaluator" then[\s\S]*?publicReadiness:true,publicReleaseIdentity:null,workerRuntime:null[\s\S]*?workerRuntime:\{running:true,zeroRestarts:true\}/,
+  "QA receipts must record component-specific checks without false success flags",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /"\$MUTATION_STARTED" == true \|\| "\$NEW_RECEIPT_WRITTEN" == true[\s\S]*?NEW_RECEIPT_WRITTEN=true\nmv -f "\$RECEIPT_TEMP"/,
+  "QA interruption must clean an uncommitted materialized receipt, including SDK receipts",
 );
 
 // Candidate fee generation: static tripwires supplement (not replace) simnet tests.
