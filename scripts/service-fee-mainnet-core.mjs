@@ -36,9 +36,13 @@ import {
   getAddressFromPrivateKey,
   makeContractCall,
   makeContractDeploy,
+  encodeStructuredDataBytes,
+  publicKeyFromSignatureRsv,
+  publicKeyToAddressSingleSig,
   serializeCV,
   serializeTransaction,
   validateStacksAddress,
+  verifySignature,
 } from "@stacks/transactions";
 import { STACKS_MAINNET } from "@stacks/network";
 
@@ -51,7 +55,7 @@ export const NETWORK = {
 };
 export const DEPLOYER = "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH";
 export const AUTHORITY = "SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH";
-export const TREASURY = "SP2G44NF8281MWN4ARNXW2B1KJ5A7J9HTZGFSE0NY";
+export const TREASURY = "SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8";
 export const SBTC = "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token";
 export const REPUTATION = "reputation-registry-v3";
 export const CONTRACTS = Object.freeze({
@@ -80,6 +84,17 @@ export const RUNTIME_ATTESTATION_VERSION = "ephemeral-npm-ci-ignore-scripts-v1";
 export const CAMPAIGN_STATE_FILENAME = "v6-v5-campaign.json";
 export const GLOBAL_LOCK_PATH =
   "/private/tmp/nayori-service-fee-mainnet-SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.lock";
+export const TREASURY_ATTESTATION_SCHEMA_VERSION = 1;
+export const TREASURY_ATTESTATION_SCHEME = "SIP-018-RSV";
+export const TREASURY_CUSTODY_DOMAIN = Object.freeze({
+  name: "Nayori Mainnet Treasury Custody",
+  version: "1",
+  chainId: NETWORK_ID,
+});
+export const TREASURY_CUSTODY_ACTION =
+  "prove-control-of-nayori-mainnet-treasury";
+export const TREASURY_ATTESTATION_MAX_LIFETIME_MS = 24 * 60 * 60 * 1000;
+export const TREASURY_ATTESTATION_CLOCK_SKEW_MS = 5 * 60 * 1000;
 
 export class SafetyError extends Error {}
 export function ensure(condition, message) {
@@ -164,10 +179,10 @@ export function guard(env, kind = "deploy") {
       "Mainnet treasury is not explicitly confirmed",
     );
     ensure(
-      typeof env.SERVICE_FEE_MAINNET_TREASURY_ENV_PATH === "string" &&
-        env.SERVICE_FEE_MAINNET_TREASURY_ENV_PATH.length > 0 &&
-        env.CONFIRM_SERVICE_FEE_MAINNET_TREASURY_ENV_PATH ===
-        env.SERVICE_FEE_MAINNET_TREASURY_ENV_PATH,
+      typeof env.SERVICE_FEE_MAINNET_TREASURY_ATTESTATION_PATH === "string" &&
+        env.SERVICE_FEE_MAINNET_TREASURY_ATTESTATION_PATH.length > 0 &&
+        env.CONFIRM_SERVICE_FEE_MAINNET_TREASURY_ATTESTATION_PATH ===
+        env.SERVICE_FEE_MAINNET_TREASURY_ATTESTATION_PATH,
       "Mainnet treasury custody path is not explicitly confirmed",
     );
     ensure(
@@ -369,15 +384,292 @@ export function signer(path) {
     "Mainnet deployer signer",
   );
 }
-export function verifyTreasuryCustody(path, treasury) {
-  loadRoleKey(
-    path,
-    principal(treasury),
-    "NAYORI_MAINNET_TREASURY_ADDRESS",
-    "NAYORI_MAINNET_TREASURY_PRIVATE_KEY",
-    "Mainnet treasury signer",
+
+const ATTESTATION_KEYS = Object.freeze([
+  "schemaVersion",
+  "scheme",
+  "domain",
+  "message",
+  "publicKey",
+  "signature",
+]);
+const ATTESTATION_DOMAIN_KEYS = Object.freeze(["name", "version", "chainId"]);
+const ATTESTATION_MESSAGE_KEYS = Object.freeze([
+  "action",
+  "treasury",
+  "deployer",
+  "appealAuthority",
+  "stxContract",
+  "sbtcContract",
+  "stxSourceHash",
+  "sbtcSourceHash",
+  "reviewedSha",
+  "challenge",
+  "issuedAt",
+  "expiresAt",
+]);
+
+function exactJsonObject(value, keys, label) {
+  ensure(
+    value !== null &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      JSON.stringify(Object.keys(value).sort()) === JSON.stringify([...keys].sort()),
+    `${label} does not match the strict schema`,
   );
-  return true;
+  return value;
+}
+
+function exactIsoTimestamp(value, label) {
+  ensure(
+    typeof value === "string" &&
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value),
+    `${label} must be an exact UTC ISO-8601 timestamp`,
+  );
+  const timestamp = Date.parse(value);
+  ensure(
+    Number.isFinite(timestamp) && new Date(timestamp).toISOString() === value,
+    `${label} is not a valid UTC timestamp`,
+  );
+  return timestamp;
+}
+
+function assertAttestationPath(path) {
+  ensure(
+    typeof path === "string" && isAbsolute(path),
+    "Treasury attestation path must be absolute",
+  );
+  let real;
+  try {
+    real = realpathSync(path);
+  } catch {
+    throw new SafetyError("Treasury attestation file does not exist");
+  }
+  ensure(real === path, "Treasury attestation path must not be a symlink");
+  let repository;
+  try {
+    repository = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+      cwd: dirname(path),
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    /* A custody attestation may intentionally live outside Git. */
+  }
+  if (repository) {
+    const file = relative(repository, path);
+    ensure(
+      file !== "" && file !== ".." && !file.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`),
+      "Treasury attestation Git path is invalid",
+    );
+    const tracked = execFileSync(
+      "git",
+      ["--literal-pathspecs", "ls-files", "--", file],
+      {
+        cwd: repository,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      },
+    ).trim();
+    ensure(!tracked, "Treasury attestation must never be tracked by Git");
+    try {
+      execFileSync("git", ["check-ignore", "--quiet", "--no-index", "--", file], {
+        cwd: repository,
+        stdio: ["ignore", "ignore", "ignore"],
+      });
+    } catch {
+      throw new SafetyError("Treasury attestation inside a Git worktree must be ignored");
+    }
+  }
+  return path;
+}
+
+export function treasuryCustodyClarity(attestation) {
+  const domain = exactJsonObject(
+    attestation?.domain,
+    ATTESTATION_DOMAIN_KEYS,
+    "Treasury attestation domain",
+  );
+  const message = exactJsonObject(
+    attestation?.message,
+    ATTESTATION_MESSAGE_KEYS,
+    "Treasury attestation message",
+  );
+  return {
+    domain: Cl.tuple({
+      name: Cl.stringAscii(domain.name),
+      version: Cl.stringAscii(domain.version),
+      "chain-id": Cl.uint(domain.chainId),
+    }),
+    message: Cl.tuple({
+      action: Cl.stringAscii(message.action),
+      treasury: Cl.stringAscii(message.treasury),
+      deployer: Cl.stringAscii(message.deployer),
+      "appeal-authority": Cl.stringAscii(message.appealAuthority),
+      "stx-contract": Cl.stringAscii(message.stxContract),
+      "sbtc-contract": Cl.stringAscii(message.sbtcContract),
+      "stx-source-hash": Cl.stringAscii(message.stxSourceHash),
+      "sbtc-source-hash": Cl.stringAscii(message.sbtcSourceHash),
+      "reviewed-sha": Cl.stringAscii(message.reviewedSha),
+      challenge: Cl.stringAscii(message.challenge),
+      "issued-at": Cl.stringAscii(message.issuedAt),
+      "expires-at": Cl.stringAscii(message.expiresAt),
+    }),
+  };
+}
+
+export function verifyTreasuryAttestation(
+  path,
+  {
+    expectedTreasury = TREASURY,
+    expectedReviewedSha,
+    now = Date.now,
+  } = {},
+) {
+  principal(expectedTreasury);
+  ensure(
+    /^[a-f0-9]{40}$/.test(expectedReviewedSha || ""),
+    "Expected reviewed mainnet release SHA is required for treasury attestation",
+  );
+  assertAttestationPath(path);
+  const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  let raw;
+  try {
+    const stat = fstatSync(fd);
+    ensure(
+      stat.isFile() &&
+        stat.size > 0 &&
+        stat.size <= 16_384 &&
+        (stat.mode & 0o777) === 0o600 &&
+        stat.uid === process.getuid(),
+      "Treasury attestation must be an owned mode-0600 regular file",
+    );
+    raw = readFileSync(fd, "utf8");
+  } finally {
+    closeSync(fd);
+  }
+  let attestation;
+  try {
+    attestation = JSON.parse(raw);
+  } catch {
+    throw new SafetyError("Treasury attestation is not valid JSON");
+  }
+  ensure(
+    raw === `${JSON.stringify(attestation, null, 2)}\n`,
+    "Treasury attestation must use its exact canonical JSON encoding",
+  );
+  exactJsonObject(attestation, ATTESTATION_KEYS, "Treasury attestation");
+  const domain = exactJsonObject(
+    attestation.domain,
+    ATTESTATION_DOMAIN_KEYS,
+    "Treasury attestation domain",
+  );
+  const message = exactJsonObject(
+    attestation.message,
+    ATTESTATION_MESSAGE_KEYS,
+    "Treasury attestation message",
+  );
+  ensure(
+    attestation.schemaVersion === TREASURY_ATTESTATION_SCHEMA_VERSION &&
+      attestation.scheme === TREASURY_ATTESTATION_SCHEME &&
+      domain.name === TREASURY_CUSTODY_DOMAIN.name &&
+      domain.version === TREASURY_CUSTODY_DOMAIN.version &&
+      domain.chainId === TREASURY_CUSTODY_DOMAIN.chainId,
+    "Treasury attestation version, scheme or SIP-018 domain differs",
+  );
+  ensure(
+    message.action === TREASURY_CUSTODY_ACTION &&
+      message.treasury === expectedTreasury &&
+      message.deployer === DEPLOYER &&
+      message.appealAuthority === AUTHORITY &&
+      message.stxContract === CONTRACTS.stx &&
+      message.sbtcContract === CONTRACTS.sbtc &&
+      message.stxSourceHash === SOURCE_HASHES[CONTRACTS.stx] &&
+      message.sbtcSourceHash === SOURCE_HASHES[CONTRACTS.sbtc] &&
+      message.reviewedSha === expectedReviewedSha &&
+      /^[a-f0-9]{64}$/.test(message.challenge || ""),
+    "Treasury attestation is not bound to the exact reviewed mainnet release",
+  );
+  const issuedAt = exactIsoTimestamp(message.issuedAt, "Treasury attestation issuedAt");
+  const expiresAt = exactIsoTimestamp(message.expiresAt, "Treasury attestation expiresAt");
+  const current = now();
+  ensure(Number.isFinite(current), "Treasury attestation verifier clock is invalid");
+  ensure(
+    expiresAt > issuedAt &&
+      expiresAt - issuedAt <= TREASURY_ATTESTATION_MAX_LIFETIME_MS,
+    "Treasury attestation lifetime must be positive and no longer than 24 hours",
+  );
+  ensure(
+    issuedAt <= current + TREASURY_ATTESTATION_CLOCK_SKEW_MS,
+    "Treasury attestation issuedAt exceeds the five-minute clock-skew allowance",
+  );
+  ensure(current <= expiresAt, "Treasury attestation expiresAt has passed");
+  ensure(
+    typeof attestation.publicKey === "string" &&
+      /^(02|03)[a-f0-9]{64}$/.test(attestation.publicKey),
+    "Treasury attestation requires a compressed lowercase secp256k1 public key",
+  );
+  let derivedAddress;
+  try {
+    derivedAddress = publicKeyToAddressSingleSig(
+      attestation.publicKey,
+      "mainnet",
+    );
+  } catch {
+    /* Fail closed without reflecting attacker-controlled key material. */
+  }
+  ensure(
+    derivedAddress === expectedTreasury,
+    "Treasury attestation public key does not derive the confirmed treasury",
+  );
+  ensure(
+    typeof attestation.signature === "string" &&
+      /^[a-f0-9]{130}$/.test(attestation.signature),
+    "Treasury attestation requires an exact lowercase 65-byte RSV signature",
+  );
+  const recoveryId = Number.parseInt(attestation.signature.slice(128), 16);
+  ensure(
+    Number.isInteger(recoveryId) && recoveryId >= 0 && recoveryId <= 3,
+    "Treasury attestation recovery id must be between 0 and 3",
+  );
+  const clarity = treasuryCustodyClarity(attestation);
+  const structuredDataHash = sha256(
+    Buffer.from(encodeStructuredDataBytes(clarity)),
+  );
+  const compactSignature = attestation.signature.slice(0, 128);
+  let signatureValid = false;
+  let recoveredPublicKey;
+  try {
+    signatureValid = verifySignature(
+      compactSignature,
+      structuredDataHash,
+      attestation.publicKey,
+      { strict: true },
+    );
+    recoveredPublicKey = publicKeyFromSignatureRsv(
+      structuredDataHash,
+      attestation.signature,
+    );
+  } catch {
+    /* Fail closed without exposing signature internals. */
+  }
+  ensure(
+    signatureValid && recoveredPublicKey === attestation.publicKey,
+    "Treasury attestation SIP-018 signature is invalid",
+  );
+  return Object.freeze({
+    schemaVersion: TREASURY_ATTESTATION_SCHEMA_VERSION,
+    scheme: TREASURY_ATTESTATION_SCHEME,
+    treasury: expectedTreasury,
+    publicKey: attestation.publicKey,
+    signatureHash: sha256(Buffer.from(attestation.signature, "hex")),
+    challengeHash: sha256(Buffer.from(message.challenge, "hex")),
+    reviewedSha: message.reviewedSha,
+    issuedAt: message.issuedAt,
+    expiresAt: message.expiresAt,
+    structuredDataHash,
+    attestationSha256: sha256(raw),
+  });
 }
 
 export function createReadTransport({

@@ -18,7 +18,7 @@ alone does not switch Web, SDK, Evaluator, API, Docs or evidence indexing to the
 | Appeal window | 144 Bitcoin burn blocks |
 | Appeal authority | `SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH` |
 | sBTC token | `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token` |
-| Treasury | `SP2G44NF8281MWN4ARNXW2B1KJ5A7J9HTZGFSE0NY` |
+| Treasury | `SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8` (dedicated Leather account) |
 | Maximum deployment fees | 3,000,000 micro-STX |
 | Required retained deployer reserve | 5,000,000 micro-STX |
 
@@ -32,29 +32,47 @@ for settlement, waiver and treasury-refund semantics.
 1. Both candidate source hashes match the reviewed commit and the full test/security gate passes.
 2. That exact commit is merged into `origin/main`; the execution checkout is clean.
 3. The two contract names remain absent on mainnet, or exist with byte-for-byte matching source.
-4. The dedicated treasury address and custody/backup policy have been approved. Never use the
-   deployer, appeal authority, a participant wallet or the QA treasury.
+4. The dedicated Leather treasury address and custody/backup policy have been approved. Never use
+   the deployer, appeal authority, a participant wallet or the QA treasury.
 5. The deployer has no pending transaction or nonce gap and retains the fixed reserve after fees.
-6. The signer file is owned by the operator, mode `0600`, not a symlink and never tracked by Git.
+6. The deployer signer file is owned by the operator, mode `0600`, not a symlink and never tracked
+   by Git. No treasury seed or private key is exported from Leather.
 7. The receipt path is absolute, outside every Git repository and has an existing parent.
 8. A dedicated campaign-state directory exists outside Git, is operator-owned and mode `0700`.
    Its permanent marker binds the entire v6/v5 campaign and 3 STX cap to one receipt.
 
-The dedicated production treasury has already been created in the approved external
-private-secrets directory. Its address is frozen in the reviewed promoter. The generator below is
-only for a future, separately reviewed contract generation; it will not produce an address accepted
-by this campaign:
+## Leather custody attestation
+
+After the exact release commit is merged to `main`, open the operator-only attestation page from a
+local build of `App`:
 
 ```bash
-STACKS_NETWORK=mainnet \
-CONFIRM_CREATE_MAINNET_TREASURY=create-dedicated-mainnet-treasury \
-SERVICE_FEE_MAINNET_TREASURY_ENV_PATH=<absolute-new-external-env-path> \
-npm run create:service-fee:treasury
+cd App
+npm ci --ignore-scripts
+npm run dev
 ```
 
-Back up that file through the approved encrypted operator process before initialization. The hot
-treasury should retain a bounded refund reserve; sweep revenue above that reserve to approved cold
-custody. Do not upload the key to GitHub, the public evidence store or browser configuration.
+In Chrome, visit
+`http://localhost:3000/operations/treasury-attestation?reviewedSha=<exact-merged-main-sha>`.
+Review every field, connect the mainnet Leather account whose address is exactly
+`SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8`, and approve the SIP-018 message. This is not a
+transaction and has no network fee. It does not authorize the deployer to spend treasury funds.
+
+Move the downloaded JSON to the approved external evidence directory and restrict it before use:
+
+```bash
+chmod 600 <absolute-external-treasury-attestation-json>
+```
+
+The attestation contains public data only: the signed custody-proof context, random challenge,
+public key and signature. Nevertheless it is treated as an operator-controlled release artifact. The promoter
+accepts it only for the exact reviewed SHA and within its 24-hour validity window. It verifies the
+canonical SIP-018 signature locally, requires the downloaded canonical JSON encoding and confirms
+that the public key derives the frozen treasury.
+Never paste or export the Leather Secret Key/private key.
+
+The treasury should retain a bounded STX gas reserve for manually approved fee-refund calls. Sweep
+revenue above the approved operating reserve to cold custody under a separately reviewed policy.
 
 Prepare the one-time external state directory before armed execution (replace the placeholder with
 the approved evidence location):
@@ -69,8 +87,8 @@ Do not reuse that directory for another campaign or manually create its marker f
 
 ## Signer-free preflight
 
-Preflight performs only allowlisted public reads. It does not open the signer file or construct a
-transaction.
+Preflight performs only allowlisted public reads. It does not open the signer or attestation file,
+and it does not construct a transaction.
 
 ```bash
 SERVICE_FEE_MAINNET_TREASURY_ADDRESS=<dedicated-mainnet-treasury> \
@@ -85,8 +103,8 @@ nonces can change.
 
 Create a fresh detached worktree of the exact merged SHA under
 `/private/tmp/nayori-mainnet-release-<sha>`. Set the receipt to the approved external evidence
-directory and signer paths to the external deployer and treasury files. Do not copy secrets into
-the execution checkout. The deploy command first replaces `node_modules` with `npm ci
+directory and paths to the external deployer signer and public treasury attestation. Do not copy
+either artifact into the execution checkout. The deploy command first replaces `node_modules` with `npm ci
 --ignore-scripts` from the reviewed lockfile; no imported signing dependency is reused from the
 development workspace. `NODE_OPTIONS`, `NODE_PATH` and npm equivalents must be empty; the wrapper
 then launches Node with an allowlisted environment and a runtime attestation tied to the SHA,
@@ -99,14 +117,14 @@ SERVICE_FEE_MAINNET_REVIEWED_SHA=<exact-merged-main-sha> \
 SERVICE_FEE_MAINNET_LOCKFILE_SHA256=<reviewed-package-lock-sha256> \
 SERVICE_FEE_MAINNET_TREASURY_ADDRESS=<dedicated-mainnet-treasury> \
 SERVICE_FEE_MAINNET_DEPLOYER_ENV_PATH=<absolute-mode-0600-mainnet-env> \
-SERVICE_FEE_MAINNET_TREASURY_ENV_PATH=<absolute-mode-0600-treasury-env> \
+SERVICE_FEE_MAINNET_TREASURY_ATTESTATION_PATH=<absolute-mode-0600-attestation-json> \
 SERVICE_FEE_MAINNET_RECEIPT_PATH=<absolute-external-receipt-json> \
 SERVICE_FEE_MAINNET_STATE_DIR=<absolute-external-mode-0700-campaign-directory> \
 CONFIRM_SERVICE_FEE_MAINNET=deploy-v6-v5-mainnet \
 CONFIRM_SERVICE_FEE_MAINNET_DEPLOYER=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH \
 CONFIRM_SERVICE_FEE_MAINNET_AUTHORITY=SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH \
 CONFIRM_SERVICE_FEE_MAINNET_TREASURY=<same-dedicated-mainnet-treasury> \
-CONFIRM_SERVICE_FEE_MAINNET_TREASURY_ENV_PATH=<same-absolute-treasury-env> \
+CONFIRM_SERVICE_FEE_MAINNET_TREASURY_ATTESTATION_PATH=<same-absolute-attestation-json> \
 CONFIRM_SERVICE_FEE_MAINNET_RECEIPT_PATH=<same-absolute-receipt-json> \
 CONFIRM_SERVICE_FEE_MAINNET_STATE_DIR=<same-absolute-campaign-directory> \
 CONFIRM_SERVICE_FEE_MAINNET_MAX_FEES_MICRO_STX=3000000 \
@@ -145,6 +163,10 @@ reviewed recovery procedure. Never auto-delete or auto-recover a lock because of
 
 Already completed exact operations are observed and skipped. Any source, owner, policy, token,
 treasury, authority, nonce or fee mismatch stops the run.
+
+The attestation proves custody only for deployment. If an earned service fee is later waived, the
+treasury account must submit the exact one-shot refund call from Leather after human review. The
+appeal authority cannot spend the treasury and the deployment process never receives its key.
 
 ## Promotion after contract deployment
 

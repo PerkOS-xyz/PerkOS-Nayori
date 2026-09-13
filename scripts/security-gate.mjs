@@ -763,8 +763,10 @@ for (const runner of [feeTestnetCore, "scripts/deploy-service-fee-testnet.mjs", 
 // are acknowledged, and every broadcast has a durable intent first.
 const feeMainnetCore = "scripts/service-fee-mainnet-core.mjs";
 const feeMainnetDeploy = "scripts/deploy-service-fee-mainnet.mjs";
-const feeMainnetTreasury = "scripts/create-service-fee-treasury.mjs";
 const feeMainnetRuntime = "scripts/run-service-fee-mainnet-deploy.sh";
+const feeMainnetAttestationUi = "App/src/services/treasury-attestation.ts";
+const feeMainnetAttestationClient =
+  "App/src/app/operations/treasury-attestation/TreasuryAttestationClient.tsx";
 requirePattern(feeMainnetCore, /env\.STACKS_NETWORK === "mainnet"/, "mainnet fee promoter must require explicit mainnet");
 requirePattern(feeMainnetCore, /STACKS_MAINNET/, "mainnet fee promoter must use only the mainnet network object");
 requirePattern(feeMainnetCore, /PostConditionMode\.Deny/, "mainnet fee promoter transactions must use deny mode");
@@ -774,15 +776,17 @@ requirePattern(feeMainnetCore, /SERVICE_FEE_MAINNET_REVIEWED_SHA/, "mainnet fee 
 requirePattern(feeMainnetCore, /merge-base[\s\S]*--is-ancestor[\s\S]*origin\/main/, "mainnet fee promoter must be merged to main");
 requirePattern(feeMainnetCore, /CONFIRM_SERVICE_FEE_MAINNET_MAX_FEES_MICRO_STX/, "mainnet fee promoter requires an explicit hard fee cap");
 requirePattern(feeMainnetCore, /CONFIRM_SERVICE_FEE_MAINNET_TREASURY/, "mainnet fee promoter requires the immutable treasury to be confirmed");
+requirePattern(feeMainnetCore, /SERVICE_FEE_MAINNET_TREASURY_ATTESTATION_PATH/, "mainnet fee promoter requires an external treasury attestation");
+requirePattern(feeMainnetCore, /encodeStructuredDataBytes/, "mainnet treasury custody must use SIP-018 structured data");
+requirePattern(feeMainnetCore, /publicKeyToAddressSingleSig/, "mainnet treasury custody must bind the public key to the treasury address");
+requirePattern(feeMainnetCore, /verifySignature/, "mainnet treasury custody must verify the Leather signature locally");
 requirePattern(feeMainnetCore, /v6-v5-campaign\.json/, "mainnet fee promoter must bind the hard cap to one permanent campaign receipt");
 requirePattern(feeMainnetCore, /CONFIRM_SERVICE_FEE_MAINNET_STATE_DIR/, "mainnet fee promoter requires the external campaign state to be confirmed");
 requirePattern(feeMainnetCore, /CONFIRM_SERVICE_FEE_MAINNET_RECEIPT_PATH/, "mainnet fee promoter requires the permanent receipt path to be confirmed");
 requirePattern(feeMainnetCore, /is_fully_synced === true/, "mainnet fee promoter requires a fully synchronized node");
 requirePattern(feeMainnetCore, /0o600/, "mainnet fee custody and journals require private file permissions");
 requirePattern(feeMainnetDeploy, /SERVICE_FEE_MAINNET_DEPLOYER_ENV_PATH/, "mainnet signer path must be explicit and external");
-requirePattern(feeMainnetTreasury, /constants\.O_EXCL/, "treasury generation must never overwrite an existing secret");
-requirePattern(feeMainnetTreasury, /0o600/, "treasury generation must create a private file");
-requirePattern(feeMainnetTreasury, /Private key written once/, "treasury generation must report custody without printing the key");
+requirePattern(feeMainnetDeploy, /verifyTreasuryAttestation/, "mainnet deployment must verify treasury custody before opening the deployer signer");
 requirePattern(feeMainnetRuntime, /\/private\/tmp\/nayori-mainnet-release-/, "mainnet signing requires an ephemeral release worktree");
 requirePattern(feeMainnetRuntime, /node_major[\s\S]*-ge 20/, "mainnet signing requires a supported Node.js runtime");
 requirePattern(feeMainnetRuntime, /NODE_OPTIONS must be empty/, "mainnet signing rejects inherited Node preload options");
@@ -792,7 +796,30 @@ requirePattern(feeMainnetRuntime, /SERVICE_FEE_MAINNET_LOCKFILE_SHA256/, "mainne
 forbidPattern(feeMainnetRuntime, /npm install|npm update|--force/, "mainnet runtime must not mutate dependency resolution");
 for (const runner of [feeMainnetCore, feeMainnetDeploy]) {
   forbidPattern(runner, /PostConditionMode\.Allow|STACKS_TESTNET|https:\/\/api\.testnet\.hiro\.so/, "mainnet fee promoter has no testnet or allow-mode branch");
+  forbidPattern(runner, /NAYORI_MAINNET_TREASURY_PRIVATE_KEY/, "Leather treasury custody must never require a private key export");
 }
+forbidPattern(feeMainnetRuntime, /TREASURY_ENV_PATH|TREASURY_PRIVATE_KEY/, "the isolated runtime must receive only a public treasury attestation");
+for (const literal of [
+  "SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8",
+  "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH",
+  "SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH",
+  "agentic-commerce-v6",
+  "sbtc-commerce-v5",
+  "8eb55eccf0421b35ec6ff87be3bc8e99a356be5a4b882d8a3e9585019f40a7b2",
+  "132567979dc49ba5726465ee12e5590cf26329acb9a31f0596f92008d0052f53",
+  "Nayori Mainnet Treasury Custody",
+  "prove-control-of-nayori-mainnet-treasury",
+]) {
+  requirePattern(feeMainnetCore, new RegExp(literal), `mainnet promoter must pin ${literal}`);
+  requirePattern(feeMainnetAttestationUi, new RegExp(literal), `Leather UI must pin ${literal}`);
+}
+requirePattern(feeMainnetAttestationUi, /crypto\.getRandomValues/, "Leather attestation challenge must use browser cryptographic randomness");
+requirePattern(feeMainnetAttestationUi, /publicKeyToAddressSingleSig/, "Leather attestation must derive the mainnet single-sig address locally");
+requirePattern(feeMainnetAttestationUi, /publicKeyFromSignatureRsv/, "Leather attestation must recover and compare the signing public key");
+requirePattern(feeMainnetAttestationClient, /LOCAL_HOSTS/, "treasury signing control must be disabled outside localhost");
+requirePattern(feeMainnetAttestationClient, /approvedProviderIds:\s*LEATHER_ONLY/, "treasury signing must restrict the provider picker to Leather");
+requirePattern(feeMainnetAttestationClient, /stx_signStructuredMessage/, "treasury custody must use a SIP-018 wallet request");
+forbidPattern(feeMainnetAttestationClient, /broadcastTransaction|makeContractCall|makeContractDeploy|stx_transferStx|stx_callContract/, "treasury custody UI must not construct or broadcast a transaction");
 
 if (failures.length > 0) {
   console.error("Nayori security gate failed:\n- " + failures.join("\n- "));

@@ -10,7 +10,7 @@ import {
   lockfileHash,
   deploymentPlan,
   signer,
-  verifyTreasuryCustody,
+  verifyTreasuryAttestation,
   Journal,
   reconcileJournal,
   campaignFeeTotal,
@@ -35,7 +35,10 @@ export async function main(env = process.env) {
     );
     return plan.report;
   }
-  verifyTreasuryCustody(env.SERVICE_FEE_MAINNET_TREASURY_ENV_PATH, treasury);
+  const treasuryAttestation = verifyTreasuryAttestation(
+    env.SERVICE_FEE_MAINNET_TREASURY_ATTESTATION_PATH,
+    { expectedTreasury: treasury, expectedReviewedSha: sha },
+  );
   const journal = new Journal(env.SERVICE_FEE_MAINNET_RECEIPT_PATH, {
     kind: "deploy-v6-v5",
     network: "mainnet",
@@ -46,6 +49,14 @@ export async function main(env = process.env) {
     campaignStateDir: env.SERVICE_FEE_MAINNET_STATE_DIR,
   });
   try {
+    if (!journal.data.treasuryCustodyAttestation)
+      journal.data.treasuryCustodyAttestation = treasuryAttestation;
+    journal.check(
+      "Leather treasury custody proven by valid release-bound SIP-018 attestation",
+      treasuryAttestation.treasury === treasury &&
+        treasuryAttestation.reviewedSha === sha,
+    );
+    journal.save();
     await reconcileJournal(journal, treasury);
     const current = await deploymentPlan(treasury);
     for (const name of Object.values(CONTRACTS)) {

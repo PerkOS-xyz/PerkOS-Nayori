@@ -7,6 +7,8 @@ principal during `initialize-protocol`. This change affects only the guarded rel
 tests and operator documentation.
 
 The operator proves control once with a SIP-018 structured-message signature approved in Leather.
+This is a custody proof, not approval of the release economics; the independently reviewed source,
+tests and guarded promotion bind those economics.
 The domain is `Nayori Mainnet Treasury Custody`, version `1`, chain ID `1`. The signed message binds
 the action, treasury, deployer, appeal authority, v6/v5 contract names, both frozen source hashes,
 the exact reviewed merge SHA, a cryptographically random 32-byte challenge and a 24-hour validity
