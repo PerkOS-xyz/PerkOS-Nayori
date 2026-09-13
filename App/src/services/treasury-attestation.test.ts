@@ -44,7 +44,7 @@ describe("treasury custody attestation", () => {
       action: "prove-control-of-nayori-mainnet-treasury",
       treasury: "SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8",
       deployer: "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH",
-      appealAuthority: "SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH",
+      appealAuthority: "SP2R584GC8W2A921080TY8CQ8P1GZ6JNXYXS65DA6",
       stxContract: "agentic-commerce-v6",
       sbtcContract: "sbtc-commerce-v5",
       reviewedSha: REVIEWED_SHA,

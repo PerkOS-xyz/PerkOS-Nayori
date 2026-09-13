@@ -73,7 +73,7 @@ describe("active v6/v5 consumer release", () => {
       "sbtc-commerce-v5",
       "8eb55eccf0421b35ec6ff87be3bc8e99a356be5a4b882d8a3e9585019f40a7b2",
       "132567979dc49ba5726465ee12e5590cf26329acb9a31f0596f92008d0052f53",
-      "SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH",
+      "SP2R584GC8W2A921080TY8CQ8P1GZ6JNXYXS65DA6",
       "SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8",
       "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token",
       "const REVIEW_WINDOW = 12n",
@@ -160,7 +160,7 @@ describe("controlled v6/v5 mainnet E2E runner", () => {
       "CONFIRM_SERVICE_FEE_MAINNET_E2E_MAX_NETWORK_FEES_MICRO_STX",
       "const MAX_CAMPAIGN_NETWORK_FEES = 3_500_000n",
       "provider top-up stays within the remaining aggregate campaign cap",
-      "SP2ENKFX2BGX94HC4KYZCCV7KEN7JXJXZDKC3GPGC",
+      "SP3GRG5CKEFNYM5BV0NPPHCM51FT176JQ02QWQ9T3",
       "reconcile-existing-receipt",
       "no automatic retransmission is allowed",
       "executionLock()",
@@ -342,15 +342,15 @@ describe("public production language", () => {
   it("does not send new SDK users to historical commerce defaults", () => {
     const quickstart = read("developer-portal/content/docs/getting-started/sdk.mdx");
     const rootQuickstart = read("README.md");
-    expect(quickstart).toContain("@perkos/agent-sdk@0.8.0");
+    expect(quickstart).toContain("@perkos/agent-sdk@0.9.0");
     expect(quickstart).toContain("agentic-commerce-v6");
     expect(quickstart).toContain("sbtc-commerce-v5");
     expect(quickstart).toContain("serviceFeeAcceptance");
-    expect(quickstart).toContain("implicit mainnet defaults");
+    expect(quickstart).toContain("stable defaults");
     expect(rootQuickstart).toContain("agentic-commerce-v6");
     expect(rootQuickstart).toContain("sbtc-commerce-v5");
     expect(rootQuickstart).toContain("serviceFeeAcceptance");
-    expect(rootQuickstart).toContain("unpublished `0.9.0` candidate");
+    expect(rootQuickstart).toContain("Stable SDK `0.9.0`");
     for (const content of [
       quickstart,
       read("developer-portal/content/docs/reference/sdk.mdx"),
@@ -425,6 +425,6 @@ describe("public production language", () => {
       "developer-portal/content/docs/commerce/autonomous-evaluation.mdx",
     );
     expect(autonomous).toContain("SDK contract-selection boundary");
-    expect(autonomous).toContain("implicit defaults remain historical v5/v4");
+    expect(autonomous).toContain("v6/v5 as its stable defaults");
   });
 });

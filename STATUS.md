@@ -4,14 +4,28 @@ Last verified: 2026-09-13 UTC
 
 ## Current status
 
+### Stable Agent SDK 0.9.0 publication — 2026-09-13 UTC
+
+`@perkos/agent-sdk@0.9.0` is published under npm `latest`. It promotes the reviewed
+`agentic-commerce-v6` and `sbtc-commerce-v5` generation to the stable mainnet defaults. Package
+publication is independent from Web and Evaluator runtime deployment and does not count as
+external adoption.
+
 ### Mainnet v6/v5 deployment and consumer promotion — 2026-09-13 UTC
 
 `agentic-commerce-v6` and `sbtc-commerce-v5` are deployed, initialized and source-verified under
 `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`. All seven deployment/wiring transactions returned
 `(ok true)` and were revalidated after two additional Stacks blocks. The exact production policy is
 review window 12, appeal window 144, appeal authority
-`SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH`, treasury
+`SP2R584GC8W2A921080TY8CQ8P1GZ6JNXYXS65DA6`, treasury
 `SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8`, 200 basis points and canonical PoX-5 sBTC.
+
+The appeal authority was rotated through the contracts' two-step governance flow on 2026-09-13.
+The new authority accepted `agentic-commerce-v6` in
+[`0x3743cd99…870a4`](https://explorer.hiro.so/txid/0x3743cd993c498c146014c1f91fbc0d3a93453f3bdc66257a8181da1c040870a4?chain=mainnet)
+at block `8982729` and `sbtc-commerce-v5` in
+[`0x735bf728…41fcf`](https://explorer.hiro.so/txid/0x735bf7285e9aa9c60c147208e7e7737bb2e2f672ca540748af07071af0141fcf?chain=mainnet)
+at block `8982751`; both returned `(ok true)` and now report no pending authority.
 
 Web source/build defaults and the coordinated QA release configuration now select v6/v5. The
 signer-free `verify:mainnet` gate pins exact hashes and every role/policy value. Immutable v5/v4

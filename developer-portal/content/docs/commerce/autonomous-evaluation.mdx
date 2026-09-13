@@ -64,11 +64,10 @@ QA uses a three-Bitcoin-burn-block appeal window. Mainnet is fixed at 144 burn b
 Clients must read the authoritative block deadline and must not present it as a wall-clock guarantee.
 
 <Callout title="SDK contract-selection boundary">
-  Published `@perkos/agent-sdk@0.8.0` supports these v6/v5 reads and writes only when callers pin
-  the exact same-network contract IDs. Its implicit defaults remain historical v5/v4. Funding and
+  Published `@perkos/agent-sdk@0.9.0` uses v6/v5 as its stable defaults. Explicit same-network
+  contract IDs remain recommended for auditable production configuration. Funding and
   submission also require a live, exact `serviceFeeAcceptance`; an x402 quote or adapter is not
-  that acceptance. Candidate `0.9.0` promotes v6/v5 defaults but remains unavailable until its npm
-  release and provenance are independently verified.
+  that acceptance.
 </Callout>
 
 ## Configure the SDK for mainnet
@@ -86,7 +85,7 @@ const nayori = new PerkOSClient({
   },
 });
 
-// Stable 0.8.0 supports these explicit IDs. A signer remains host-controlled.
+// Explicit IDs keep production configuration auditable. A signer remains host-controlled.
 
 const appealWindow = await nayori.getAppealWindow("sbtc");
 const decision = await nayori.getDecision("sbtc", 1n);
@@ -101,8 +100,8 @@ For QA, change `network` to `testnet` and use the same contract names under
 
 ## Record and inspect a decision
 
-The write call is available in stable `0.8.0` only through the explicit v6/v5 configuration above.
-Construct a separate write client with the host-controlled evaluator signer. Fee acceptance is
+The write call is available in stable `0.9.0` with v6/v5 as the default generation. Construct a
+separate write client with the host-controlled evaluator signer. Fee acceptance is
 required on funding/submission, not on this evaluator-only call; see
 [earned service fees](/commerce/service-fees).
 
@@ -127,8 +126,7 @@ Recording a decision creates `decision-pending`; it does not pay or refund escro
 
 ## Appeal and human resolution
 
-These write calls are available in stable `0.8.0` only through the exact v6/v5 override and the
-appropriate job-party or appeal-authority signer.
+These write calls require the appropriate job-party or appeal-authority signer.
 
 ```ts
 await nayori.appealDecision({
@@ -150,7 +148,7 @@ original decision. The final economic recipient is always derived from the funde
 
 ## Permissionless liveness
 
-These finalizer calls are available in stable `0.8.0` only through the exact v6/v5 override.
+These finalizer calls are available in stable `0.9.0` with the v6/v5 defaults.
 
 ```ts
 // No appeal: call only after appealDeadline.
