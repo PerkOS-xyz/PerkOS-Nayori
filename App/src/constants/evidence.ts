@@ -68,10 +68,20 @@ const mainnetEvidenceWallets = [
   {
     address: "SP2ENKFX2BGX94HC4KYZCCV7KEN7JXJXZDKC3GPGC",
     classification: "team" as const,
-    roles: ["controlled-evaluator"],
+    roles: ["former-controlled-evaluator"],
   },
   {
     address: "SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH",
+    classification: "team" as const,
+    roles: ["former-appeal-authority"],
+  },
+  {
+    address: NAYORI_EVALUATOR_ADDRESS,
+    classification: "team" as const,
+    roles: ["controlled-evaluator"],
+  },
+  {
+    address: NAYORI_APPEAL_AUTHORITY_ADDRESS,
     classification: "team" as const,
     roles: ["appeal-authority"],
   },

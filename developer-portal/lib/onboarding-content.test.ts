@@ -56,13 +56,13 @@ describe('existing-agent onboarding', () => {
   it('distinguishes deployed QA timing from signer and production releases', () => {
     const guide = read('commerce/workflow-timing.mdx');
     for (const text of ['deployed in QA', '0233183efb3e32d09ca0f5bf6c1ac2188921c88d',
-      'Production promotion is separate', 'SDK 0.8.0', 'Version 1 remains unchanged',
+      'Production promotion is separate', 'SDK 0.9.0', 'Version 1 remains unchanged',
       'not wallet enforcement', 'terminal jobs have no active countdown',
       'No new funded E2E or external adoption']) {
       expect(guide).toContain(text);
     }
-    expect(guide).toContain('stable **SDK 0.8.0** under `latest`');
-    expect(guide).toContain('npm install --save-exact @perkos/agent-sdk@0.8.0');
+    expect(guide).toContain('stable **SDK 0.9.0** under `latest`');
+    expect(guide).toContain('npm install --save-exact @perkos/agent-sdk@0.9.0');
     expect(guide).not.toContain('source candidate, not yet deployed');
     expect(guide).not.toContain('After the Web candidate is deployed');
   });

@@ -42,7 +42,7 @@ one service:
 | --- | --- |
 | On-chain network | Stacks mainnet for identity, STX escrow, sBTC escrow and reputation |
 | Mainnet contracts | Six current contracts under `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` |
-| Agent SDK | Stable npm `0.8.0`; `0.9.0` is the reviewed v6/v5-default candidate, not yet published |
+| Agent SDK | Stable npm `0.9.0`, with v6/v5 as the reviewed mainnet defaults |
 | Browser wallet | Leather through Stacks Connect; wallet remains the signing boundary |
 | Headless agents | Policy-constrained signer interface for KMS/HSM/secret-manager integrations |
 | x402 | Live same-origin mainnet resource; SDK profiles for STX, sBTC and USDCx |
@@ -744,8 +744,8 @@ The [existing-agent guide](developer-portal/content/docs/getting-started/existin
 covers SDK/MCP selection → operator-owned wallet/signer preparation → explicit testnet and limits
 → registration and confirmed agent ID → buyer/provider work → settlement and reputation checks.
 It is linked from the portal's Getting started navigation. The local Hermes bridge and its
-role walkthroughs target stable npm 0.8.0 in QA, separate from remote partner MCP. A clean
-registry install of 0.8.0 and the historical supervised rc.2 job16 lifecycle passed independently.
+role walkthroughs target stable npm 0.9.0, separate from remote partner MCP. Historical clean
+registry installation of 0.8.0 and the supervised rc.2 job16 lifecycle passed independently.
 Fresh registration, self-service evidence publication, HTTPx402 and video remain separate gates. See
 [verified scope](developer-portal/content/docs/resources/qa-validation.mdx).
 
@@ -755,7 +755,7 @@ record. Review [agent identity](developer-portal/content/docs/agents/identity.md
 
 The [evaluation recovery guide](developer-portal/content/docs/getting-started/existing-agent.mdx#evaluation-capacity-and-recovery)
 documents quota preflight, contract review deadlines, bounded candidate transport timeouts and
-deterministic-ID reconciliation. The transport correction ships in stable npm 0.8.0 for QA;
+deterministic-ID reconciliation. The transport correction ships in stable npm 0.9.0;
 SDK publication is not a production deployment or a new autonomous E2E.
 
 The [onboarding checkpoints](developer-portal/content/docs/getting-started/existing-agent.mdx#successful-onboarding)
@@ -809,7 +809,7 @@ wallet credential.
 ### Install the agent SDK
 
 ```bash
-npm install --save-exact @perkos/agent-sdk@0.8.0
+npm install --save-exact @perkos/agent-sdk@0.9.0
 ```
 
 ```ts
@@ -832,14 +832,11 @@ const reputation = await nayori.getReputation(
 );
 ```
 
-Read-only operations require no wallet. Stable SDK `0.8.0` retains the historical v5/v4
-defaults, so a current-generation integration must keep the explicit v6/v5 IDs above; changing
-only `network` is not sufficient. SDK `0.8.0` can execute v6/v5 writes when those IDs are pinned,
-but funding and submission additionally require the exact live `serviceFeeAcceptance` described
+Read-only operations require no wallet. Stable SDK `0.9.0` selects v6/v5 by default; explicit
+contract IDs remain recommended for auditable production configuration. Funding and submission
+additionally require the exact live `serviceFeeAcceptance` described
 in the [earned service fee guide](https://docs.nayori.ai/commerce/service-fees). State changes
-also require a configured browser or enterprise signer and an explicit spending policy. The
-unpublished `0.9.0` candidate promotes v6/v5 to SDK defaults; do not install it until npm
-publication and provenance are independently verified.
+also require a configured browser or enterprise signer and an explicit spending policy.
 
 ### Component documentation
 

@@ -85,7 +85,7 @@ const PROVIDER_POST_CAMPAIGN_RESERVE = 500_000n;
 // Evaluator and authority each make exactly two campaign calls. From a known 800k balance,
 // two fixed 200k fees leave 400k, which exceeds this independently enforced 300k reserve.
 const ACTOR_POST_CAMPAIGN_RESERVE = 300_000n;
-const EXPECTED_EVALUATOR = "SP2ENKFX2BGX94HC4KYZCCV7KEN7JXJXZDKC3GPGC";
+const EXPECTED_EVALUATOR = "SP3GRG5CKEFNYM5BV0NPPHCM51FT176JQ02QWQ9T3";
 const FINALITY_DEPTH = 2n;
 const STATUS_OPEN = 0n;
 const STATUS_FUNDED = 1n;

@@ -9,12 +9,10 @@ description: Install @perkos/agent-sdk, read Nayori state and prepare wallet-app
 </StatusRow>
 
 <Callout title="Pin the contract generation explicitly">
-  Public package `0.8.0` predates the active STX v6/sBTC v5 defaults. The example below pins the
-  current contracts explicitly. Stable `0.8.0` supports v6/v5 reads and writes only through this
-  opt-in: funding and submission must also include the exact live `serviceFeeAcceptance`. Never
-  rely on its implicit mainnet defaults or infer fee acceptance from an x402 adapter. Candidate
-  `0.9.0` promotes v6/v5 to the defaults, but remains unavailable until its npm release and
-  provenance are independently verified.
+  Public package `0.9.0` uses STX v6/sBTC v5 as its stable defaults. The example below still pins
+  the current contracts explicitly for an auditable production configuration. Funding and
+  submission must include the exact live `serviceFeeAcceptance`; never infer that acceptance from
+  an x402 adapter.
 </Callout>
 
 ## Requirements
@@ -31,7 +29,7 @@ registration confirmation and the two job roles. The examples below do not regis
 ## Install
 
 ```bash
-npm install --save-exact @perkos/agent-sdk@0.8.0
+npm install --save-exact @perkos/agent-sdk@0.9.0
 ```
 
 ## Read public state
@@ -73,13 +71,12 @@ console.log(plan.contract, plan.functionName, plan.postConditions);
 ```
 
 Plans do not sign, broadcast or load environment variables. Agent registration continues to use
-the unchanged agent registry. Stable `0.8.0` may perform current v6/v5 writes only with the exact
-contract override above; `fundJob` and `submitWork` additionally require a
+the unchanged agent registry. Stable `0.9.0` uses v6/v5 by default; `fundJob` and `submitWork`
+additionally require a
 `serviceFeeAcceptance` that matches the live gross amount, 200 basis points, pinned treasury and
 net-after-evaluation rejection terms. Connect a
 [browser or enterprise signer](/reference/sdk#signing-boundaries) only after inspecting the plan,
-live state and terms. Candidate `0.9.0` removes the need for the contract-name override after its
-verified publication; it does not remove fee acceptance or signer policy.
+live state and terms. The stable defaults do not remove fee acceptance or signer policy.
 
 ## Verify the package examples
 

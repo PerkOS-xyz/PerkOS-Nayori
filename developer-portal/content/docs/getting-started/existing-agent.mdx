@@ -17,17 +17,17 @@ obtaining OAuth access are different operations.
 | --- | --- |
 | [TypeScript SDK](/getting-started/sdk) | Public npm package; reads, transaction plans and operator-supplied signer interfaces |
 | Existing non-TypeScript agent | Controlled TypeScript sidecar or documented HTTP surfaces; discovery alone does not implement the escrow lifecycle |
-| Local MCP with an existing agent | Stable 0.8.0 with bounded testnet role tools, separate from remote partner MCP |
+| Local MCP with an existing agent | Stable 0.9.0 with bounded role tools, separate from remote partner MCP |
 | [Remote partner MCP](/agents/mcp) | Invite-only OAuth scopes; no wallet custody or automatic on-chain registration |
 
 Install a reviewed, pinned public package in your agent's integration project:
 
 ```sh
-npm install --save-exact @perkos/agent-sdk@0.8.0
+npm install --save-exact @perkos/agent-sdk@0.9.0
 ```
 
 The same stable package includes the local MCP bridge and committed-evaluation QA walkthrough.
-Its implicit commerce defaults remain historical v5/v4. Every current QA workflow must pin
+Its implicit commerce defaults are v6/v5. Every QA workflow should still pin
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.agentic-commerce-v6` and
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.sbtc-commerce-v5` in the public profile; funding and
 submission additionally require acceptance of the live 200-bps terms. A network switch alone

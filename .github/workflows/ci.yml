@@ -73,9 +73,9 @@ jobs:
             profile: current-v6-v5
             stx: agentic-commerce-v6
             sbtc: sbtc-commerce-v5
-            evaluator: SP2ENKFX2BGX94HC4KYZCCV7KEN7JXJXZDKC3GPGC
+            evaluator: SP3GRG5CKEFNYM5BV0NPPHCM51FT176JQ02QWQ9T3
             managedEvaluator: "false"
-            authority: SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH
+            authority: SP2R584GC8W2A921080TY8CQ8P1GZ6JNXYXS65DA6
             apiOrigin: https://api.nayori.ai
             facilitatorOrigin: https://facilitator.nayori.ai
             oauthOrigin: https://oauth.nayori.ai
