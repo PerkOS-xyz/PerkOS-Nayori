@@ -176,7 +176,7 @@ refresh_public_proxy() {
   docker exec perkos-knowledge-proxy \
     caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
   docker exec perkos-knowledge-proxy \
-    caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
+    caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile --force >/dev/null
 }
 
 verify_public_origin_for_service() {

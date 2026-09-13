@@ -1034,7 +1034,7 @@ requirePattern(
 );
 requirePattern(
   "ops/vps/nayori-qa-release",
-  /refresh_public_proxy\(\)[\s\S]*?caddy validate --config \/etc\/caddy\/Caddyfile --adapter caddyfile[\s\S]*?caddy reload --config \/etc\/caddy\/Caddyfile --adapter caddyfile[\s\S]*?refresh_public_proxy \|\| failed=1/,
+  /refresh_public_proxy\(\)[\s\S]*?caddy validate --config \/etc\/caddy\/Caddyfile --adapter caddyfile[\s\S]*?caddy reload --config \/etc\/caddy\/Caddyfile --adapter caddyfile --force[\s\S]*?refresh_public_proxy \|\| failed=1/,
   "QA runtime replacement and rollback must refresh the validated public proxy",
 );
 requirePattern(
