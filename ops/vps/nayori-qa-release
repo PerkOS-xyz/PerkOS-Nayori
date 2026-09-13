@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# The controller handles Compose models backed by secret env files. Disable an inherited
+# xtrace before any argument, environment, Compose or Docker operation can be expanded.
+{ set +x; } 2>/dev/null
+unset BASH_XTRACEFD 2>/dev/null || true
+PS4='+ '
+set -Eeuo pipefail
 umask 077
 
 BASE=/opt/perkos-nayori-qa
@@ -19,16 +24,362 @@ case "$REPOSITORY" in
   *) echo "unsupported repository" >&2; exit 64 ;;
 esac
 [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "invalid commit SHA" >&2; exit 64; }
-mkdir -p "$RELEASES" "$RECEIPTS" "$BASE/backups"
+mkdir -p "$AUTOMATION" "$RELEASES" "$RECEIPTS" "$BASE/backups"
+exec 9>"$AUTOMATION/release-controller.lock"
+flock -n 9 || { echo "another Nayori QA release operation is active" >&2; exit 75; }
+docker compose config --help | grep -Fq -- '--no-env-resolution' || {
+  echo "Docker Compose with config --no-env-resolution support is required (VPS baseline: 2.40.3)" >&2
+  exit 69
+}
 
 receipt_path() { printf '%s/%s-%s.json' "$RECEIPTS" "$REPOSITORY" "$SHA"; }
+current_pointer_path() { printf '%s/%s-current.json' "$RECEIPTS" "$REPOSITORY"; }
+
+expected_runtime_rows() {
+  case "$REPOSITORY" in
+    PerkOS-Nayori)
+      printf '%s\n' \
+        "web|nayori-qa-web|perkos-nayori-web-qa:$SHA" \
+        "docs|nayori-qa-docs|perkos-nayori-docs-qa:$SHA"
+      ;;
+    PerkOS-Nayori-Platform)
+      printf '%s\n' \
+        "api|nayori-qa-api|perkos-nayori-platform-qa:$SHA" \
+        "facilitator|nayori-qa-facilitator|perkos-nayori-platform-qa:$SHA" \
+        "facilitator-worker|nayori-qa-facilitator-worker|perkos-nayori-platform-qa:$SHA"
+      ;;
+    PerkOS-Nayori-OAuth)
+      printf '%s\n' "oauth|nayori-qa-oauth|perkos-nayori-oauth-qa:$SHA"
+      ;;
+    PerkOS-Nayori-Evaluator)
+      printf '%s\n' "evaluator|nayori-qa-evaluator|perkos-nayori-evaluator-qa:$SHA"
+      ;;
+  esac
+}
+
+expected_release_identity_rows() {
+  case "$REPOSITORY" in
+    PerkOS-Nayori)
+      printf '%s\n' \
+        'web|nayori-qa-web|NAYORI_RELEASE_SHA' \
+        'docs|nayori-qa-docs|NAYORI_DOCS_RELEASE'
+      ;;
+    PerkOS-Nayori-Platform)
+      printf '%s\n' \
+        'api|nayori-qa-api|RELEASE_SHA' \
+        'facilitator|nayori-qa-facilitator|RELEASE_SHA' \
+        'facilitator-worker|nayori-qa-facilitator-worker|RELEASE_SHA'
+      ;;
+    PerkOS-Nayori-OAuth)
+      printf '%s\n' 'oauth|nayori-qa-oauth|RELEASE_SHA'
+      ;;
+    PerkOS-Nayori-Evaluator)
+      printf '%s\n' 'evaluator|nayori-qa-evaluator|RELEASE_SHA'
+      ;;
+  esac
+}
+
+compose_json() {
+  if [[ ${1:-} == evaluator ]]; then
+    docker compose -f "$COMPOSE" --profile evaluator config --format json --no-env-resolution
+  else
+    docker compose -f "$COMPOSE" config --format json --no-env-resolution
+  fi
+}
+
+first_non_whitespace() {
+  awk '{ sub(/^[[:space:]]*/, ""); if (length($0)) { print substr($0, 1, 1); exit } }' "$1"
+}
+
+validate_canonical_compose() {
+  [[ "$(first_non_whitespace "$COMPOSE")" == "{" ]] || {
+    echo "canonical QA Compose must be a JSON object" >&2
+    return 65
+  }
+  jq -e 'type == "object" and (.services | type == "object")' "$COMPOSE" >/dev/null || {
+    echo "invalid JSON Compose document" >&2
+    return 65
+  }
+}
+
+compose_environment_value() {
+  local service=$1 key=$2 profile=${3:-}
+  if [[ "$profile" == evaluator ]]; then
+    docker compose -f "$COMPOSE" --profile evaluator config --format json
+  else
+    docker compose -f "$COMPOSE" config --format json
+  fi | jq -er --arg service "$service" --arg key "$key" '
+    (.services[$service].environment // null) as $environment |
+    if ($environment | type) != "object" then error("missing service environment")
+    else [$environment | to_entries[] | select(.key == $key)] |
+      if length == 1 and (.[0].value | type) == "string" then .[0].value
+      else error("missing or ambiguous release identity") end
+    end
+  '
+}
+
+running_environment_value() {
+  local container=$1 key=$2
+  docker inspect --format '{{json .Config.Env}}' "$container" 2>/dev/null | jq -er \
+    --arg key "$key" '
+      [.[] | select(type == "string" and startswith($key + "="))] |
+      if length == 1 then .[0] | ltrimstr($key + "=")
+      else error("missing or ambiguous live release identity") end
+    '
+}
+
+verify_compose_environment() {
+  local service=$1 key=$2 value=$3 profile=${4:-} actual
+  actual=$(compose_environment_value "$service" "$key" "$profile") || {
+    echo "Compose release identity is missing or ambiguous: $service.$key" >&2
+    return 65
+  }
+  [[ "$actual" == "$value" ]] || {
+    echo "Compose environment mismatch before restart: $service.$key" >&2
+    return 65
+  }
+}
+
+verify_running_environment() {
+  local container=$1 key=$2 value=$3 actual
+  actual=$(running_environment_value "$container" "$key") || {
+    echo "running release identity is missing or ambiguous: $container.$key" >&2
+    return 65
+  }
+  [[ "$actual" == "$value" ]] || {
+    echo "running release identity mismatch for $container.$key" >&2
+    return 65
+  }
+}
+
+verify_public_json() {
+  local url=$1 label=$2 expected_sha=$3 filter=$4
+  for attempt in 1 2 3; do
+    if curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+      --connect-timeout 5 --max-time 15 "$url" |
+      jq -e --arg sha "$expected_sha" "$filter" >/dev/null; then
+      return 0
+    fi
+    [[ "$attempt" == 3 ]] || sleep 3
+  done
+  echo "public QA origin verification failed: $label" >&2
+  return 65
+}
+
+verify_public_origin_for_service() {
+  local service=$1 expected_sha=${2:-}
+  case "$service" in
+    web)
+      verify_public_json https://qa.nayori.ai/api/health web "$expected_sha" \
+        '. == {status:"ok",service:"nayori-web",network:"testnet",release:$sha}'
+      ;;
+    docs)
+      verify_public_json https://docs.qa.nayori.ai/api/health docs "$expected_sha" \
+        '. == {service:"nayori-docs",status:"ok",version:$sha}'
+      ;;
+    api)
+      verify_public_json https://api.qa.nayori.ai/ready api "$expected_sha" \
+        '. == {status:"ready",service:"nayori-x402-facilitator",database:"available",release:$sha}'
+      verify_public_json https://api.qa.nayori.ai/supported api-role "$expected_sha" '
+        .service == "nayori-x402-facilitator" and .release == $sha and
+        .networks == ["stacks:2147483648"] and .roadmap.activeNetwork == "testnet" and
+        .quoteIssuanceEnabled == true and .paymentVerificationEnabled == false and
+        .settlementEnabled == false and .confirmationEnabled == false and
+        .deliveryLedgerEnabled == false and .mcpEnabled == true and
+        .publicResourceEnabled == true and .mppResourceEnabled == true'
+      ;;
+    facilitator)
+      verify_public_json https://facilitator.qa.nayori.ai/ready facilitator "$expected_sha" \
+        '. == {status:"ready",service:"nayori-x402-facilitator",database:"available",release:$sha}'
+      verify_public_json https://facilitator.qa.nayori.ai/supported facilitator-role "$expected_sha" '
+        .service == "nayori-x402-facilitator" and .release == $sha and
+        .networks == ["stacks:2147483648"] and .roadmap.activeNetwork == "testnet" and
+        .quoteIssuanceEnabled == true and .paymentVerificationEnabled == true and
+        .settlementEnabled == true and .confirmationEnabled == true and
+        .deliveryLedgerEnabled == true and .mcpEnabled == false and
+        .publicResourceEnabled == false and .mppResourceEnabled == false'
+      ;;
+    facilitator-worker)
+      return 0
+      ;;
+    oauth)
+      verify_public_json https://oauth.qa.nayori.ai/ready oauth "$expected_sha" \
+        '.status == "ready" and .database == "available" and .release == $sha'
+      verify_public_json https://oauth.qa.nayori.ai/supported oauth-role "$expected_sha" '
+        .service == "nayori-oauth" and .release == $sha and
+        .stacksNetwork == "testnet" and
+        .partnerRegistrationEnabled == true and .agentRegistrationEnabled == true'
+      ;;
+    evaluator)
+      # Evaluator intentionally does not expose its commit. Exact release identity is proven
+      # by the image ID/tag and live RELEASE_SHA; these public checks prove role and readiness.
+      verify_public_json https://evaluator.qa.nayori.ai/healthz evaluator-health "" \
+        '. == {ok:true,service:"nayori-evaluator",version:"0.1.0"}'
+      verify_public_json https://evaluator.qa.nayori.ai/readyz evaluator-ready "" '
+        .ok == true and .environment == "qa" and .network == "testnet" and
+        .commerceGeneration == "service-fee-v6-v5" and .earnedServiceFeeBps == 200 and
+        .committedEvaluationsEnabled == true and .privateEvidenceEnabled == true and
+        (.stxContract | type) == "string" and (.sbtcContract | type) == "string" and
+        (.evaluatorPrincipal | type) == "string"'
+      ;;
+    *) echo "unsupported public-origin service: $service" >&2; return 64 ;;
+  esac
+}
+
+verify_public_origins() {
+  local expected_sha=${1:-$SHA} service container key
+  case "$REPOSITORY" in
+    PerkOS-Nayori-Agent-SDK) return 0 ;;
+    PerkOS-Nayori-Evaluator)
+      verify_public_origin_for_service evaluator "$expected_sha"
+      ;;
+    *)
+      while IFS='|' read -r service container key; do
+        [[ -n "$service" ]] || continue
+        verify_public_origin_for_service "$service" "$expected_sha"
+      done < <(expected_release_identity_rows)
+      ;;
+  esac
+}
+
+verify_worker_runtime() {
+  local status running restarts
+  for observation in 1 2; do
+    status=$(docker inspect --format '{{.State.Status}}' nayori-qa-facilitator-worker 2>/dev/null) || return 65
+    running=$(docker inspect --format '{{.State.Running}}' nayori-qa-facilitator-worker 2>/dev/null) || return 65
+    restarts=$(docker inspect --format '{{.RestartCount}}' nayori-qa-facilitator-worker 2>/dev/null) || return 65
+    [[ "$status" == running && "$running" == true && "$restarts" == 0 ]] || {
+      echo "facilitator worker is not stably running with zero restarts" >&2
+      return 65
+    }
+    [[ "$observation" == 2 ]] || sleep 2
+  done
+}
+
+verify_current_release() {
+  local receipt pointer receipt_digest expected_count actual_count row service container image
+  local expected_id actual_tag actual_id actual_status profile migration_source migration_target
+  receipt=$(receipt_path)
+  pointer=$(current_pointer_path)
+  [[ -f "$receipt" && -f "$pointer" ]] || {
+    echo "no current QA receipt for $REPOSITORY $SHA" >&2
+    return 66
+  }
+  receipt_digest=$(sha256sum "$receipt" | cut -d' ' -f1)
+  jq -e --arg repository "$REPOSITORY" --arg commit "$SHA" \
+    --arg receiptSha256 "$receipt_digest" '
+      .schemaVersion == 1 and .environment == "qa" and
+      .repository == $repository and .commit == $commit and
+      .receiptSha256 == $receiptSha256
+    ' "$pointer" >/dev/null || {
+      echo "QA release is not the authoritative current pointer: $REPOSITORY $SHA" >&2
+      return 65
+    }
+  jq -e --arg repository "$REPOSITORY" --arg commit "$SHA" '
+    .schemaVersion == 2 and .environment == "qa" and
+    .repository == $repository and .commit == $commit and
+    .result == "passed" and
+    (if $repository == "PerkOS-Nayori-Agent-SDK" then
+      .verification == {
+        desiredComposeImages:null,runningContainerImages:null,releaseIdentities:null,
+        publicReadiness:null,publicReleaseIdentity:null,workerRuntime:null
+      }
+     elif $repository == "PerkOS-Nayori-Evaluator" then
+      .verification == {
+        desiredComposeImages:true,runningContainerImages:true,releaseIdentities:true,
+        publicReadiness:true,publicReleaseIdentity:null,workerRuntime:null
+      }
+     elif $repository == "PerkOS-Nayori-Platform" then
+      .verification == {
+        desiredComposeImages:true,runningContainerImages:true,releaseIdentities:true,
+        publicReadiness:true,publicReleaseIdentity:true,
+        workerRuntime:{running:true,zeroRestarts:true}
+      }
+     else
+      .verification == {
+        desiredComposeImages:true,runningContainerImages:true,releaseIdentities:true,
+        publicReadiness:true,publicReleaseIdentity:true,workerRuntime:null
+      }
+     end) and
+    (.runtimeImages | type == "object")
+  ' "$receipt" >/dev/null || {
+    echo "QA receipt lacks current runtime verification: $REPOSITORY $SHA" >&2
+    return 65
+  }
+
+  expected_count=$(expected_runtime_rows | awk 'NF { count++ } END { print count + 0 }')
+  actual_count=$(jq -r '.runtimeImages | length' "$receipt")
+  [[ "$actual_count" == "$expected_count" ]] || {
+    echo "QA receipt has an incomplete runtime service set" >&2
+    return 65
+  }
+  if [[ "$REPOSITORY" == "PerkOS-Nayori-Agent-SDK" ]]; then
+    echo "verified current $REPOSITORY $SHA"
+    return 0
+  fi
+
+  profile=default
+  [[ "$REPOSITORY" == "PerkOS-Nayori-Evaluator" ]] && profile=evaluator
+  while IFS='|' read -r service container image; do
+    [[ -n "$service" ]] || continue
+    expected_id=$(jq -er --arg container "$container" --arg image "$image" '
+      .runtimeImages[$container] |
+      select(type == "object" and .tag == $image and (.id | test("^sha256:[0-9a-f]{64}$"))) |
+      .id
+    ' "$receipt") || {
+      echo "QA receipt runtime binding is invalid for $container" >&2
+      return 65
+    }
+    compose_json "$profile" | jq -e --arg service "$service" --arg image "$image" \
+      '.services[$service].image == $image' >/dev/null || {
+        echo "current Compose image mismatch for $service" >&2
+        return 65
+      }
+    actual_tag=$(docker inspect --format '{{.Config.Image}}' "$container" 2>/dev/null) || return 65
+    actual_id=$(docker inspect --format '{{.Image}}' "$container" 2>/dev/null) || return 65
+    actual_status=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container" 2>/dev/null) || return 65
+    [[ "$actual_tag" == "$image" && "$actual_id" == "$expected_id" &&
+      ( "$actual_status" == healthy || "$actual_status" == running ) ]] || {
+      echo "current container image binding mismatch for $container" >&2
+      return 65
+    }
+  done < <(expected_runtime_rows)
+
+  while IFS='|' read -r service container key; do
+    [[ -n "$service" ]] || continue
+    verify_compose_environment "$service" "$key" "$SHA" "$profile"
+    verify_running_environment "$container" "$key" "$SHA"
+  done < <(expected_release_identity_rows)
+  verify_public_origins "$SHA"
+  if [[ "$REPOSITORY" == "PerkOS-Nayori-Platform" ]]; then
+    verify_worker_runtime
+  fi
+
+  if [[ "$REPOSITORY" == "PerkOS-Nayori-Evaluator" ]]; then
+    migration_source="$RELEASES/$REPOSITORY-$SHA/migrations/001_initial.sql"
+    migration_target=/docker-entrypoint-initdb.d/001_initial.sql
+    jq -e --arg source "$migration_source" --arg target "$migration_target" '
+      .migrationMount == {source:$source,target:$target,readOnly:true}
+    ' "$receipt" >/dev/null || return 65
+    compose_json evaluator | jq -e --arg source "$migration_source" --arg target "$migration_target" '
+      [.services["evaluator-postgres"].volumes[] |
+        select(.source == $source and .target == $target and .read_only == true)] | length == 1
+    ' >/dev/null || return 65
+    actual_status=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' nayori-qa-evaluator-postgres 2>/dev/null) || return 65
+    [[ "$actual_status" == healthy || "$actual_status" == running ]] || return 65
+    docker inspect --format '{{json .Mounts}}' nayori-qa-evaluator-postgres | jq -e \
+      --arg source "$migration_source" --arg target "$migration_target" '
+        [.[] | select(.Source == $source and .Destination == $target and .RW == false)] |
+        length == 1
+      ' >/dev/null || return 65
+  fi
+  echo "verified current $REPOSITORY $SHA"
+}
+
+validate_canonical_compose
 
 if [[ "$ACTION" == "verify" ]]; then
-  RECEIPT=$(receipt_path)
-  [[ -f "$RECEIPT" ]] || { echo "no QA receipt for $REPOSITORY $SHA" >&2; exit 66; }
-  grep -Fq '"result":"passed"' "$RECEIPT"
-  grep -Fq "\"commit\":\"$SHA\"" "$RECEIPT"
-  echo "verified $REPOSITORY $SHA"
+  verify_current_release
   exit 0
 fi
 
@@ -37,6 +388,10 @@ fi
 ARCHIVE="$INCOMING/$REPOSITORY-$SHA-$DIGEST.tar.gz"
 [[ -f "$ARCHIVE" ]] || { echo "staged archive missing" >&2; exit 66; }
 [[ "$(sha256sum "$ARCHIVE" | cut -d' ' -f1)" == "$DIGEST" ]] || { echo "staged digest mismatch" >&2; exit 65; }
+[[ ! -e "$(receipt_path)" ]] || {
+  echo "QA receipt already exists; verify or quarantine it before redeploying $REPOSITORY $SHA" >&2
+  exit 73
+}
 
 RELEASE="$RELEASES/$REPOSITORY-$SHA"
 if [[ ! -d "$RELEASE" ]]; then
@@ -52,36 +407,200 @@ SHORT=${SHA:0:16}
 COMPOSE_BACKUP="$BASE/backups/compose.qa.before-$REPOSITORY-$SHA.yaml"
 cp "$COMPOSE" "$COMPOSE_BACKUP"
 COMPOSE_CHANGED=false
+MUTATION_STARTED=false
+DEPLOYMENT_COMMITTED=false
+NEW_RECEIPT_WRITTEN=false
 ENV_BACKUPS=()
+VERIFIED_RUNTIME_IMAGES=()
+PREVIOUS_RUNTIME_IMAGES=()
+PREVIOUS_RELEASE_IDENTITIES=()
+PREVIOUS_MIGRATION_SOURCE=
+
+commit_compose_temp() {
+  local temp=$1
+  chmod 600 "$temp"
+  mv -f "$temp" "$COMPOSE"
+}
+
+json_stream_value_count() {
+  local service=$1 field=$2
+  jq --stream -nr --arg service "$service" --arg field "$field" '
+    reduce inputs as $event (0;
+      if ($event | length) == 2 and
+         $event[0] == ["services", $service, $field]
+      then . + 1 else . end)
+  ' "$COMPOSE"
+}
+
+assert_image_target() {
+  local service=$1 count
+  count=$(json_stream_value_count "$service" image)
+  [[ "$count" == 1 ]] &&
+    jq -e --arg service "$service" '
+      .services[$service] | type == "object" and (.image | type == "string")
+    ' "$COMPOSE" >/dev/null || {
+      echo "missing or ambiguous JSON Compose image target: $service" >&2
+      return 66
+    }
+}
+
+assert_compose_environment_target() {
+  local service=$1 key=$2 count kind
+  [[ "$key" =~ ^[A-Z0-9_]+$ ]] || {
+    echo "invalid compose environment key: $key" >&2
+    return 64
+  }
+  jq -e --arg service "$service" '
+    .services[$service] | type == "object" and
+    ((.environment | type) == "object" or (.environment | type) == "array")
+  ' "$COMPOSE" >/dev/null || {
+    echo "missing JSON Compose environment target: $service.$key" >&2
+    return 66
+  }
+  kind=$(jq -r --arg service "$service" '.services[$service].environment | type' "$COMPOSE")
+  if [[ "$kind" == object ]]; then
+    count=$(jq --stream -nr --arg service "$service" --arg key "$key" '
+      reduce inputs as $event (0;
+        if ($event | length) == 2 and
+           $event[0] == ["services", $service, "environment", $key]
+        then . + 1 else . end)
+    ' "$COMPOSE")
+  else
+    count=$(jq -r --arg service "$service" --arg key "$key" '
+      [.services[$service].environment[] |
+        select(type == "string" and (split("=")[0] == $key))] | length
+    ' "$COMPOSE")
+  fi
+  [[ "$count" == 1 ]] || {
+    echo "missing or ambiguous JSON Compose environment target: $service.$key" >&2
+    return 66
+  }
+}
+
+assert_evaluator_migration_mount_target() {
+  local service=evaluator-postgres target=/docker-entrypoint-initdb.d/001_initial.sql count
+  jq -e --arg service "$service" \
+    '.services[$service] | type == "object" and (.volumes | type == "array")' \
+    "$COMPOSE" >/dev/null || {
+      echo "missing JSON Compose migration service or volumes: $service" >&2
+      return 66
+    }
+  count=$(jq -r --arg service "$service" --arg target "$target" '
+    [.services[$service].volumes[] |
+      select(
+        (type == "string" and (split(":") | length == 3 and .[1] == $target and .[2] == "ro")) or
+        (type == "object" and .target == $target and .read_only == true)
+      )] | length
+  ' "$COMPOSE")
+  [[ "$count" == 1 ]] || {
+    echo "missing or ambiguous JSON Compose migration mount: $service:$target" >&2
+    return 66
+  }
+}
+
+assert_env_file_release_target() {
+  local file=$1 count
+  [[ -f "$file" ]] || { echo "missing environment file: $file" >&2; return 66; }
+  count=$(grep -c '^RELEASE_SHA=' "$file" || true)
+  [[ "$count" == 1 ]] || {
+    echo "missing or ambiguous RELEASE_SHA in environment file: $file" >&2
+    return 66
+  }
+}
 
 replace_image() {
-  local service=$1 image=$2
-  sed -i "/^  ${service}:$/,/^  [A-Za-z0-9_-]*:$/ s|^    image: .*|    image: ${image}|" "$COMPOSE"
+  local service=$1 image=$2 temp
+  assert_image_target "$service"
+  temp=$(mktemp "$BASE/ops/.compose-image.XXXXXX")
+  if ! jq --arg service "$service" --arg image "$image" \
+    '.services[$service].image = $image' "$COMPOSE" > "$temp"; then
+    rm -f "$temp"
+    return 65
+  fi
+  commit_compose_temp "$temp"
 }
 
 replace_compose_environment() {
-  local key=$1 value=$2
-  grep -Eq "^      ${key}:" "$COMPOSE" || { echo "missing compose environment key: $key" >&2; exit 66; }
-  sed -i "s|^      ${key}:.*|      ${key}: ${value}|" "$COMPOSE"
+  local service=$1 key=$2 value=$3 temp
+  assert_compose_environment_target "$service" "$key"
+  temp=$(mktemp "$BASE/ops/.compose-environment.XXXXXX")
+  if ! jq --arg service "$service" --arg key "$key" --arg value "$value" '
+    if (.services[$service].environment | type) == "object" then
+      .services[$service].environment[$key] = $value
+    else
+      .services[$service].environment |= map(
+        if type == "string" and (split("=")[0] == $key)
+        then ($key + "=" + $value) else . end)
+    end
+  ' "$COMPOSE" > "$temp"; then
+    rm -f "$temp"
+    return 65
+  fi
+  commit_compose_temp "$temp"
+}
+
+replace_evaluator_migration_mount() {
+  local source=$1 service=evaluator-postgres target=/docker-entrypoint-initdb.d/001_initial.sql temp
+  assert_evaluator_migration_mount_target
+  temp=$(mktemp "$BASE/ops/.compose-migration.XXXXXX")
+  if ! jq --arg service "$service" --arg source "$source" --arg target "$target" '
+    .services[$service].volumes |= map(
+      if type == "string" and (split(":") | length == 3 and .[1] == $target and .[2] == "ro")
+      then ($source + ":" + $target + ":ro")
+      elif type == "object" and .target == $target and .read_only == true
+      then .source = $source
+      else . end)
+  ' "$COMPOSE" > "$temp"; then
+    rm -f "$temp"
+    return 65
+  fi
+  commit_compose_temp "$temp"
+}
+
+verify_compose_image() {
+  local service=$1 image=$2 profile=${3:-}
+  compose_json "$profile" | jq -e --arg service "$service" --arg image "$image" '
+    (.services | type == "object") and
+    (.services[$service] | type == "object") and
+    (.services[$service].image == $image)
+  ' >/dev/null || {
+    echo "Compose image mismatch before restart: $service must use $image" >&2
+    return 65
+  }
+}
+
+verify_compose_migration_mount() {
+  local source=$1 target=/docker-entrypoint-initdb.d/001_initial.sql
+  compose_json evaluator | jq -e --arg source "$source" --arg target "$target" '
+    [.services["evaluator-postgres"].volumes[] |
+      select(
+        (type == "string" and (split(":") | length == 3 and .[0] == $source and .[1] == $target and .[2] == "ro")) or
+        (type == "object" and .source == $source and .target == $target and .read_only == true)
+      )] | length == 1
+  ' >/dev/null || {
+    echo "Compose evaluator migration mount mismatch before restart" >&2
+    return 65
+  }
 }
 
 replace_env_file_release() {
-  local file=$1
-  [[ -f "$file" ]] || { echo "missing environment file: $file" >&2; exit 66; }
+  local file=$1 temp
+  assert_env_file_release_target "$file"
   local backup="$BASE/backups/$(basename "$file").before-$REPOSITORY-$SHA"
   cp "$file" "$backup"
   chmod 600 "$backup"
   ENV_BACKUPS+=("$file|$backup")
-  if grep -q '^RELEASE_SHA=' "$file"; then
-    sed -i "s|^RELEASE_SHA=.*|RELEASE_SHA=$SHA|" "$file"
-  else
-    printf '\nRELEASE_SHA=%s\n' "$SHA" >> "$file"
-  fi
-  chmod 600 "$file"
+  temp=$(mktemp "$(dirname "$file")/.release-env.XXXXXX")
+  awk -v sha="$SHA" '
+    /^RELEASE_SHA=/ { print "RELEASE_SHA=" sha; next }
+    { print }
+  ' "$file" > "$temp"
+  chmod 600 "$temp"
+  mv -f "$temp" "$file"
 }
 
 wait_healthy() {
-  local container=$1
+  local container=$1 status
   for _ in $(seq 1 40); do
     status=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container" 2>/dev/null || true)
     [[ "$status" == "healthy" || "$status" == "running" ]] && return 0
@@ -91,19 +610,249 @@ wait_healthy() {
   return 1
 }
 
-rollback() {
-  local item file backup
-  for item in "${ENV_BACKUPS[@]}"; do
-    file=${item%%|*}
-    backup=${item#*|}
-    cp "$backup" "$file"
-  done
-  if [[ "$COMPOSE_CHANGED" == true ]]; then
-    cp "$COMPOSE_BACKUP" "$COMPOSE"
-    docker compose -f "$COMPOSE" --profile evaluator up -d >/dev/null 2>&1 || true
+built_image_id() {
+  local image=$1 id
+  id=$(docker image inspect --format '{{.Id}}' "$image" 2>/dev/null) || {
+    echo "unable to inspect built image: $image" >&2
+    return 65
+  }
+  [[ "$id" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+    echo "invalid built image ID for $image" >&2
+    return 65
+  }
+  printf '%s\n' "$id"
+}
+
+capture_previous_runtime_state() {
+  local row service container ignored_image tag id mounts target key value
+  while IFS='|' read -r service container ignored_image; do
+    [[ -n "$service" ]] || continue
+    tag=$(docker inspect --format '{{.Config.Image}}' "$container" 2>/dev/null) || {
+      echo "unable to capture prior runtime tag for $container" >&2
+      return 65
+    }
+    id=$(docker inspect --format '{{.Image}}' "$container" 2>/dev/null) || {
+      echo "unable to capture prior runtime image ID for $container" >&2
+      return 65
+    }
+    [[ -n "$tag" && "$id" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+      echo "invalid prior runtime image binding for $container" >&2
+      return 65
+    }
+    PREVIOUS_RUNTIME_IMAGES+=("$container|$tag|$id")
+  done < <(expected_runtime_rows)
+  while IFS='|' read -r service container key; do
+    [[ -n "$service" ]] || continue
+    value=$(running_environment_value "$container" "$key") || {
+      echo "unable to capture prior runtime release identity for $container.$key" >&2
+      return 65
+    }
+    PREVIOUS_RELEASE_IDENTITIES+=("$service|$container|$key|$value")
+  done < <(expected_release_identity_rows)
+  if [[ "$REPOSITORY" == "PerkOS-Nayori-Evaluator" ]]; then
+    target=/docker-entrypoint-initdb.d/001_initial.sql
+    mounts=$(docker inspect --format '{{json .Mounts}}' nayori-qa-evaluator-postgres 2>/dev/null) || {
+      echo "unable to capture prior Evaluator PostgreSQL mounts" >&2
+      return 65
+    }
+    PREVIOUS_MIGRATION_SOURCE=$(printf '%s' "$mounts" | jq -er --arg target "$target" '
+      [.[] | select(.Destination == $target and .RW == false)] |
+      if length == 1 then .[0].Source else error("ambiguous prior migration mount") end
+    ') || {
+      echo "missing or ambiguous prior Evaluator migration mount" >&2
+      return 65
+    }
   fi
 }
-trap rollback ERR
+
+verify_running_image() {
+  local container=$1 image=$2 image_id=$3 actual_tag actual_id
+  actual_tag=$(docker inspect --format '{{.Config.Image}}' "$container" 2>/dev/null) || {
+    echo "unable to inspect running image for $container" >&2
+    return 65
+  }
+  actual_id=$(docker inspect --format '{{.Image}}' "$container" 2>/dev/null) || {
+    echo "unable to inspect running image ID for $container" >&2
+    return 65
+  }
+  [[ "$actual_tag" == "$image" && "$actual_id" == "$image_id" ]] || {
+    echo "running image mismatch for $container: expected $image ($image_id), got $actual_tag ($actual_id)" >&2
+    return 65
+  }
+  VERIFIED_RUNTIME_IMAGES+=("$container|$image|$image_id")
+}
+
+verify_running_migration_mount() {
+  local container=$1 source=$2 target=/docker-entrypoint-initdb.d/001_initial.sql
+  docker inspect --format '{{json .Mounts}}' "$container" | jq -e \
+    --arg source "$source" --arg target "$target" '
+      [.[] | select(.Source == $source and .Destination == $target and .RW == false)] |
+      length == 1
+    ' >/dev/null || {
+      echo "running migration mount mismatch for $container" >&2
+      return 65
+    }
+}
+
+assert_complete_verified_runtime_set() {
+  local expected_count actual_count row service container image item matches
+  if [[ "$REPOSITORY" == "PerkOS-Nayori-Agent-SDK" ]]; then
+    return 0
+  fi
+  expected_count=$(expected_runtime_rows | awk 'NF { count++ } END { print count + 0 }')
+  actual_count=${#VERIFIED_RUNTIME_IMAGES[@]}
+  [[ "$actual_count" == "$expected_count" ]] || {
+    echo "verified runtime service set is incomplete for $REPOSITORY" >&2
+    return 65
+  }
+  while IFS='|' read -r service container image; do
+    [[ -n "$service" ]] || continue
+    matches=0
+    for item in "${VERIFIED_RUNTIME_IMAGES[@]}"; do
+      [[ "$item" == "$container|$image|"* ]] && matches=$((matches + 1))
+    done
+    [[ "$matches" == 1 ]] || {
+      echo "verified runtime service set is missing or ambiguous for $container" >&2
+      return 65
+    }
+  done < <(expected_runtime_rows)
+}
+
+rollback() {
+  local item file backup row service container expected_tag expected_id actual_tag actual_id key value
+  local failed=0 target=/docker-entrypoint-initdb.d/001_initial.sql
+  set +e
+  for item in "${ENV_BACKUPS[@]+"${ENV_BACKUPS[@]}"}"; do
+    file=${item%%|*}
+    backup=${item#*|}
+    cp "$backup" "$file" || failed=1
+  done
+  if [[ "$COMPOSE_CHANGED" == true ]]; then
+    cp "$COMPOSE_BACKUP" "$COMPOSE" || failed=1
+    docker compose -f "$COMPOSE" config >/dev/null || failed=1
+    case "$REPOSITORY" in
+      PerkOS-Nayori)
+        docker compose -f "$COMPOSE" up -d web docs >/dev/null 2>&1 || failed=1
+        ;;
+      PerkOS-Nayori-Platform)
+        docker compose -f "$COMPOSE" up -d api facilitator facilitator-worker >/dev/null 2>&1 || failed=1
+        ;;
+      PerkOS-Nayori-OAuth)
+        docker compose -f "$COMPOSE" up -d oauth >/dev/null 2>&1 || failed=1
+        ;;
+      PerkOS-Nayori-Evaluator)
+        docker compose -f "$COMPOSE" --profile evaluator up -d evaluator-postgres evaluator >/dev/null 2>&1 || failed=1
+        ;;
+    esac
+    for row in "${PREVIOUS_RUNTIME_IMAGES[@]}"; do
+      container=${row%%|*}
+      row=${row#*|}
+      expected_tag=${row%%|*}
+      expected_id=${row#*|}
+      wait_healthy "$container" || failed=1
+      actual_tag=$(docker inspect --format '{{.Config.Image}}' "$container" 2>/dev/null) || failed=1
+      actual_id=$(docker inspect --format '{{.Image}}' "$container" 2>/dev/null) || failed=1
+      [[ "$actual_tag" == "$expected_tag" && "$actual_id" == "$expected_id" ]] || failed=1
+    done
+    for row in "${PREVIOUS_RELEASE_IDENTITIES[@]}"; do
+      service=${row%%|*}
+      row=${row#*|}
+      container=${row%%|*}
+      row=${row#*|}
+      key=${row%%|*}
+      value=${row#*|}
+      verify_running_environment "$container" "$key" "$value" || failed=1
+      verify_public_origin_for_service "$service" "$value" || failed=1
+    done
+    if [[ "$REPOSITORY" == "PerkOS-Nayori-Platform" ]]; then
+      verify_worker_runtime || failed=1
+    fi
+    if [[ "$REPOSITORY" == "PerkOS-Nayori-Evaluator" ]]; then
+      wait_healthy nayori-qa-evaluator-postgres || failed=1
+      docker inspect --format '{{json .Mounts}}' nayori-qa-evaluator-postgres | jq -e \
+        --arg source "$PREVIOUS_MIGRATION_SOURCE" --arg target "$target" '
+          [.[] | select(.Source == $source and .Destination == $target and .RW == false)] |
+          length == 1
+        ' >/dev/null || failed=1
+    fi
+  fi
+  if [[ "$NEW_RECEIPT_WRITTEN" == true ]]; then
+    rm -f "$(receipt_path)" || failed=1
+  fi
+  if [[ "$failed" != 0 ]]; then
+    echo "QA RELEASE ROLLBACK VERIFICATION FAILED; operator remediation required" >&2
+    return 70
+  fi
+  echo "QA release rollback restored and verified the previous runtime" >&2
+  return 0
+}
+
+deployment_commit_is_durable() {
+  local receipt pointer digest
+  receipt=$(receipt_path)
+  pointer=$(current_pointer_path)
+  [[ -f "$receipt" && -f "$pointer" ]] || return 1
+  digest=$(sha256sum "$receipt" | cut -d' ' -f1) || return 1
+  jq -e --arg repository "$REPOSITORY" --arg commit "$SHA" --arg digest "$digest" '
+    .schemaVersion == 1 and .environment == "qa" and
+    .repository == $repository and .commit == $commit and
+    .receiptSha256 == $digest
+  ' "$pointer" >/dev/null
+}
+
+on_error() {
+  # EXIT owns rollback so every failure path, including explicit exits, uses one recovery path.
+  return 0
+}
+
+on_exit() {
+  local status=$?
+  trap - EXIT ERR INT TERM HUP
+  set +e
+  if [[ "$DEPLOYMENT_COMMITTED" != true &&
+    ( "$MUTATION_STARTED" == true || "$NEW_RECEIPT_WRITTEN" == true ) ]]; then
+    if deployment_commit_is_durable; then
+      DEPLOYMENT_COMMITTED=true
+    elif ! rollback; then
+      status=70
+    fi
+  fi
+  exit "$status"
+}
+
+trap on_error ERR
+trap 'exit 130' INT
+trap 'exit 129' HUP
+trap 'exit 143' TERM
+trap on_exit EXIT
+
+# Validate every document target before the first mutation. This keeps malformed or drifted
+# Compose files unchanged even when Bash's ERR-trap semantics differ across supported versions.
+case "$REPOSITORY" in
+  PerkOS-Nayori)
+    assert_image_target web
+    assert_image_target docs
+    assert_compose_environment_target web NAYORI_RELEASE_SHA
+    assert_compose_environment_target docs NAYORI_DOCS_RELEASE
+    ;;
+  PerkOS-Nayori-Platform)
+    assert_image_target api
+    assert_image_target facilitator
+    assert_image_target facilitator-worker
+    assert_env_file_release_target "$BASE/secrets/platform.env"
+    assert_env_file_release_target "$BASE/secrets/facilitator.env"
+    ;;
+  PerkOS-Nayori-OAuth)
+    assert_image_target oauth
+    assert_env_file_release_target "$BASE/secrets/oauth.env"
+    ;;
+  PerkOS-Nayori-Evaluator)
+    assert_image_target evaluator
+    assert_evaluator_migration_mount_target
+    assert_env_file_release_target "$BASE/secrets/evaluator.env"
+    ;;
+esac
+capture_previous_runtime_state
 
 case "$REPOSITORY" in
   PerkOS-Nayori)
@@ -130,15 +879,26 @@ case "$REPOSITORY" in
       --build-arg NAYORI_APP_ORIGIN=https://qa.nayori.ai \
       --build-arg NAYORI_PRODUCT_ORIGIN=https://qa.nayori.ai \
       --build-arg NAYORI_API_ORIGIN=https://api.qa.nayori.ai "$RELEASE/developer-portal"
+    WEB_IMAGE_ID=$(built_image_id "$WEB_IMAGE")
+    DOCS_IMAGE_ID=$(built_image_id "$DOCS_IMAGE")
+    MUTATION_STARTED=true
+    COMPOSE_CHANGED=true
     replace_image web "$WEB_IMAGE"
     replace_image docs "$DOCS_IMAGE"
-    replace_compose_environment NAYORI_RELEASE_SHA "$SHA"
-    replace_compose_environment NAYORI_DOCS_RELEASE "$SHA"
-    COMPOSE_CHANGED=true
+    replace_compose_environment web NAYORI_RELEASE_SHA "$SHA"
+    replace_compose_environment docs NAYORI_DOCS_RELEASE "$SHA"
     docker compose -f "$COMPOSE" config >/dev/null
+    verify_compose_image web "$WEB_IMAGE"
+    verify_compose_image docs "$DOCS_IMAGE"
+    verify_compose_environment web NAYORI_RELEASE_SHA "$SHA"
+    verify_compose_environment docs NAYORI_DOCS_RELEASE "$SHA"
     docker compose -f "$COMPOSE" up -d web docs
     wait_healthy nayori-qa-web
     wait_healthy nayori-qa-docs
+    verify_running_image nayori-qa-web "$WEB_IMAGE" "$WEB_IMAGE_ID"
+    verify_running_image nayori-qa-docs "$DOCS_IMAGE" "$DOCS_IMAGE_ID"
+    verify_running_environment nayori-qa-web NAYORI_RELEASE_SHA "$SHA"
+    verify_running_environment nayori-qa-docs NAYORI_DOCS_RELEASE "$SHA"
     ;;
   PerkOS-Nayori-Agent-SDK)
     docker run --rm --network bridge -v "$RELEASE:/work" -w /work node:22-alpine \
@@ -147,49 +907,172 @@ case "$REPOSITORY" in
   PerkOS-Nayori-Platform)
     IMAGE="perkos-nayori-platform-qa:$SHA"
     docker build --pull=false -t "$IMAGE" "$RELEASE"
+    IMAGE_ID=$(built_image_id "$IMAGE")
+    MUTATION_STARTED=true
+    COMPOSE_CHANGED=true
     replace_image api "$IMAGE"
     replace_image facilitator "$IMAGE"
     replace_image facilitator-worker "$IMAGE"
-    COMPOSE_CHANGED=true
     replace_env_file_release "$BASE/secrets/platform.env"
     replace_env_file_release "$BASE/secrets/facilitator.env"
     docker compose -f "$COMPOSE" config >/dev/null
+    verify_compose_image api "$IMAGE"
+    verify_compose_image facilitator "$IMAGE"
+    verify_compose_image facilitator-worker "$IMAGE"
+    verify_compose_environment api RELEASE_SHA "$SHA"
+    verify_compose_environment facilitator RELEASE_SHA "$SHA"
+    verify_compose_environment facilitator-worker RELEASE_SHA "$SHA"
     docker compose -f "$COMPOSE" run --rm api npm run db:migrate:production
     docker compose -f "$COMPOSE" run --rm facilitator npm run db:migrate:production
     docker compose -f "$COMPOSE" up -d api facilitator facilitator-worker
     wait_healthy nayori-qa-api
     wait_healthy nayori-qa-facilitator
+    verify_running_image nayori-qa-api "$IMAGE" "$IMAGE_ID"
+    verify_running_image nayori-qa-facilitator "$IMAGE" "$IMAGE_ID"
+    verify_running_image nayori-qa-facilitator-worker "$IMAGE" "$IMAGE_ID"
+    verify_running_environment nayori-qa-api RELEASE_SHA "$SHA"
+    verify_running_environment nayori-qa-facilitator RELEASE_SHA "$SHA"
+    verify_running_environment nayori-qa-facilitator-worker RELEASE_SHA "$SHA"
     ;;
   PerkOS-Nayori-OAuth)
     IMAGE="perkos-nayori-oauth-qa:$SHA"
     docker build --pull=false -t "$IMAGE" "$RELEASE"
-    replace_image oauth "$IMAGE"
+    IMAGE_ID=$(built_image_id "$IMAGE")
+    MUTATION_STARTED=true
     COMPOSE_CHANGED=true
+    replace_image oauth "$IMAGE"
     replace_env_file_release "$BASE/secrets/oauth.env"
     docker compose -f "$COMPOSE" config >/dev/null
+    verify_compose_image oauth "$IMAGE"
+    verify_compose_environment oauth RELEASE_SHA "$SHA"
     docker compose -f "$COMPOSE" run --rm oauth npm run db:migrate:production
     docker compose -f "$COMPOSE" up -d oauth
     wait_healthy nayori-qa-oauth
+    verify_running_image nayori-qa-oauth "$IMAGE" "$IMAGE_ID"
+    verify_running_environment nayori-qa-oauth RELEASE_SHA "$SHA"
     ;;
   PerkOS-Nayori-Evaluator)
     IMAGE="perkos-nayori-evaluator-qa:$SHA"
     docker build --pull=false -t "$IMAGE" "$RELEASE"
-    replace_image evaluator "$IMAGE"
-    sed -i -E "s|/opt/perkos-nayori-qa/releases/evaluator-[0-9a-f-]+/migrations/001_initial.sql|$RELEASE/migrations/001_initial.sql|" "$COMPOSE"
+    IMAGE_ID=$(built_image_id "$IMAGE")
+    MUTATION_STARTED=true
     COMPOSE_CHANGED=true
+    replace_image evaluator "$IMAGE"
+    replace_evaluator_migration_mount "$RELEASE/migrations/001_initial.sql"
     replace_env_file_release "$BASE/secrets/evaluator.env"
     docker compose -f "$COMPOSE" config >/dev/null
+    verify_compose_image evaluator "$IMAGE" evaluator
+    verify_compose_migration_mount "$RELEASE/migrations/001_initial.sql"
+    verify_compose_environment evaluator RELEASE_SHA "$SHA" evaluator
     docker compose -f "$COMPOSE" --profile evaluator up -d evaluator-postgres
     wait_healthy nayori-qa-evaluator-postgres
-    docker exec -i nayori-qa-evaluator-postgres sh -lc 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$RELEASE/migrations/001_initial.sql"
+    verify_running_migration_mount nayori-qa-evaluator-postgres "$RELEASE/migrations/001_initial.sql"
+    docker exec -i nayori-qa-evaluator-postgres sh -lc 'psql --single-transaction -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$RELEASE/migrations/001_initial.sql"
     docker compose -f "$COMPOSE" --profile evaluator up -d evaluator
     wait_healthy nayori-qa-evaluator
+    verify_running_image nayori-qa-evaluator "$IMAGE" "$IMAGE_ID"
+    verify_running_environment nayori-qa-evaluator RELEASE_SHA "$SHA"
     ;;
 esac
 
-trap - ERR
+verify_public_origins "$SHA"
+if [[ "$REPOSITORY" == "PerkOS-Nayori-Platform" ]]; then
+  verify_worker_runtime
+fi
+assert_complete_verified_runtime_set
 COMPLETED=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-printf '{"schemaVersion":1,"environment":"qa","repository":"%s","commit":"%s","archiveSha256":"%s","startedAt":"%s","completedAt":"%s","result":"passed"}\n' \
-  "$REPOSITORY" "$SHA" "$DIGEST" "$STARTED" "$COMPLETED" > "$(receipt_path)"
-chmod 600 "$(receipt_path)"
+RUNTIME_IMAGES='{}'
+if [[ "$REPOSITORY" != "PerkOS-Nayori-Agent-SDK" ]]; then
+  for item in "${VERIFIED_RUNTIME_IMAGES[@]}"; do
+    container=${item%%|*}
+    item=${item#*|}
+    image=${item%%|*}
+    image_id=${item#*|}
+    RUNTIME_IMAGES=$(jq -cn --argjson current "$RUNTIME_IMAGES" \
+      --arg container "$container" --arg image "$image" --arg imageId "$image_id" \
+      '$current + {($container): {tag:$image,id:$imageId}}')
+  done
+fi
+MIGRATION_MOUNT=null
+if [[ "$REPOSITORY" == "PerkOS-Nayori-Evaluator" ]]; then
+  MIGRATION_MOUNT=$(jq -cn \
+    --arg source "$RELEASE/migrations/001_initial.sql" \
+    --arg target /docker-entrypoint-initdb.d/001_initial.sql \
+    '{source:$source,target:$target,readOnly:true}')
+fi
+case "$REPOSITORY" in
+  PerkOS-Nayori-Agent-SDK)
+    VERIFICATION='{
+      "desiredComposeImages":null,"runningContainerImages":null,"releaseIdentities":null,
+      "publicReadiness":null,"publicReleaseIdentity":null,"workerRuntime":null
+    }'
+    ;;
+  PerkOS-Nayori-Evaluator)
+    VERIFICATION='{
+      "desiredComposeImages":true,"runningContainerImages":true,"releaseIdentities":true,
+      "publicReadiness":true,"publicReleaseIdentity":null,"workerRuntime":null
+    }'
+    ;;
+  PerkOS-Nayori-Platform)
+    VERIFICATION='{
+      "desiredComposeImages":true,"runningContainerImages":true,"releaseIdentities":true,
+      "publicReadiness":true,"publicReleaseIdentity":true,
+      "workerRuntime":{"running":true,"zeroRestarts":true}
+    }'
+    ;;
+  *)
+    VERIFICATION='{
+      "desiredComposeImages":true,"runningContainerImages":true,"releaseIdentities":true,
+      "publicReadiness":true,"publicReleaseIdentity":true,"workerRuntime":null
+    }'
+    ;;
+esac
+RECEIPT_TEMP=$(mktemp "$RECEIPTS/.receipt.XXXXXX")
+jq -n \
+  --arg environment qa \
+  --arg repository "$REPOSITORY" \
+  --arg commit "$SHA" \
+  --arg archiveSha256 "$DIGEST" \
+  --arg startedAt "$STARTED" \
+  --arg completedAt "$COMPLETED" \
+  --argjson runtimeImages "$RUNTIME_IMAGES" \
+  --argjson migrationMount "$MIGRATION_MOUNT" \
+  --argjson verification "$VERIFICATION" \
+  '{
+    schemaVersion: 2,
+    environment: $environment,
+    repository: $repository,
+    commit: $commit,
+    archiveSha256: $archiveSha256,
+    startedAt: $startedAt,
+    completedAt: $completedAt,
+    result: "passed",
+    verification: $verification,
+    runtimeImages: $runtimeImages,
+    migrationMount: $migrationMount
+  }' > "$RECEIPT_TEMP"
+chmod 600 "$RECEIPT_TEMP"
+NEW_RECEIPT_WRITTEN=true
+mv -f "$RECEIPT_TEMP" "$(receipt_path)"
+RECEIPT_DIGEST=$(sha256sum "$(receipt_path)" | cut -d' ' -f1)
+POINTER_TEMP=$(mktemp "$RECEIPTS/.current.XXXXXX")
+jq -n \
+  --arg environment qa \
+  --arg repository "$REPOSITORY" \
+  --arg commit "$SHA" \
+  --arg receiptSha256 "$RECEIPT_DIGEST" \
+  '{
+    schemaVersion: 1,
+    environment: $environment,
+    repository: $repository,
+    commit: $commit,
+    receiptSha256: $receiptSha256
+  }' > "$POINTER_TEMP"
+chmod 600 "$POINTER_TEMP"
+mv -f "$POINTER_TEMP" "$(current_pointer_path)"
+deployment_commit_is_durable || {
+  echo "QA release receipt pointer could not be verified after commit" >&2
+  exit 65
+}
+DEPLOYMENT_COMMITTED=true
 echo "deployed $REPOSITORY $SHA"
