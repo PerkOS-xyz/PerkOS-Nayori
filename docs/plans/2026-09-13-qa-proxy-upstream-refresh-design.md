@@ -7,7 +7,9 @@ A Compose recreate can assign a new IP to the service while Caddy retains the ol
 upstream address, leaving the new healthy container unreachable through HTTPS.
 
 After every runtime recreate, the release controller will validate the existing
-read-only Caddyfile inside the proxy container and reload that same configuration.
+read-only Caddyfile inside the proxy container and force-reload that same configuration.
+The force flag is required because a normal reload of identical JSON lets Caddy reuse
+the existing reverse-proxy handler and its stale resolved Docker address.
 It performs the refresh before the existing public HTTPS checks, so a release still
 cannot pass based only on internal container health. The controller performs the
 same refresh after restoring containers during rollback, before validating the

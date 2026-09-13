@@ -992,7 +992,7 @@ describe("QA release controller Compose mutation", () => {
     ).toEqual(original);
     expect(
       readFileSync(harness.dockerLog, "utf8").match(
-        /exec perkos-knowledge-proxy caddy reload --config \/etc\/caddy\/Caddyfile --adapter caddyfile/g,
+        /exec perkos-knowledge-proxy caddy reload --config \/etc\/caddy\/Caddyfile --adapter caddyfile --force/g,
       ),
     ).toHaveLength(2);
   });
@@ -1026,7 +1026,7 @@ describe("QA release controller Compose mutation", () => {
       "exec perkos-knowledge-proxy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile",
     );
     const reloadIndex = operations.indexOf(
-      "exec perkos-knowledge-proxy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile",
+      "exec perkos-knowledge-proxy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile --force",
     );
     const publicIndex = operations.indexOf(
       "curl https://evaluator.qa.nayori.ai/healthz",
