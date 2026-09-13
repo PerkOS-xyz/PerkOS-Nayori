@@ -61,6 +61,9 @@ describe("active v6/v5 consumer release", () => {
     expect(workflow).toContain(
       "NEXT_PUBLIC_NAYORI_FACILITATOR_ORIGIN: ${{ matrix.facilitatorOrigin }}",
     );
+    expect(workflow).toMatch(
+      /- run: npm test[\s\S]*?NEXT_PUBLIC_CONTRACT_PROFILE: current-v6-v5[\s\S]*?NEXT_PUBLIC_STX_COMMERCE_CONTRACT: agentic-commerce-v6[\s\S]*?NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT: sbtc-commerce-v5[\s\S]*?- run: npm run lint/,
+    );
   });
 
   it("pins the signer-free mainnet verifier to exact sources and policy", () => {

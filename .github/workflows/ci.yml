@@ -106,7 +106,13 @@ jobs:
           cache-dependency-path: App/package-lock.json
       - run: npm ci
       - run: npm audit --omit=dev --audit-level=high
+      # Unit tests exercise profile switching explicitly. Keep their process-level baseline on
+      # the writable current generation; the build below still uses every exact matrix profile.
       - run: npm test
+        env:
+          NEXT_PUBLIC_CONTRACT_PROFILE: current-v6-v5
+          NEXT_PUBLIC_STX_COMMERCE_CONTRACT: agentic-commerce-v6
+          NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT: sbtc-commerce-v5
       - run: npm run lint
       - run: npm run build
       - run: npm run check:bundle
