@@ -339,6 +339,7 @@ const fakeCurl = `#!/usr/bin/env bash
 set -euo pipefail
 url=
 for argument in "$@"; do url=$argument; done
+printf 'curl %s\n' "$url" >> "$FAKE_DOCKER_LOG"
 
 if [[ "$url" == "${"$"}{FAKE_TRANSIENT_PUBLIC_URL:-}" ]]; then
   attempts_file="${"$"}FAKE_DOCKER_STATE.public-attempts"
@@ -989,6 +990,11 @@ describe("QA release controller Compose mutation", () => {
       JSON.parse(readFileSync(harness.composePath, "utf8")),
       `${harness.run.stdout}\n${harness.run.stderr}`,
     ).toEqual(original);
+    expect(
+      readFileSync(harness.dockerLog, "utf8").match(
+        /exec perkos-knowledge-proxy caddy reload --config \/etc\/caddy\/Caddyfile --adapter caddyfile/g,
+      ),
+    ).toHaveLength(2);
   });
 
   it("tolerates a bounded reverse-proxy propagation window", () => {
@@ -1015,6 +1021,19 @@ describe("QA release controller Compose mutation", () => {
     expect(
       readFileSync(`${harness.dockerState}.public-attempts`, "utf8").trim(),
     ).toBe("4");
+    const operations = readFileSync(harness.dockerLog, "utf8");
+    const validateIndex = operations.indexOf(
+      "exec perkos-knowledge-proxy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile",
+    );
+    const reloadIndex = operations.indexOf(
+      "exec perkos-knowledge-proxy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile",
+    );
+    const publicIndex = operations.indexOf(
+      "curl https://evaluator.qa.nayori.ai/healthz",
+    );
+    expect(validateIndex).toBeGreaterThanOrEqual(0);
+    expect(reloadIndex).toBeGreaterThan(validateIndex);
+    expect(publicIndex).toBeGreaterThan(reloadIndex);
   });
 
   it("cannot confuse the API edge with the facilitator execution origin", () => {
