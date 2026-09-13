@@ -1,9 +1,10 @@
 # Earned service fees — candidate contract reference
 
 `agentic-commerce-v6` (STX) and `sbtc-commerce-v5` (sBTC) add a fixed **200 basis-point
-service fee** to the autonomous-decision escrow lifecycle. They are **testnet candidates,
-not production contracts or the current application/SDK defaults**. Production continues to
-use STX v5 and sBTC v4 without this fee. Existing jobs and their terms are unchanged.
+service fee** to the autonomous-decision escrow lifecycle. They are **QA-verified promotion
+candidates, not current production contracts or application defaults**. Production continues
+to use STX v5 and sBTC v4 without this fee until a separately reviewed mainnet promotion is
+completed and verified. Existing jobs and their terms are unchanged.
 
 Isolated QA/testnet explicitly selects v6/v5 in Web and Evaluator for controlled integration
 testing. That selection does not change production defaults or publish the candidate SDK.
@@ -55,8 +56,10 @@ Review remains 12 Bitcoin burn blocks. Initialization accepts the existing QA 3-
 mainnet 144-block appeal policy. Selecting 144 is a deployment gate: the contract does not
 infer which policy to initialize from the network. The dedicated
 [testnet fee runbook](../docs/TESTNET_SERVICE_FEE_RUNBOOK.md) fixes QA initialization to three
-burn blocks and an explicitly confirmed treasury. Historical deployment scripts and defaults
-remain unchanged; no mainnet fee promoter is provided.
+burn blocks and an explicitly confirmed treasury. The isolated
+[mainnet promotion runbook](../docs/MAINNET_SERVICE_FEE_RUNBOOK.md) provides a fail-closed,
+signer-free preflight and a separately armed deploy path. Merely adding that promoter does not
+deploy a contract or change a production default.
 
 The sBTC token remains pinned per funded job. Every SIP-010 transfer checks both the response
 and its boolean result: `(err ...)` and `(ok false)` fail the operation. Only an explicitly

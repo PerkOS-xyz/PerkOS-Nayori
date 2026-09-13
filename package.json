@@ -36,7 +36,10 @@
     "preflight:service-fee:testnet": "STACKS_NETWORK=testnet SERVICE_FEE_ACTION=preflight node scripts/deploy-service-fee-testnet.mjs",
     "deploy:service-fee:testnet": "node scripts/deploy-service-fee-testnet.mjs",
     "preflight:e2e:service-fee:testnet": "STACKS_NETWORK=testnet SERVICE_FEE_ACTION=preflight node scripts/e2e-service-fee-testnet.mjs",
-    "e2e:service-fee:testnet": "node scripts/e2e-service-fee-testnet.mjs"
+    "e2e:service-fee:testnet": "node scripts/e2e-service-fee-testnet.mjs",
+    "create:service-fee:treasury": "node scripts/create-service-fee-treasury.mjs",
+    "preflight:service-fee:mainnet": "STACKS_NETWORK=mainnet SERVICE_FEE_MAINNET_ACTION=preflight node scripts/deploy-service-fee-mainnet.mjs",
+    "deploy:service-fee:mainnet": "sh scripts/run-service-fee-mainnet-deploy.sh"
   },
   "devDependencies": {
     "@stacks/clarinet-sdk": "^3.8.1",
