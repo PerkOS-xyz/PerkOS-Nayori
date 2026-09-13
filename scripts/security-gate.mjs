@@ -984,6 +984,11 @@ requirePattern(
 );
 requirePattern(
   "ops/vps/nayori-qa-release",
+  /evaluator\.qa\.nayori\.ai\/healthz evaluator-health ""[\s\S]*?version:"0\.2\.0"/,
+  "QA Evaluator public health contract must match the promoted 0.2.0 release",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
   /flock -n 9[\s\S]*?another Nayori QA release operation is active/,
   "all QA repository releases must share one VPS-wide controller lock",
 );

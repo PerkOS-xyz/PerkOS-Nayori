@@ -421,7 +421,7 @@ case "$url" in
       partnerRegistrationEnabled:true,agentRegistrationEnabled:true
     }' ;;
   https://evaluator.qa.nayori.ai/healthz)
-    jq -cn '{ok:true,service:"nayori-evaluator",version:"0.1.0"}' ;;
+    jq -cn '{ok:true,service:"nayori-evaluator",version:"0.2.0"}' ;;
   https://evaluator.qa.nayori.ai/readyz)
     jq -cn '{
       ok:true,environment:"qa",network:"testnet",commerceGeneration:"service-fee-v6-v5",
