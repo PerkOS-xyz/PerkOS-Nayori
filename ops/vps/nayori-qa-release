@@ -169,6 +169,16 @@ verify_public_json() {
   return 65
 }
 
+refresh_public_proxy() {
+  # Caddy resolves Docker service names when it loads the config. A Compose
+  # recreate can assign a new container IP, so validate and reload the existing
+  # read-only config before proving the public HTTPS origin.
+  docker exec perkos-knowledge-proxy \
+    caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
+  docker exec perkos-knowledge-proxy \
+    caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
+}
+
 verify_public_origin_for_service() {
   local service=$1 expected_sha=${2:-}
   case "$service" in
@@ -757,6 +767,7 @@ rollback() {
       actual_id=$(docker inspect --format '{{.Image}}' "$container" 2>/dev/null) || failed=1
       [[ "$actual_tag" == "$expected_tag" && "$actual_id" == "$expected_id" ]] || failed=1
     done
+    refresh_public_proxy || failed=1
     for row in "${PREVIOUS_RELEASE_IDENTITIES[@]}"; do
       service=${row%%|*}
       row=${row#*|}
@@ -978,6 +989,9 @@ case "$REPOSITORY" in
     ;;
 esac
 
+if [[ "$REPOSITORY" != "PerkOS-Nayori-Agent-SDK" ]]; then
+  refresh_public_proxy
+fi
 verify_public_origins "$SHA"
 if [[ "$REPOSITORY" == "PerkOS-Nayori-Platform" ]]; then
   verify_worker_runtime

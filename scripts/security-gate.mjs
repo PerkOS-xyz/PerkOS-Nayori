@@ -1029,8 +1029,13 @@ requirePattern(
 );
 requirePattern(
   "ops/vps/nayori-qa-release",
-  /verify_worker_runtime\(\)[\s\S]*?State\.Status[\s\S]*?State\.Running[\s\S]*?RestartCount[\s\S]*?esac\n\nverify_public_origins "\$SHA"\nif \[\[ "\$REPOSITORY" == "PerkOS-Nayori-Platform" \]\]; then\n  verify_worker_runtime\nfi\nassert_complete_verified_runtime_set[\s\S]*?RECEIPT_TEMP=/,
+  /verify_worker_runtime\(\)[\s\S]*?State\.Status[\s\S]*?State\.Running[\s\S]*?RestartCount[\s\S]*?esac\n\nif \[\[ "\$REPOSITORY" != "PerkOS-Nayori-Agent-SDK" \]\]; then\n  refresh_public_proxy\nfi\nverify_public_origins "\$SHA"\nif \[\[ "\$REPOSITORY" == "PerkOS-Nayori-Platform" \]\]; then\n  verify_worker_runtime\nfi\nassert_complete_verified_runtime_set[\s\S]*?RECEIPT_TEMP=/,
   "QA receipts must follow public-origin and stable-worker runtime checks",
+);
+requirePattern(
+  "ops/vps/nayori-qa-release",
+  /refresh_public_proxy\(\)[\s\S]*?caddy validate --config \/etc\/caddy\/Caddyfile --adapter caddyfile[\s\S]*?caddy reload --config \/etc\/caddy\/Caddyfile --adapter caddyfile[\s\S]*?refresh_public_proxy \|\| failed=1/,
+  "QA runtime replacement and rollback must refresh the validated public proxy",
 );
 requirePattern(
   "ops/vps/nayori-qa-release",
