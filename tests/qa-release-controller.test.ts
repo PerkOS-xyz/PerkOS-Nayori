@@ -340,6 +340,16 @@ set -euo pipefail
 url=
 for argument in "$@"; do url=$argument; done
 
+if [[ "$url" == "${"$"}{FAKE_TRANSIENT_PUBLIC_URL:-}" ]]; then
+  attempts_file="${"$"}FAKE_DOCKER_STATE.public-attempts"
+  attempts=0
+  [[ ! -f "$attempts_file" ]] || attempts=$(cat "$attempts_file")
+  if (( attempts < ${"$"}{FAKE_TRANSIENT_PUBLIC_FAILURES:-0} )); then
+    printf '%s\n' "$((attempts + 1))" > "$attempts_file"
+    exit 22
+  fi
+fi
+
 release_for() {
   local service=$1 key=$2 release
   release=$(jq -er --arg service "$service" --arg key "$key" '.[$service].env[$key]' "$FAKE_DOCKER_STATE")
@@ -484,6 +494,8 @@ function runController(
   restartWorkerOnPublicService = "",
   missingReleaseEnv = "",
   signalAfterReceipt = false,
+  transientPublicUrl = "",
+  transientPublicFailures = 0,
 ): Harness {
   const sandbox = mkdtempSync(join(tmpdir(), "nayori-qa-controller-"));
   dirs.push(sandbox);
@@ -630,6 +642,8 @@ fi
     FAKE_RESTART_WORKER_ON_PUBLIC_SERVICE: restartWorkerOnPublicService,
     FAKE_SIGNAL_AFTER_RECEIPT: signalAfterReceipt ? "1" : "0",
     FAKE_RECEIPT_PATH: receiptPath,
+    FAKE_TRANSIENT_PUBLIC_URL: transientPublicUrl,
+    FAKE_TRANSIENT_PUBLIC_FAILURES: String(transientPublicFailures),
   };
   const run = spawnSync(
     "bash",
@@ -975,6 +989,32 @@ describe("QA release controller Compose mutation", () => {
       JSON.parse(readFileSync(harness.composePath, "utf8")),
       `${harness.run.stdout}\n${harness.run.stderr}`,
     ).toEqual(original);
+  });
+
+  it("tolerates a bounded reverse-proxy propagation window", () => {
+    const harness = runController(
+      "PerkOS-Nayori-Evaluator",
+      currentVpsCompose(),
+      "",
+      false,
+      "",
+      "",
+      false,
+      "",
+      priorEvaluatorSha,
+      "",
+      "",
+      "",
+      false,
+      "https://evaluator.qa.nayori.ai/healthz",
+      4,
+    );
+
+    expect(harness.run.status, harness.run.stderr).toBe(0);
+    expect(existsSync(harness.receiptPath)).toBe(true);
+    expect(
+      readFileSync(`${harness.dockerState}.public-attempts`, "utf8").trim(),
+    ).toBe("4");
   });
 
   it("cannot confuse the API edge with the facilitator execution origin", () => {

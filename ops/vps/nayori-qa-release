@@ -154,13 +154,16 @@ verify_running_environment() {
 
 verify_public_json() {
   local url=$1 label=$2 expected_sha=$3 filter=$4
-  for attempt in 1 2 3; do
+  # A container can be healthy before the public reverse proxy has refreshed its
+  # upstream connection. Keep proving the public HTTPS origin, but tolerate that
+  # bounded propagation window before treating the release as failed.
+  for attempt in {1..10}; do
     if curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
       --connect-timeout 5 --max-time 15 "$url" |
       jq -e --arg sha "$expected_sha" "$filter" >/dev/null; then
       return 0
     fi
-    [[ "$attempt" == 3 ]] || sleep 3
+    [[ "$attempt" == 10 ]] || sleep 3
   done
   echo "public QA origin verification failed: $label" >&2
   return 65
