@@ -1,0 +1,160 @@
+# Mainnet service-fee promotion runbook
+
+This runbook promotes the QA-verified earned-service-fee contracts as **new immutable contracts**:
+
+- `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v6`
+- `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v5`
+
+It never modifies or removes the existing v5/v4 contracts or their historical jobs. Deployment
+alone does not switch Web, SDK, Evaluator, API, Docs or evidence indexing to the new generation.
+
+## Frozen production policy
+
+| Setting | Mainnet value |
+| --- | --- |
+| Gross-budget service fee | 200 basis points (2%) |
+| Provider/refund recipient | 98% when a fee is earned |
+| Review window | 12 Bitcoin burn blocks |
+| Appeal window | 144 Bitcoin burn blocks |
+| Appeal authority | `SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH` |
+| sBTC token | `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token` |
+| Treasury | `SP2G44NF8281MWN4ARNXW2B1KJ5A7J9HTZGFSE0NY` |
+| Maximum deployment fees | 3,000,000 micro-STX |
+| Required retained deployer reserve | 5,000,000 micro-STX |
+
+The client funds the gross job budget; the fee is not an additional 2% debit. Expiry before an
+evaluation and review timeout without a decision do not earn a fee. An appeal does not create a
+second automatic fee. See [`contracts/service-fees-README.md`](../contracts/service-fees-README.md)
+for settlement, waiver and treasury-refund semantics.
+
+## Preconditions
+
+1. Both candidate source hashes match the reviewed commit and the full test/security gate passes.
+2. That exact commit is merged into `origin/main`; the execution checkout is clean.
+3. The two contract names remain absent on mainnet, or exist with byte-for-byte matching source.
+4. The dedicated treasury address and custody/backup policy have been approved. Never use the
+   deployer, appeal authority, a participant wallet or the QA treasury.
+5. The deployer has no pending transaction or nonce gap and retains the fixed reserve after fees.
+6. The signer file is owned by the operator, mode `0600`, not a symlink and never tracked by Git.
+7. The receipt path is absolute, outside every Git repository and has an existing parent.
+8. A dedicated campaign-state directory exists outside Git, is operator-owned and mode `0700`.
+   Its permanent marker binds the entire v6/v5 campaign and 3 STX cap to one receipt.
+
+The dedicated production treasury has already been created in the approved external
+private-secrets directory. Its address is frozen in the reviewed promoter. The generator below is
+only for a future, separately reviewed contract generation; it will not produce an address accepted
+by this campaign:
+
+```bash
+STACKS_NETWORK=mainnet \
+CONFIRM_CREATE_MAINNET_TREASURY=create-dedicated-mainnet-treasury \
+SERVICE_FEE_MAINNET_TREASURY_ENV_PATH=<absolute-new-external-env-path> \
+npm run create:service-fee:treasury
+```
+
+Back up that file through the approved encrypted operator process before initialization. The hot
+treasury should retain a bounded refund reserve; sweep revenue above that reserve to approved cold
+custody. Do not upload the key to GitHub, the public evidence store or browser configuration.
+
+Prepare the one-time external state directory before armed execution (replace the placeholder with
+the approved evidence location):
+
+```bash
+umask 077
+mkdir -p <absolute-external-campaign-directory>
+chmod 700 <absolute-external-campaign-directory>
+```
+
+Do not reuse that directory for another campaign or manually create its marker file.
+
+## Signer-free preflight
+
+Preflight performs only allowlisted public reads. It does not open the signer file or construct a
+transaction.
+
+```bash
+SERVICE_FEE_MAINNET_TREASURY_ADDRESS=<dedicated-mainnet-treasury> \
+npm run preflight:service-fee:mainnet
+```
+
+Review the reported source hashes, occupied names, nonce, balance, exact operation list and total
+fee budget. A new preflight is mandatory immediately before execution because contract names and
+nonces can change.
+
+## Armed execution
+
+Create a fresh detached worktree of the exact merged SHA under
+`/private/tmp/nayori-mainnet-release-<sha>`. Set the receipt to the approved external evidence
+directory and signer paths to the external deployer and treasury files. Do not copy secrets into
+the execution checkout. The deploy command first replaces `node_modules` with `npm ci
+--ignore-scripts` from the reviewed lockfile; no imported signing dependency is reused from the
+development workspace. `NODE_OPTIONS`, `NODE_PATH` and npm equivalents must be empty; the wrapper
+then launches Node with an allowlisted environment and a runtime attestation tied to the SHA,
+lockfile and ephemeral root.
+
+```bash
+STACKS_NETWORK=mainnet \
+SERVICE_FEE_MAINNET_ACTION=deploy \
+SERVICE_FEE_MAINNET_REVIEWED_SHA=<exact-merged-main-sha> \
+SERVICE_FEE_MAINNET_LOCKFILE_SHA256=<reviewed-package-lock-sha256> \
+SERVICE_FEE_MAINNET_TREASURY_ADDRESS=<dedicated-mainnet-treasury> \
+SERVICE_FEE_MAINNET_DEPLOYER_ENV_PATH=<absolute-mode-0600-mainnet-env> \
+SERVICE_FEE_MAINNET_TREASURY_ENV_PATH=<absolute-mode-0600-treasury-env> \
+SERVICE_FEE_MAINNET_RECEIPT_PATH=<absolute-external-receipt-json> \
+SERVICE_FEE_MAINNET_STATE_DIR=<absolute-external-mode-0700-campaign-directory> \
+CONFIRM_SERVICE_FEE_MAINNET=deploy-v6-v5-mainnet \
+CONFIRM_SERVICE_FEE_MAINNET_DEPLOYER=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH \
+CONFIRM_SERVICE_FEE_MAINNET_AUTHORITY=SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH \
+CONFIRM_SERVICE_FEE_MAINNET_TREASURY=<same-dedicated-mainnet-treasury> \
+CONFIRM_SERVICE_FEE_MAINNET_TREASURY_ENV_PATH=<same-absolute-treasury-env> \
+CONFIRM_SERVICE_FEE_MAINNET_RECEIPT_PATH=<same-absolute-receipt-json> \
+CONFIRM_SERVICE_FEE_MAINNET_STATE_DIR=<same-absolute-campaign-directory> \
+CONFIRM_SERVICE_FEE_MAINNET_MAX_FEES_MICRO_STX=3000000 \
+CONFIRM_SERVICE_FEE_MAINNET_EPHEMERAL_ROOT=<same-absolute-ephemeral-worktree> \
+npm run deploy:service-fee:mainnet
+```
+
+The runner executes strictly serially and waits for canonical anchored success before the next
+nonce. It validates and records each complete intent, exact signed bytes and deterministic txid
+before broadcast. If broadcast is ambiguous, preserve the receipt for reconciliation; an orderly
+fail-closed exit releases its active locks, while a process crash leaves both locks in place for
+manual recovery. Recovery may only rebroadcast the byte-identical saved transaction; never create
+a fresh receipt or manually advance the nonce. Final success requires two additional Stacks blocks
+and canonical revalidation of every transaction.
+
+The campaign marker `v6-v5-campaign.json` is permanent and mode `0600`. Never delete or replace it
+to start a new receipt: confirmed or failed on-chain attempts may already have consumed part of the
+campaign fee cap. The same serialized txid rebroadcast from the journal counts once.
+
+If the process terminates abruptly, both the receipt lock and global deployer lock intentionally
+remain in place. They contain only PID, host, start time, receipt path and source commit. Recovery
+is fail-closed: confirm the process no longer exists on the recorded host, validate the journal
+mode/binding and campaign marker, reconcile every recorded txid plus the deployer mempool and nonce,
+then preserve the old locks by renaming them with a `.stale-<timestamp>` suffix under an explicitly
+reviewed recovery procedure. Never auto-delete or auto-recover a lock because of age alone.
+
+## Expected operation order
+
+1. Deploy `agentic-commerce-v6`.
+2. Authorize v6 in `reputation-registry-v3`.
+3. Initialize v6 with appeal window, authority and treasury.
+4. Deploy `sbtc-commerce-v5`.
+5. Pin canonical PoX-5 sBTC.
+6. Authorize sBTC v5 in `reputation-registry-v3`.
+7. Initialize v5 with the same policy.
+
+Already completed exact operations are observed and skipped. Any source, owner, policy, token,
+treasury, authority, nonce or fee mismatch stops the run.
+
+## Promotion after contract deployment
+
+Do not expose the new generation to users until all of the following are complete:
+
+1. Independent postflight confirms exact sources, configuration, token and reputation allowlists.
+2. SDK/config defaults and release notes reference v6/v5.
+3. Web, Evaluator, API/evidence indexer and Docs use the same addresses and disclose gross/net/fee.
+4. Controlled meaningful STX and sBTC mainnet jobs confirm 98/2 transfers, one settlement, escrow
+   zero, terminal state and reputation synchronization.
+5. Production evidence identifies those jobs as
+   `internal-team-operated-not-m2-adoption`; they are not external M2 adoption.
+6. The external security reviewer receives the exact deployed sources and receipts.

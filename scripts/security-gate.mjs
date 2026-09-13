@@ -758,6 +758,42 @@ for (const runner of [feeTestnetCore, "scripts/deploy-service-fee-testnet.mjs", 
   forbidPattern(runner, /PostConditionMode\.Allow|STACKS_MAINNET|https:\/\/api\.mainnet\.hiro\.so/, "fee runner has no mainnet or allow-mode branch");
 }
 
+// Mainnet fee promotion is deliberately isolated from the QA runners. Its
+// signer remains unreachable until the exact release, roles and hard fee cap
+// are acknowledged, and every broadcast has a durable intent first.
+const feeMainnetCore = "scripts/service-fee-mainnet-core.mjs";
+const feeMainnetDeploy = "scripts/deploy-service-fee-mainnet.mjs";
+const feeMainnetTreasury = "scripts/create-service-fee-treasury.mjs";
+const feeMainnetRuntime = "scripts/run-service-fee-mainnet-deploy.sh";
+requirePattern(feeMainnetCore, /env\.STACKS_NETWORK === "mainnet"/, "mainnet fee promoter must require explicit mainnet");
+requirePattern(feeMainnetCore, /STACKS_MAINNET/, "mainnet fee promoter must use only the mainnet network object");
+requirePattern(feeMainnetCore, /PostConditionMode\.Deny/, "mainnet fee promoter transactions must use deny mode");
+requirePattern(feeMainnetCore, /signed-bytes-recorded/, "mainnet fee promoter must persist the validated signed intent before broadcast");
+requirePattern(feeMainnetCore, /broadcast-attempt-recorded/, "mainnet fee promoter must persist each broadcast attempt before network access");
+requirePattern(feeMainnetCore, /SERVICE_FEE_MAINNET_REVIEWED_SHA/, "mainnet fee promoter requires a reviewed exact SHA");
+requirePattern(feeMainnetCore, /merge-base[\s\S]*--is-ancestor[\s\S]*origin\/main/, "mainnet fee promoter must be merged to main");
+requirePattern(feeMainnetCore, /CONFIRM_SERVICE_FEE_MAINNET_MAX_FEES_MICRO_STX/, "mainnet fee promoter requires an explicit hard fee cap");
+requirePattern(feeMainnetCore, /CONFIRM_SERVICE_FEE_MAINNET_TREASURY/, "mainnet fee promoter requires the immutable treasury to be confirmed");
+requirePattern(feeMainnetCore, /v6-v5-campaign\.json/, "mainnet fee promoter must bind the hard cap to one permanent campaign receipt");
+requirePattern(feeMainnetCore, /CONFIRM_SERVICE_FEE_MAINNET_STATE_DIR/, "mainnet fee promoter requires the external campaign state to be confirmed");
+requirePattern(feeMainnetCore, /CONFIRM_SERVICE_FEE_MAINNET_RECEIPT_PATH/, "mainnet fee promoter requires the permanent receipt path to be confirmed");
+requirePattern(feeMainnetCore, /is_fully_synced === true/, "mainnet fee promoter requires a fully synchronized node");
+requirePattern(feeMainnetCore, /0o600/, "mainnet fee custody and journals require private file permissions");
+requirePattern(feeMainnetDeploy, /SERVICE_FEE_MAINNET_DEPLOYER_ENV_PATH/, "mainnet signer path must be explicit and external");
+requirePattern(feeMainnetTreasury, /constants\.O_EXCL/, "treasury generation must never overwrite an existing secret");
+requirePattern(feeMainnetTreasury, /0o600/, "treasury generation must create a private file");
+requirePattern(feeMainnetTreasury, /Private key written once/, "treasury generation must report custody without printing the key");
+requirePattern(feeMainnetRuntime, /\/private\/tmp\/nayori-mainnet-release-/, "mainnet signing requires an ephemeral release worktree");
+requirePattern(feeMainnetRuntime, /node_major[\s\S]*-ge 20/, "mainnet signing requires a supported Node.js runtime");
+requirePattern(feeMainnetRuntime, /NODE_OPTIONS must be empty/, "mainnet signing rejects inherited Node preload options");
+requirePattern(feeMainnetRuntime, /\/usr\/bin\/env -i/, "mainnet signing must launch with an allowlisted environment");
+requirePattern(feeMainnetRuntime, /npm ci --ignore-scripts --no-audit --no-fund/, "mainnet signing must rebuild the locked dependency tree without lifecycle scripts");
+requirePattern(feeMainnetRuntime, /SERVICE_FEE_MAINNET_LOCKFILE_SHA256/, "mainnet runtime must verify the reviewed dependency lock");
+forbidPattern(feeMainnetRuntime, /npm install|npm update|--force/, "mainnet runtime must not mutate dependency resolution");
+for (const runner of [feeMainnetCore, feeMainnetDeploy]) {
+  forbidPattern(runner, /PostConditionMode\.Allow|STACKS_TESTNET|https:\/\/api\.testnet\.hiro\.so/, "mainnet fee promoter has no testnet or allow-mode branch");
+}
+
 if (failures.length > 0) {
   console.error("Nayori security gate failed:\n- " + failures.join("\n- "));
   process.exit(1);
