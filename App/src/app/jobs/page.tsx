@@ -67,7 +67,10 @@ import { useToast } from "../../components/Toast";
 import { sbtcToSats, stxToMicro } from "../../utils/format";
 import {
   AGENTIC_COMMERCE_CONTRACT,
+  assertCommerceContractsWritable,
+  COMMERCE_CONTRACTS_READ_ONLY,
   NAYORI_EVALUATOR_ADDRESS,
+  NAYORI_MANAGED_EVALUATOR_ENABLED,
 } from "../../constants/contract";
 import { decisionLabel } from "../../services/autonomous-decision";
 import { NETWORK_NAME } from "../../constants/network";
@@ -154,7 +157,7 @@ export default function JobsPage() {
   const [txProgress, setTxProgress] = useState<TxProgress | null>(null);
   const [formData, setFormData] = useState({
     description: "",
-    evaluator: NAYORI_EVALUATOR_ADDRESS,
+    evaluator: NAYORI_MANAGED_EVALUATOR_ENABLED ? NAYORI_EVALUATOR_ADDRESS : "",
     provider: "",
     duration: "24",
     durationUnit: "hours" as "hours" | "days",
@@ -269,6 +272,7 @@ export default function JobsPage() {
     after?: () => void,
     onStatus?: (status: "pending" | "success" | "failed") => void
   ) {
+    assertCommerceContractsWritable();
     if (!connected) {
       toast.error("Connect a wallet before submitting a transaction.");
       return;
@@ -621,8 +625,14 @@ export default function JobsPage() {
         <button
           onClick={() => setShowForm(!showForm)}
           className={showForm ? "btn-ghost" : "btn-primary"}
-          disabled={!connected || Boolean(activeAction)}
-          title={!connected ? "Connect a wallet first" : undefined}
+          disabled={!connected || Boolean(activeAction) || COMMERCE_CONTRACTS_READ_ONLY}
+          title={
+            COMMERCE_CONTRACTS_READ_ONLY
+              ? "Historical contract profile is read-only"
+              : !connected
+                ? "Connect a wallet first"
+                : undefined
+          }
         >
           {showForm ? "Cancel" : <><Plus className="h-4 w-4" /> Create Job</>}
         </button>
@@ -662,6 +672,12 @@ export default function JobsPage() {
       {!connected && (
         <div className="mt-4 flex items-center gap-2 rounded-lg border border-brand/25 bg-brand/[0.06] px-4 py-3 text-sm text-mist-300">
           <Wallet className="h-4 w-4 text-brand-300" /> Connect your wallet to create or manage escrow.
+        </div>
+      )}
+
+      {COMMERCE_CONTRACTS_READ_ONLY && (
+        <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          Historical v5/v4 profile: reads remain available, but new jobs and transactions are disabled.
         </div>
       )}
 
@@ -715,12 +731,18 @@ export default function JobsPage() {
                 onChange={(e) => setFormData({ ...formData, evaluator: e.target.value.trim() })}
                 className="field font-mono"
                 placeholder={NETWORK_NAME === "mainnet" ? "SP…" : "ST…"}
-                readOnly={Boolean(NAYORI_EVALUATOR_ADDRESS)}
+                readOnly={NAYORI_MANAGED_EVALUATOR_ENABLED}
                 required
               />
-              {NAYORI_EVALUATOR_ADDRESS && (
+              {NAYORI_MANAGED_EVALUATOR_ENABLED && (
                 <p className="mt-1 text-xs text-violet-300">
                   QA pins Nayori as the autonomous evaluator for controlled lifecycle tests.
+                </p>
+              )}
+              {!NAYORI_MANAGED_EVALUATOR_ENABLED && NETWORK_NAME === "mainnet" && (
+                <p className="mt-1 text-xs text-mist-500">
+                  Nayori&apos;s managed evaluator is not active on mainnet yet. Enter an evaluator whose
+                  availability you have confirmed.
                 </p>
               )}
             </div>
@@ -906,7 +928,7 @@ export default function JobsPage() {
                   </div>
                 )}
 
-                {actionForm?.jobId === job.id && (
+                {!COMMERCE_CONTRACTS_READ_ONLY && actionForm?.jobId === job.id && (
                   <div className="mt-4 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
                     {actionForm.mode === "budget" && (
                       <InlineAction
@@ -973,7 +995,7 @@ export default function JobsPage() {
                   </div>
                 )}
 
-                {ratingFor === job.id && canRate && (
+                {!COMMERCE_CONTRACTS_READ_ONLY && ratingFor === job.id && canRate && (
                   <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
                     <span className="text-sm text-mist-300">Rate the provider</span>
                     {[1, 2, 3, 4, 5].map((score) => (
@@ -988,6 +1010,8 @@ export default function JobsPage() {
                 )}
 
                 <div className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.06] pt-4">
+                  {!COMMERCE_CONTRACTS_READ_ONLY && (
+                  <>
                   {permissions.canSetBudget && (
                     <button onClick={() => setActionForm({ jobId: job.id, mode: "budget", value: "" })} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white">Set Budget</button>
                   )}
@@ -1086,6 +1110,8 @@ export default function JobsPage() {
                   )}
                   {!hasActions && connected && (
                     <span className="self-center text-xs text-mist-500">No actions available for this wallet.</span>
+                  )}
+                  </>
                   )}
                   <Link href={jobHref(job.id, currency)} className="btn-sm ml-auto border border-white/[0.12] text-mist-300 hover:text-white">Details</Link>
                 </div>

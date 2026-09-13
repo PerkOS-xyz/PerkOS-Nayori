@@ -8,6 +8,9 @@ import { SITE_ORIGIN } from "./site";
 import { NETWORK_NAME } from "./network";
 import {
   CONTRACT_ADDRESS,
+  COMMERCE_CONTRACTS_READ_ONLY,
+  CONTRACT_PROFILE,
+  NAYORI_MANAGED_EVALUATOR_ENABLED,
   REPUTATION_CONTRACT_NAME,
   SBTC_COMMERCE_CONTRACT_NAME,
   STX_COMMERCE_CONTRACT_NAME,
@@ -18,6 +21,10 @@ export const STACKS_TESTNET_ID = "stacks:2147483648";
 export const COMMERCE_NETWORK_ID =
   NETWORK_NAME === "testnet" ? STACKS_TESTNET_ID : STACKS_MAINNET_ID;
 export const COMMERCE_NETWORK_LABEL = `Stacks ${NETWORK_NAME}`;
+// Both quote API edges issue challenges and expose OAuth/MCP, while their own /supported
+// responses keep verification, settlement, confirmation, delivery and partner registration
+// disabled. Those economic duties belong to each network's isolated facilitator runtime.
+export const NAYORI_QUOTE_API_SETTLEMENT_ACTIVE = false;
 export function resolveServiceOrigin(variable: string, value: string): string {
   const url = new URL(value);
   const isLocal = url.hostname === "localhost" || url.hostname === "127.0.0.1";
@@ -94,7 +101,9 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       },
       {
         id: "job-escrow",
-        description: "Create, fund and settle agent jobs in STX or sBTC.",
+        description: COMMERCE_CONTRACTS_READ_ONLY
+          ? "Inspect historical STX and sBTC agent jobs; writes are disabled for this profile."
+          : "Create, fund and settle agent jobs in STX or sBTC.",
       },
       {
         id: "reputation",
@@ -115,14 +124,14 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
           walletApproval: "required",
         },
         quoteService: {
-          status: `public-resource-and-invite-only-api-${NETWORK_NAME}-settlement`,
+          status: `${NETWORK_NAME}-challenge-issuance-only`,
           network: COMMERCE_NETWORK_ID,
           authorization: "wallet-linked-oauth-or-merchant-key",
           quoteIssuance: true,
-          paymentVerification: true,
-          settlement: true,
-          confirmation: true,
-          deliveryLedger: true,
+          paymentVerification: NAYORI_QUOTE_API_SETTLEMENT_ACTIVE,
+          settlement: NAYORI_QUOTE_API_SETTLEMENT_ACTIVE,
+          confirmation: NAYORI_QUOTE_API_SETTLEMENT_ACTIVE,
+          deliveryLedger: NAYORI_QUOTE_API_SETTLEMENT_ACTIVE,
           mcp: true,
           sponsorship: false,
         },
@@ -149,8 +158,9 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
     ],
     authorization: {
       reads: "public",
-      writes:
-        "A Stacks wallet must authorize and sign every state-changing transaction.",
+      writes: COMMERCE_CONTRACTS_READ_ONLY
+        ? `commerce writes disabled for historical profile ${CONTRACT_PROFILE}; identity and other writes still require a Stacks wallet signature`
+        : "A Stacks wallet must authorize and sign every state-changing transaction.",
       custody: "Nayori does not request or store buyer private keys.",
     },
     contracts: {
@@ -162,6 +172,10 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
     },
     availability: {
       webApplication: true,
+      jobEscrowWrites: !COMMERCE_CONTRACTS_READ_ONLY,
+      managedEvaluator: NAYORI_MANAGED_EVALUATOR_ENABLED,
+      managedEvaluatorStatus:
+        NAYORI_MANAGED_EVALUATOR_ENABLED ? "active" : "mainnet-activation-pending",
       publicFacilitatorApi: true,
       publicPaidResource: true,
       mppPaymentAuth: true,
@@ -170,7 +184,28 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       settlement: true,
       confirmation: true,
       deliveryLedger: true,
-      partnerRegistration: true,
+      settlementProvider: NAYORI_FACILITATOR_ORIGIN,
+      quoteApi: {
+        quoteIssuance: true,
+        paymentVerification: NAYORI_QUOTE_API_SETTLEMENT_ACTIVE,
+        settlement: NAYORI_QUOTE_API_SETTLEMENT_ACTIVE,
+        confirmation: NAYORI_QUOTE_API_SETTLEMENT_ACTIVE,
+        deliveryLedger: NAYORI_QUOTE_API_SETTLEMENT_ACTIVE,
+        partnerRegistration: false,
+        oauth: true,
+        mcp: true,
+      },
+      facilitator: {
+        paymentVerification: true,
+        settlement: true,
+        confirmation: true,
+        deliveryLedger: true,
+        publicResource: false,
+        partnerRegistration: false,
+        oauth: false,
+        mcp: false,
+      },
+      partnerRegistration: false,
       anonymousAgentRegistration: true,
       walletClaim: true,
       oauth: true,
@@ -184,17 +219,21 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
 export function buildLlmsText(origin = SITE_ORIGIN): string {
   const environment = NETWORK_NAME === "testnet" ? "QA/testnet" : "mainnet";
   const networkId = NETWORK_NAME === "testnet" ? STACKS_TESTNET_ID : STACKS_MAINNET_ID;
+  const commerceMode = COMMERCE_CONTRACTS_READ_ONLY
+    ? `The selected historical contract profile \`${CONTRACT_PROFILE}\` is read-only. Its jobs remain inspectable, but the Web manifest and UI disable commerce writes.`
+    : "Every state-changing action requires authorization from a Stacks wallet; Nayori does not request or store buyer private keys.";
+  const platformMode = `The ${NETWORK_NAME} quote API enables challenge issuance, OAuth, MCP and public resources. Its own payment verification, settlement, confirmation, delivery-ledger and partner-registration flags are disabled; those economic capabilities are served separately by ${NAYORI_FACILITATOR_ORIGIN}, whose live /supported response must be verified before use.`;
   return `# ${PRODUCT_FULL_NAME}
 
 > ${PRODUCT_DESCRIPTION}
 
-Nayori is a ${environment} web application and TypeScript SDK for autonomous commerce on Stacks. Public reads do not require authentication. Every state-changing action requires authorization from a Stacks wallet; Nayori does not request or store buyer private keys.
+Nayori is a ${environment} web application and TypeScript SDK for autonomous commerce on Stacks. Public reads do not require authentication. ${commerceMode}
 
 ## Product
 
 - [Application](${origin}/): ${environment} application and product overview.
 - [Agents](${origin}/agents): On-chain agent directory and registration.
-- [Jobs](${origin}/jobs): STX and sBTC job escrow lifecycle.
+- [Jobs](${origin}/jobs): ${COMMERCE_CONTRACTS_READ_ONLY ? "Read-only historical STX and sBTC job escrow records." : "STX and sBTC job escrow lifecycle."}
 - [Analytics](${origin}/analytics): Currency-separated protocol activity.
 - [Transparency dashboard](${origin}/evidence): Live ${COMMERCE_NETWORK_LABEL} contract totals, explorer-verifiable M1 evidence and explicitly attested M2 adoption.
 - [Evidence JSON](${origin}/api/evidence.json): Versioned machine-readable transparency snapshot.
@@ -210,7 +249,7 @@ Nayori is a ${environment} web application and TypeScript SDK for autonomous com
 
 - [Application and contracts](https://github.com/PerkOS-xyz/PerkOS-Nayori): Public source, Clarity contracts and deployment evidence.
 - [Nayori Agent SDK](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK): TypeScript SDK published as \`@perkos/agent-sdk\`.
-- [Nayori commerce API](${NAYORI_API_ORIGIN}): Public x402 and MPP paid-resource server plus invite-only merchant and MCP operations on ${COMMERCE_NETWORK_LABEL}.
+- [Nayori commerce API](${NAYORI_API_ORIGIN}): Public-resource and quote edge with OAuth and MCP on ${COMMERCE_NETWORK_LABEL}; inspect its live capability flags separately from the facilitator.
 - [Nayori facilitator](${NAYORI_FACILITATOR_ORIGIN}/supported): Isolated quote, verification, settlement-confirmation and delivery-ledger runtime.
 - [API capabilities](${NAYORI_API_ORIGIN}/supported): Exact network, mechanism, assets and availability flags.
 - [API OpenAPI schema](${NAYORI_API_ORIGIN}/openapi.json): Machine-readable HTTP contract.
@@ -234,11 +273,10 @@ Supporting browsers can discover three read-only WebMCP tools on the application
 
 ## Payment support
 
-- Escrowed jobs: STX and sBTC.
+- Escrowed jobs: ${COMMERCE_CONTRACTS_READ_ONLY ? "historical STX and sBTC records are read-only in this profile" : "STX and sBTC"}.
 - Request-bound direct x402 profile in the SDK: STX, sBTC and USDCx.
-- The real same-origin paid resource is ${origin}/api/v1. It returns PAYMENT-REQUIRED, accepts a wallet-created PAYMENT-SIGNATURE and the advertised X-NAYORI-SIGNED-QUOTE, then returns 202 until canonical confirmation and PAYMENT-RESPONSE with the delivered report.
-- The MPP PaymentAuth resource is ${origin}/api/mpp/v1. It returns WWW-Authenticate: Payment, selects Payment-Authorization so OAuth Bearer remains separate, accepts USDCx only, and emits Payment-Receipt only after canonical confirmation and idempotent delivery.
-- The public Nayori API runs an invite-only partner pilot on ${COMMERCE_NETWORK_LABEL} (\`${COMMERCE_NETWORK_ID}\`) for STX, sBTC and USDCx.
+- The same-origin x402 resource is ${origin}/api/v1 and the MPP resource is ${origin}/api/mpp/v1. Their challenge responses are public; check both ${NAYORI_API_ORIGIN}/supported for edge issuance and ${NAYORI_FACILITATOR_ORIGIN}/supported for economic execution before attempting a paid settlement. Require matching network/assets and fail closed on disagreement.
+- ${platformMode}
 - OAuth authorizes API and MCP access. It never signs a payment; each payment transaction remains separately wallet-approved.
 - A signed quote, successful verification or broadcast response is not proof of settlement. Only the confirmed settlement state and signed receipt cross that boundary.
 - Transaction sponsorship remains disabled; direct payments require a payer-approved transaction.

@@ -3,6 +3,7 @@ import { request } from "@stacks/connect";
 import { NETWORK, NETWORK_NAME } from "../constants/network";
 import {
   CONTRACT_ADDRESS,
+  assertCommerceContractsWritable,
   SBTC_COMMERCE_HAS_REVIEW_TIMEOUT,
   SBTC_COMMERCE_CONTRACT_NAME,
 } from "../constants/contract";
@@ -179,6 +180,7 @@ export async function hasRatedJob(jobId: number, rater: string): Promise<boolean
 // Writes
 // ============================================
 function call(functionName: string, functionArgs: any[], extra: Record<string, any> = {}) {
+  assertCommerceContractsWritable();
   return request("stx_callContract", {
     contract: SBTC_COMMERCE,
     functionName,

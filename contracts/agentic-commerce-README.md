@@ -1,11 +1,11 @@
 # Nayori Agentic Commerce
 
 Non-custodial job escrow for STX and sBTC on Stacks. The active production contracts are
-`agentic-commerce-v5` and `sbtc-commerce-v4`; both use `reputation-registry-v3`.
+`agentic-commerce-v6` and `sbtc-commerce-v5`; both use `reputation-registry-v3`.
 
-An additive [earned-service-fee candidate](service-fees-README.md) introduces STX v6 and sBTC
-v5 for validation. Both candidates are selected in isolated QA/testnet. The active mainnet
-generation and existing jobs retain their original full-budget settlement policy.
+The [earned-service-fee policy](service-fees-README.md) splits an evaluated final settlement into
+98% for the economic recipient and 2% for the job-pinned treasury. Immutable v5/v4 jobs retain
+their original full-budget settlement policy and remain readable through explicit overrides.
 
 ## Active mainnet contracts
 
@@ -13,8 +13,8 @@ Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 
 | Asset | Contract |
 | --- | --- |
-| STX | `agentic-commerce-v5` |
-| sBTC | `sbtc-commerce-v4` |
+| STX | `agentic-commerce-v6` |
+| sBTC | `sbtc-commerce-v5` |
 | Reputation | `reputation-registry-v3` |
 
 The sBTC contract accepts canonical mainnet sBTC only:
@@ -94,9 +94,11 @@ The sBTC contract additionally exposes `get-payment-token` and `get-job-payment-
 ## Security properties
 
 - Client, provider and evaluator are distinct parties.
-- Only the evaluator may complete or reject during the review window.
+- Only the job-pinned evaluator may record an approve or reject decision during the review window.
 - Funding and payouts use exact deny-mode post-conditions in the Web and SDK.
 - sBTC settlement is bound to the funded job's pinned SIP-010 token.
+- Evaluated settlement conserves the gross escrow as net recipient payment plus the exact 2% fee.
+- Expiry and no-decision review timeout paths do not collect a service fee.
 - Failed reputation writes never roll back economic settlement and can be retried.
 - Ownership transfer requires proposal and acceptance by the new owner.
 - Every lifecycle transition emits an indexable `print` event.
@@ -106,8 +108,8 @@ new jobs. Internal deployment and smoke actors do not count as external adoption
 
 ## Autonomous evaluator and appeals
 
-`agentic-commerce-v5` and `sbtc-commerce-v4` are deployed on mainnet and selected by the Web
-production release. They retain the 12-burn-block evaluator response window and add these
+`agentic-commerce-v6` and `sbtc-commerce-v5` are deployed and initialized on mainnet and are the
+current Web build defaults. They retain the 12-burn-block evaluator response window and these
 non-terminal states without changing historical codes:
 
 | Code | State | Meaning |
@@ -126,6 +128,8 @@ The pinned human authority may uphold or reverse an appealed decision through it
 deadline. If that authority becomes unavailable, a permissionless liveness path finalizes the
 original decision only after the second deadline.
 
-Only final settlement moves funds or writes completed/disputed reputation. Approvals pay exactly
-the pinned provider, rejections refund exactly the pinned client, and sBTC uses the per-job pinned
-SIP-010 token. This generation removes the immediate `complete-job` and `reject-job` entrypoints.
+Only final settlement moves funds or writes completed/disputed reputation. Evaluated approvals pay
+the provider 98% and evaluated rejections refund the client 98%, with the remaining 2% sent once to
+the pinned treasury. sBTC uses the per-job pinned SIP-010 token. A fee waiver preserves the outcome
+while enabling an exact treasury-signed return; it is not an automatic contract clawback. This
+generation has no immediate `complete-job` or `reject-job` entrypoint.

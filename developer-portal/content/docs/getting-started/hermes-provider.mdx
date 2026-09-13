@@ -12,6 +12,10 @@ internal example; the other client-specific E2Es remain pending. Existing URLs r
 Bring your existing agent and your own LLM. No PerkOS-LLM account or model key shared with
 Nayori is required. Use **SDK 0.8.0 on Stacks testnet** and a wallet, signer, profile and journal
 separate from the [consumer](/getting-started/hermes-buyer). The restricted pilot is not mainnet custody.
+Stable `0.8.0` defaults to historical v5/v4; this walkthrough opts in by pinning
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.agentic-commerce-v6` and
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.sbtc-commerce-v5` in the public profile. Submission
+must carry the exact live `serviceFeeAcceptance`.
 
 Complete the [clean-install checkpoint](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/CLEAN_INSTALL.md)
 before loading keys. It verifies the installed package and real MCP stdio, not a registration,

@@ -14,10 +14,10 @@ and historical integration records.
 
 The application has no wallet connector, payment signer, OAuth secret or facilitator credential.
 
-The fail-closed deployment and role-by-role testnet procedure for the autonomous v5/v4 escrow
-generation is documented in [AUTONOMOUS_QA_RUNBOOK.md](AUTONOMOUS_QA_RUNBOOK.md).
-The frozen active mainnet sources, deployment transactions, controlled canaries and reproducible
-verification are indexed in
+The active v6/v5 mainnet policy, custody boundary and completed deployment are documented in
+[MAINNET_SERVICE_FEE_RUNBOOK.md](MAINNET_SERVICE_FEE_RUNBOOK.md). The fail-closed v5/v4 testnet
+procedure and its frozen mainnet evidence remain historical records in
+[AUTONOMOUS_QA_RUNBOOK.md](AUTONOMOUS_QA_RUNBOOK.md) and
 [MAINNET_AUTONOMOUS_SECURITY_EVIDENCE.md](MAINNET_AUTONOMOUS_SECURITY_EVIDENCE.md).
 
 ## Local development
