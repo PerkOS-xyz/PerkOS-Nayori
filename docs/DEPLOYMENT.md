@@ -17,9 +17,9 @@ See [`QA_RELEASES.md`](QA_RELEASES.md) for the operational sequence and
 
 ## Production
 
-For opt-in earned-service-fee QA selection, follow [the coordinated consumer gate](QA_FEE_CONSUMERS.md).
 Changing `NEXT_PUBLIC_*` values only at runtime is insufficient: the Web embeds them at build
-time. The default production pair in this guide remains v5/v4, without the candidate fee.
+time. The active source defaults and coordinated QA build select the deployed v6/v5 service-fee
+generation. Follow [the consumer release record](QA_FEE_CONSUMERS.md) for compatibility boundaries.
 
 PerkOS is deployed on Stacks mainnet under:
 
@@ -34,11 +34,11 @@ The current product stack contains:
 - `validation-registry`
 - `sip-010-trait`
 - `reputation-registry-v3`
-- `agentic-commerce-v5` for STX escrow and autonomous decisions
-- `sbtc-commerce-v4` for sBTC escrow and autonomous decisions
+- `agentic-commerce-v6` for STX escrow, autonomous decisions and earned service fees
+- `sbtc-commerce-v5` for sBTC escrow, autonomous decisions and earned service fees
 
-The prior v4/v3 and v2 generations remain immutable historical evidence and are not selected for
-new jobs.
+The prior v5/v4, v4/v3 and v2 generations remain immutable historical evidence and are not
+selected for new jobs.
 
 ## Historical bootstrap deployment
 
@@ -80,15 +80,46 @@ No wallet or private key is needed:
 npm run verify:mainnet
 ```
 
-This compares all deployed source code, verifies exposed owners, confirms the canonical
-sBTC token and both reputation allowlist entries, and reads the current agent and job
-counts.
+This pins and compares exact local/on-chain source hashes, verifies owners and pending roles,
+confirms canonical sBTC, both reputation allowlist entries, the 12/144 windows, the distinct appeal
+authority, the attested treasury and 200-basis-point policy, then reads current agent and active
+v6/v5 job counts. It has no signer or broadcast path.
 
-## Active versioned escrow release
+## Active earned-service-fee release
 
-The repository includes `reputation-registry-v3`, `agentic-commerce-v5` and `sbtc-commerce-v4` as
-the active generation. It combines the 12-block evaluator window with an explainable decision and
-appeal lifecycle. The preceding v4/v3 generation was first deployed on Stacks testnet under
+`agentic-commerce-v6` and `sbtc-commerce-v5` were deployed and initialized on Stacks mainnet from
+exact reviewed merge `887ee9b01d5a880373aa868970e0ff83a6f6731a`. Seven transactions confirmed
+`(ok true)` in Stacks blocks `8978368` through `8978385`; the required two-block finality depth was
+observed. The source hashes are `8eb55ecc…f40a7b2` and `13256797…052f53`. Both contracts use
+`reputation-registry-v3`, review window 12, appeal window 144, appeal authority
+`SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH`, treasury
+`SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8`, 200 basis points and canonical mainnet sBTC.
+
+New Web builds select this generation. Existing v5/v4 jobs remain readable through explicit
+contract overrides and preserve their original no-fee economics. Contract deployment, consumer
+deployment and controlled mainnet E2E are separate receipts; none counts as external adoption,
+externally earned revenue or an independent audit.
+
+The current generation has its own signer-free preflight and guarded E2E alias:
+
+```bash
+STACKS_NETWORK=mainnet \
+SERVICE_FEE_MAINNET_E2E_ACTION=preflight \
+SERVICE_FEE_MAINNET_E2E_REVIEWED_SHA=<exact-clean-reviewed-sha> \
+npm run preflight:e2e:autonomous:mainnet
+```
+
+The wrapper preflights STX and then sBTC. It verifies v6/v5 sources, roles, 12/144 windows, treasury,
+200 basis points, canonical sBTC and reputation allowlists without opening signer files. The
+execution procedure, distinct role files, typed cap and receipt requirements are frozen in
+[the mainnet service-fee runbook](MAINNET_SERVICE_FEE_RUNBOOK.md). Never use the legacy v5/v4
+aliases for a current-generation canary.
+
+## Historical versioned escrow releases
+
+The repository retains `reputation-registry-v3`, `agentic-commerce-v5` and `sbtc-commerce-v4` as
+the immutable pre-fee generation. It introduced the 12-block evaluator window, explainable decisions
+and appeals. The preceding v4/v3 generation was first deployed on Stacks testnet under
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5` from exact merge
 `b15544d601bd4e49610be854f7ad33a0af90c0a7`, then promoted on mainnet from exact merge
 `670d23abe78051cfb3963228650fed5089d6827c`.
@@ -100,7 +131,7 @@ The active PoX-5 testnet sBTC principal is
 `SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token`. The older `ST1F7...` principal is retained
 only in frozen historical sources/evidence. Mainnet remains `SM3VD...` and is unaffected.
 
-### Autonomous evaluator/appeal generation
+### Historical autonomous evaluator/appeal generation
 
 `agentic-commerce-v5` and `sbtc-commerce-v4` were fully exercised in isolated Stacks testnet QA
 with a three-burn-block appeal policy before mainnet promotion. Mainnet uses the same frozen
@@ -113,7 +144,7 @@ mainnet source occupancy, nonce, mempool and maximum fees, and creates no transa
 ```bash
 STACKS_NETWORK=mainnet \
 AUTONOMOUS_ESCROW_MAINNET_APPEAL_AUTHORITY=SP... \
-npm run preflight:autonomous:mainnet
+npm run preflight:autonomous:legacy-v5-v4:mainnet
 ```
 
 The deploy action additionally requires the exact strings
@@ -130,12 +161,11 @@ STACKS_NETWORK=mainnet \
 AUTONOMOUS_ESCROW_MAINNET_E2E_ASSET=sbtc \
 AUTONOMOUS_ESCROW_MAINNET_E2E_SCENARIO=reject-appeal-resolve-approve \
 CONFIRM_AUTONOMOUS_ESCROW_MAINNET_E2E=execute-controlled-v5-v4-mainnet \
-npm run e2e:autonomous:mainnet
+npm run e2e:autonomous:legacy-v5-v4:mainnet
 ```
 
-Internal canaries prove operability but never count as external M2 adoption, non-team wallets or
-revenue. The production-consumer rollout selects v5/v4 only after both asset canaries, independent
-public-state verification and the QA consumer gates pass.
+These completed internal canaries prove historical v5/v4 operability but never count as external
+adoption, non-team wallets or revenue. Generic mainnet aliases no longer target this generation.
 
 Verified v4/v3 testnet evidence on 2026-08-30:
 
@@ -222,8 +252,8 @@ The corresponding testnet preview selects:
 
 ```env
 NEXT_PUBLIC_STACKS_NETWORK=testnet
-NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v5
-NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v4
+NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v6
+NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v5
 NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3
 NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS=STBTXHXFXFGMNPXST7A6XQ1WNGC0V6TB6CDDQZB4
 NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS=ST256E5DAXM7RDFZ76ECCTPTBYHRXXJQ29H16DN69
@@ -310,8 +340,8 @@ Configure these values in the target production build environment:
 ```env
 NEXT_PUBLIC_STACKS_NETWORK=mainnet
 NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
-NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v5
-NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v4
+NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v6
+NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v5
 NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3
 NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS=SP2ENKFX2BGX94HC4KYZCCV7KEN7JXJXZDKC3GPGC
 NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS=SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH

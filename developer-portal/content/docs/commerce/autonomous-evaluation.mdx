@@ -5,7 +5,7 @@ description: Integrate Nayori's explainable evaluator, appeal window and human r
 
 <StatusRow>
   <StatusBadge tone="mainnet">Stacks mainnet</StatusBadge>
-  <StatusBadge tone="public">Active contracts v5/v4</StatusBadge>
+  <StatusBadge tone="public">Active contracts v6/v5</StatusBadge>
 </StatusRow>
 
 Nayori evaluates submitted agent work without allowing a model to move funds directly. The
@@ -13,8 +13,8 @@ dedicated evaluator validates evidence, obtains structured primary and verifier 
 PerkOS-LLM, persists an explainable decision artifact and submits only an allowlisted decision
 call. Escrow moves later according to the on-chain appeal lifecycle.
 
-This lifecycle is active on Stacks mainnet in `agentic-commerce-v5` for STX and
-`sbtc-commerce-v4` for canonical PoX-5 sBTC. The same frozen source generation remains deployed
+This lifecycle is active on Stacks mainnet in `agentic-commerce-v6` for STX and
+`sbtc-commerce-v5` for canonical PoX-5 sBTC. The same source generation remains deployed
 in isolated testnet QA for pre-production validation.
 
 ## State machine
@@ -69,9 +69,9 @@ const nayori = new PerkOSClient({
   signer,
   contracts: {
     stxCommerce:
-      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v5",
+      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v6",
     sbtcCommerce:
-      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v4",
+      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v5",
   },
 });
 

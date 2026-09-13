@@ -32,7 +32,8 @@ describe('versioned public references', () => {
       'utf8',
     );
     expect(overview).not.toMatch(/\b(?:M1|M2|Milestone\s*[12])\b/i);
-    expect(overview).toContain('SDK 0.8.0 · Stable');
+    expect(overview).toContain('SDK 0.8.0 · Stable npm');
+    expect(overview).toContain('SDK 0.9.0 · v6/v5 candidate');
   });
 
   it('documents the autonomous appeal lifecycle as the active mainnet generation', () => {
@@ -40,8 +41,8 @@ describe('versioned public references', () => {
       new URL('../content/docs/commerce/autonomous-evaluation.mdx', import.meta.url),
       'utf8',
     );
-    expect(guide).toContain('agentic-commerce-v5');
-    expect(guide).toContain('sbtc-commerce-v4');
+    expect(guide).toContain('agentic-commerce-v6');
+    expect(guide).toContain('sbtc-commerce-v5');
     expect(guide).toContain('This lifecycle is active on Stacks mainnet');
     expect(guide).toContain('Mainnet is fixed at 144 burn blocks.');
     expect(guide).toContain('await nayori.appealDecision');
@@ -49,16 +50,15 @@ describe('versioned public references', () => {
     expect(guide).toContain('await nayori.settleAppealTimeout');
   });
 
-  it('distinguishes fee selection in QA from production and published SDK support', () => {
+  it('distinguishes deployed contracts from consumer and SDK release receipts', () => {
     const guide = readFileSync(
       new URL('../content/docs/commerce/service-fees.mdx', import.meta.url),
       'utf8',
     );
-    expect(guide).toContain('selected in isolated QA/testnet');
-    expect(guide).toContain('Production v5/v4 contracts');
-    expect(guide).toContain('SDK methods ship in stable 0.8.0');
-    expect(guide).toContain('does not');
-    expect(guide).toContain('certify the full two-role SDK/LLM lifecycle');
-    expect(guide).not.toContain('consumers have not yet selected v6/v5');
+    expect(guide).toContain('deployed, initialized and source-verified on Stacks mainnet');
+    expect(guide).toContain('Existing v5/v4 contracts and jobs retain their');
+    expect(guide).toContain('SDK 0.9.0 promotion is a candidate');
+    expect(guide).toContain('require separate receipts');
+    expect(guide).not.toContain('Production remains v5/v4');
   });
 });

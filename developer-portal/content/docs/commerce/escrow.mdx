@@ -49,11 +49,10 @@ The active versioned release begins a fixed 12 Bitcoin burn-block review window 
 submits work. The evaluator can approve or reject through the exact deadline. After the deadline,
 any caller can release escrow to the provider so an unavailable evaluator cannot trap funds.
 
-The active v5/v4/v3 source set first passed controlled STX and official PoX-5 sBTC paths on
-testnet, including decisions, appeals and real timeout payouts. It was then source-verified on
-mainnet. Guarded mainnet canaries passed 47/47 STX checks and 50/50 sBTC checks, followed by an
-independent 75/75 public-state postcheck. Internal actors remain release evidence, not external
-adoption or revenue.
+The active v6/v5/v3 source set passed controlled STX and official PoX-5 sBTC paths on testnet,
+including decisions, appeals, real timeout payouts and 98/2 conservation. It was then deployed,
+initialized and source-verified on mainnet. The signer-free verifier pins exact sources and policy.
+Controlled actors remain release evidence, not external adoption or revenue.
 
 <Mermaid
   label="Versioned escrow review-window lifecycle"
@@ -90,6 +89,6 @@ post-conditions.
 See [autonomous evaluation and appeals](/commerce/autonomous-evaluation),
 [contract reference](/reference/contracts) and [settlement semantics](/commerce/settlement).
 
-The production generation has no earned service fee. The additive QA STX v6/sBTC v5
-integration is described separately in [earned service fees](/commerce/service-fees); it does
-not change existing job terms or deployed defaults.
+The active v6/v5 generation applies an earned service fee only after an evaluator records a
+decision and final settlement succeeds. See [earned service fees](/commerce/service-fees). Existing
+v5/v4 jobs retain their original terms and must be read with explicit historical contract names.

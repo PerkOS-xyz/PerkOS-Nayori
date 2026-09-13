@@ -37,10 +37,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - checkName: Frontend
+          - checkName: Frontend legacy v5/v4 compatibility
             stx: agentic-commerce-v5
             sbtc: sbtc-commerce-v4
-          - checkName: Frontend fees v6/v5
+          - checkName: Frontend active v6/v5
             stx: agentic-commerce-v6
             sbtc: sbtc-commerce-v5
     defaults:

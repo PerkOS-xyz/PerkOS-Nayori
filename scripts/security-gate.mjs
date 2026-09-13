@@ -53,6 +53,9 @@ const versionedEscrowTestnetE2e = "scripts/e2e-versioned-escrow-testnet.mjs";
 const autonomousEscrowTestnetDeploy = "scripts/deploy-autonomous-escrow-testnet.mjs";
 const autonomousEscrowMainnetDeploy = "scripts/deploy-autonomous-escrow-mainnet.mjs";
 const autonomousEscrowMainnetE2e = "scripts/e2e-autonomous-escrow-mainnet.mjs";
+const serviceFeeMainnetE2e = "scripts/e2e-service-fee-mainnet.mjs";
+const serviceFeeMainnetE2eSequential =
+  "scripts/run-service-fee-mainnet-e2e-sequential.sh";
 const autonomousEscrowTestnetE2e = "scripts/e2e-autonomous-escrow-testnet.mjs";
 const versionedEscrowMainnetDeploy = "scripts/deploy-versioned-escrow-mainnet.mjs";
 const versionedEscrowMainnetE2e = "scripts/e2e-versioned-escrow-mainnet.mjs";
@@ -573,13 +576,13 @@ requirePattern(
 );
 requirePattern(
   "App/src/constants/contract.ts",
-  /NEXT_PUBLIC_STX_COMMERCE_CONTRACT\s*\|\|\s*["']agentic-commerce-v5["']/,
-  "the Web default must select the active v5 STX contract",
+  /NEXT_PUBLIC_STX_COMMERCE_CONTRACT\s*\|\|\s*["']agentic-commerce-v6["']/,
+  "the Web default must select the active v6 STX contract",
 );
 requirePattern(
   "App/src/constants/contract.ts",
-  /NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT\s*\|\|\s*["']sbtc-commerce-v4["']/,
-  "the Web default must select the active v4 sBTC contract",
+  /NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT\s*\|\|\s*["']sbtc-commerce-v5["']/,
+  "the Web default must select the active v5 sBTC contract",
 );
 for (const variable of [
   "NEXT_PUBLIC_RELEASE_CHANNEL",
@@ -613,14 +616,111 @@ requirePattern(
 
 requirePattern(
   "scripts/verify-current-mainnet.mjs",
-  /name:\s*["']agentic-commerce-v5["'][\s\S]*?name:\s*["']sbtc-commerce-v4["']/,
-  "the signer-free current-mainnet verifier must select the active v5/v4 contracts",
+  /stx:\s*["']agentic-commerce-v6["'][\s\S]*?sbtc:\s*["']sbtc-commerce-v5["']/,
+  "the signer-free current-mainnet verifier must select the active v6/v5 contracts",
 );
 requirePattern(
   "scripts/verify-current-mainnet.mjs",
-  /appealWindow\s*!==\s*144n[\s\S]*?configuredAuthority\s*!==\s*appealAuthority/,
-  "the current-mainnet verifier must enforce the 144-block policy and pinned authority",
+  /EXPECTED_SOURCE_HASHES[\s\S]*?8eb55eccf0421b35ec6ff87be3bc8e99a356be5a4b882d8a3e9585019f40a7b2[\s\S]*?132567979dc49ba5726465ee12e5590cf26329acb9a31f0596f92008d0052f53/,
+  "the current-mainnet verifier must pin the deployed v6/v5 source hashes",
 );
+requirePattern(
+  "scripts/verify-current-mainnet.mjs",
+  /REVIEW_WINDOW\s*=\s*12n[\s\S]*?APPEAL_WINDOW\s*=\s*144n[\s\S]*?SERVICE_FEE_BPS\s*=\s*200n/,
+  "the current-mainnet verifier must enforce the 12/144 windows and 200-bps fee",
+);
+requirePattern(
+  "scripts/verify-current-mainnet.mjs",
+  /SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH[\s\S]*?SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8[\s\S]*?SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4\.sbtc-token/,
+  "the current-mainnet verifier must pin authority, treasury and canonical sBTC",
+);
+forbidPattern(
+  "scripts/verify-current-mainnet.mjs",
+  /PRIVATE_KEY|broadcastTransaction|makeContractCall|makeContractDeploy/,
+  "the current-mainnet verifier must remain signer-free and read-only",
+);
+requirePattern(
+  serviceFeeMainnetE2e,
+  /SERVICE_FEE_MAINNET_E2E_ACTION\s*\|\|\s*["']preflight["']/,
+  "the active v6/v5 E2E must default to signer-free preflight",
+);
+requirePattern(
+  serviceFeeMainnetE2e,
+  /STACKS_NETWORK\s*===\s*["']mainnet["']/,
+  "the active v6/v5 E2E must require explicit mainnet",
+);
+requirePattern(
+  serviceFeeMainnetE2e,
+  /CONFIRM_SERVICE_FEE_MAINNET_E2E\s*===\s*["']execute-controlled-v6-v5-mainnet["']/,
+  "the active v6/v5 E2E requires its release-specific typed confirmation",
+);
+requirePattern(
+  serviceFeeMainnetE2e,
+  /CONFIRM_SERVICE_FEE_MAINNET_E2E_MAX_TOP_UP_MICRO_STX[\s\S]*?MAX_TOTAL_TOP_UP/,
+  "the active v6/v5 E2E requires an independently typed actor top-up cap",
+);
+requirePattern(
+  serviceFeeMainnetE2e,
+  /const MAX_TOTAL_TOP_UP = 900_000n[\s\S]*?willSendEq\(amount\)\.ustx\(\)[\s\S]*?makeSTXTokenTransfer/,
+  "the active v6/v5 E2E must bound and deny-bind provider gas funding",
+);
+requirePattern(
+  serviceFeeMainnetE2e,
+  /8eb55eccf0421b35ec6ff87be3bc8e99a356be5a4b882d8a3e9585019f40a7b2[\s\S]*?132567979dc49ba5726465ee12e5590cf26329acb9a31f0596f92008d0052f53/,
+  "the active v6/v5 E2E must freeze exact contract hashes",
+);
+requirePattern(
+  serviceFeeMainnetE2e,
+  /secretFile[\s\S]*?0o600[\s\S]*?SERVICE_FEE_MAINNET_E2E_CLIENT_ENV_PATH[\s\S]*?SERVICE_FEE_MAINNET_E2E_ACTOR_ENV_PATH[\s\S]*?SERVICE_FEE_MAINNET_E2E_AUTHORITY_ENV_PATH/,
+  "the active v6/v5 E2E must isolate all role signers in external mode-0600 files",
+);
+requirePattern(
+  serviceFeeMainnetE2e,
+  /PostConditionMode\.Deny[\s\S]*?fundedEscrow\s*===\s*BUDGET[\s\S]*?provider receives exact 98% net[\s\S]*?treasury receives exact 2% fee[\s\S]*?terminal job is completed with zero escrow/,
+  "the active v6/v5 E2E must deny-bind and verify exact conservation and settlement",
+);
+forbidPattern(
+  serviceFeeMainnetE2e,
+  /STACKS_TESTNET|api\.testnet\.hiro\.so|PostConditionMode\.Allow|randomPrivateKey/,
+  "the active v6/v5 E2E may not expose testnet, allow mode or ephemeral signers",
+);
+forbidPattern(
+  serviceFeeMainnetE2e,
+  /serializedTransaction|PRIVATE_KEY\s*:/,
+  "the active v6/v5 E2E receipt must never retain raw signed transactions or signer keys",
+);
+requirePattern(
+  serviceFeeMainnetE2eSequential,
+  /SERVICE_FEE_MAINNET_E2E_ACTION=execute[\s\S]*?SERVICE_FEE_MAINNET_E2E_ASSET=stx[\s\S]*?node scripts\/e2e-service-fee-mainnet\.mjs[\s\S]*?SERVICE_FEE_MAINNET_E2E_ACTION=execute[\s\S]*?SERVICE_FEE_MAINNET_E2E_ASSET=sbtc[\s\S]*?node scripts\/e2e-service-fee-mainnet\.mjs/,
+  "the active mainnet wrapper must execute STX then sBTC strictly sequentially",
+);
+requirePattern(
+  serviceFeeMainnetE2eSequential,
+  /SERVICE_FEE_MAINNET_E2E_STX_RESULT_PATH[\s\S]*?SERVICE_FEE_MAINNET_E2E_SBTC_RESULT_PATH[\s\S]*?\[ "\$stx_receipt" = "\$sbtc_receipt" \]/,
+  "the active mainnet wrapper must require distinct external receipts",
+);
+{
+  const contents = source(serviceFeeMainnetE2e);
+  const publicVerification = contents.lastIndexOf("const publicState = await verifyPublicRelease()");
+  const preflightReturn = contents.lastIndexOf('if (ACTION === "preflight") return preflight');
+  const executeCall = contents.lastIndexOf("await execute(publicState)");
+  const localGate = contents.indexOf('["run", "security:gate"]');
+  const firstSignerRead = contents.indexOf("const clientEnv = parseEnv(secretFile(");
+  if (
+    publicVerification < 0 ||
+    preflightReturn < 0 ||
+    executeCall < 0 ||
+    localGate < 0 ||
+    firstSignerRead < 0 ||
+    publicVerification > preflightReturn ||
+    preflightReturn > executeCall ||
+    localGate > firstSignerRead
+  ) {
+    failures.push(
+      `${serviceFeeMainnetE2e}: public preflight must return before any signer file is opened`,
+    );
+  }
+}
 
 for (const path of [
   versionedEscrowTestnetDeploy,
@@ -716,6 +816,7 @@ for (const candidate of ["agentic-commerce-v6", "sbtc-commerce-v5"]) {
   const fn = (name, kind = "public") => clarityFunction(path, kind, name);
   requirePattern(path, /\(define-constant SERVICE_FEE_BPS u200\)/, "service fee must stay at the approved 200 bps");
   requirePattern(path, /\(define-constant SERVICE_FEE_DIVISOR u50\)/, "fee arithmetic must divide without multiplication overflow");
+  requirePattern(path, /\(define-constant REVIEW_WINDOW_BURN_BLOCKS u12\)/, "active fee contracts must retain the 12-block review window");
   check(/\(treasury principal\)/.test(fn("initialize-protocol")), "initialization requires an explicit treasury");
   check(/treasury: \(var-get service-treasury\)/.test(fn("create-job")), "jobs must pin their treasury");
   check((source(path).match(/\(var-set service-treasury /g) ?? []).length === 1, "treasury must be immutable after initialization");

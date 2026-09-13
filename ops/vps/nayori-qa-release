@@ -112,8 +112,8 @@ case "$REPOSITORY" in
     docker build --pull=false -f "$RELEASE/App/Dockerfile" -t "$WEB_IMAGE" \
       --build-arg NEXT_PUBLIC_STACKS_NETWORK=testnet \
       --build-arg NEXT_PUBLIC_CONTRACT_ADDRESS=ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5 \
-      --build-arg NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v5 \
-      --build-arg NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v4 \
+      --build-arg NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v6 \
+      --build-arg NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v5 \
       --build-arg NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3 \
       --build-arg NEXT_PUBLIC_SITE_URL=https://qa.nayori.ai \
       --build-arg NEXT_PUBLIC_RELEASE_CHANNEL=qa \

@@ -1,5 +1,8 @@
 # Autonomous escrow QA runbook
 
+> Historical v5/v4 procedure. Current QA defaults use v6/v5; this record preserves the exact old
+> runner and must not be used as the active contract-selection guide.
+
 This runbook deploys and exercises `agentic-commerce-v5` and `sbtc-commerce-v4` on Stacks
 testnet. It has no mainnet mode. It does not deploy Web, API, OAuth or Evaluator containers and it
 does not publish an npm package.

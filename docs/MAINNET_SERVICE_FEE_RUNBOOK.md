@@ -1,6 +1,15 @@
 # Mainnet service-fee promotion runbook
 
-This runbook promotes the QA-verified earned-service-fee contracts as **new immutable contracts**:
+## Completed deployment — 2026-09-13 UTC
+
+The reviewed merge `887ee9b01d5a880373aa868970e0ff83a6f6731a` completed this runbook. All seven
+transactions confirmed `(ok true)` in Stacks blocks `8978368`–`8978385` and were revalidated after
+the required two-block depth. The deployment receipt SHA-256 is
+`973633a6c793811b04e0e996c8170c7968916f7282d065b57832d1978adb7af1`; the campaign marker SHA-256
+is `ea1c03123214445e12c099c39d5ff8b0416d4c5d7abdbad8054324edbf3b4fc0`. Both artifacts remain
+outside Git. The procedure below is retained for audit and recovery and must not be replayed.
+
+This runbook promoted the QA-verified earned-service-fee contracts as **new immutable contracts**:
 
 - `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v6`
 - `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v5`
@@ -180,3 +189,71 @@ Do not expose the new generation to users until all of the following are complet
 5. Production evidence identifies those jobs as
    `internal-team-operated-not-m2-adoption`; they are not external M2 adoption.
 6. The external security reviewer receives the exact deployed sources and receipts.
+
+## Controlled v6/v5 consumer E2E — not yet executed
+
+The active `e2e:autonomous:mainnet` alias is reserved for one reviewed v6/v5 STX canary followed
+strictly by one sBTC canary. It does not deploy contracts. Its default action is a signer-free
+public preflight of both assets:
+
+```bash
+STACKS_NETWORK=mainnet \
+SERVICE_FEE_MAINNET_E2E_ACTION=preflight \
+SERVICE_FEE_MAINNET_E2E_REVIEWED_SHA=<exact-clean-reviewed-sha> \
+npm run preflight:e2e:autonomous:mainnet
+```
+
+The wrapper checks the exact v6/v5 source hashes, mainnet identity, owners and pending roles, reputation
+allowlists, policy, token and current job counts. It neither reads a signer nor constructs or
+broadcasts a transaction.
+
+Armed execution is intentionally unavailable through GitHub Actions. It requires an exact clean
+commit already contained by `origin/main`, the reviewed lockfile hash, separate external regular
+files owned by the operator with exact mode `0600`, and a new receipt path outside Git. The client
+file contains `DEPLOYER_PRIVATE_KEY` and may include `DEPLOYER_ADDRESS`; the actor file contains
+`PROVIDER_PRIVATE_KEY` and `EVALUATOR_PRIVATE_KEY`; the authority file contains
+`MAINNET_APPEAL_AUTHORITY_PRIVATE_KEY` and may include
+`MAINNET_APPEAL_AUTHORITY_ADDRESS`. Any declared address must match its key. Actor addresses are
+derived locally and must equal their separate typed confirmations; private keys are never written
+to the receipt.
+
+```bash
+STACKS_NETWORK=mainnet \
+SERVICE_FEE_MAINNET_E2E_ACTION=execute \
+SERVICE_FEE_MAINNET_E2E_REVIEWED_SHA=<exact-merged-main-sha> \
+SERVICE_FEE_MAINNET_E2E_LOCKFILE_SHA256=<reviewed-package-lock-sha256> \
+SERVICE_FEE_MAINNET_E2E_CLIENT_ENV_PATH=<absolute-client-mode-0600-env> \
+SERVICE_FEE_MAINNET_E2E_ACTOR_ENV_PATH=<absolute-actors-mode-0600-env> \
+SERVICE_FEE_MAINNET_E2E_AUTHORITY_ENV_PATH=<absolute-authority-mode-0600-env> \
+SERVICE_FEE_MAINNET_E2E_STX_RESULT_PATH=<new-absolute-external-stx-receipt-json> \
+SERVICE_FEE_MAINNET_E2E_SBTC_RESULT_PATH=<new-absolute-external-sbtc-receipt-json> \
+CONFIRM_SERVICE_FEE_MAINNET_E2E=execute-controlled-v6-v5-mainnet \
+CONFIRM_SERVICE_FEE_MAINNET_E2E_DEPLOYER=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH \
+CONFIRM_SERVICE_FEE_MAINNET_E2E_PROVIDER=<derived-provider-address> \
+CONFIRM_SERVICE_FEE_MAINNET_E2E_EVALUATOR=<derived-evaluator-address> \
+CONFIRM_SERVICE_FEE_MAINNET_E2E_AUTHORITY=SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH \
+CONFIRM_SERVICE_FEE_MAINNET_E2E_TREASURY=SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8 \
+CONFIRM_SERVICE_FEE_MAINNET_E2E_MAX_TOP_UP_MICRO_STX=900000 \
+npm run e2e:autonomous:mainnet
+```
+
+Before opening the signer files, the runner repeats the public release check, `security:gate` and
+the full root test suite. It stops on pending nonces, insufficient balances or any identity drift.
+If the provider is below the 900,000-micro-STX gas reserve, the client may make exactly one
+deny-mode top-up to that reserve; the amount cannot exceed the independently typed 900,000 cap and
+is recorded as a complete signed/canonical intent. Other actors must be funded in advance.
+
+The wrapper always executes STX first and sBTC second, stops immediately if STX fails and requires
+distinct non-overwriting receipts. To investigate one asset without broadcasting, use
+`e2e:autonomous:mainnet:asset` with `SERVICE_FEE_MAINNET_E2E_ACTION=preflight`; the guarded
+per-asset execute entry point is an implementation primitive and is not the release procedure.
+
+The meaningful fixed path is create, budget, fund, assign, submit, evaluator reject, provider
+appeal and authority resolve approve. For STX the gross budget is 100,000 micro-STX; for sBTC it is
+1,000 satoshis. Success requires one 98% recipient transfer, one 2% treasury transfer, exact gross
+conservation, terminal completion, zero escrow, final reputation synchronization and two-block
+canonical finality. Each asset uses a different non-overwriting receipt. These internal canaries
+must be classified `internal-team-operated-not-m2-adoption`; they are not external adoption,
+external revenue or an independent audit. Receipts include the txid, exact public intent fields,
+signed-serialization SHA-256 and byte length, but never raw signed transaction bytes or keys. If a
+broadcast is uncertain, reconcile that preserved txid and intent hash—never start a fresh run.

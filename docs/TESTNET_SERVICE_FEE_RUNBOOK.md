@@ -1,5 +1,8 @@
 # Earned service fees: guarded testnet validation
 
+> Historical activation record. The v6/v5 sources described here were promoted to mainnet on
+> 2026-09-13; statements below describe the testnet-only status at their original verification date.
+
 This runbook prepares **STX v6 and sBTC v5**. It does not activate production, change Web/SDK
 defaults, publish npm, deploy the LLM evaluator or demonstrate external adoption. Sources are
 frozen in `scripts/service-fee-testnet-core.mjs`. Existing v5/v4 runners remain unchanged.

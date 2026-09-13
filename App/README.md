@@ -74,8 +74,8 @@ on a developer workstation:
 docker build \
   --build-arg NEXT_PUBLIC_STACKS_NETWORK=mainnet \
   --build-arg NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH \
-  --build-arg NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v5 \
-  --build-arg NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v4 \
+  --build-arg NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v6 \
+  --build-arg NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v5 \
   --build-arg NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3 \
   --build-arg NEXT_PUBLIC_SITE_URL=https://preview.nayori.ai \
   -t nayori-web .
@@ -168,8 +168,8 @@ testnet must be selected explicitly.
 ```env
 NEXT_PUBLIC_STACKS_NETWORK=mainnet
 NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
-NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v5
-NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v4
+NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v6
+NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v5
 NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3
 NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS=SP2ENKFX2BGX94HC4KYZCCV7KEN7JXJXZDKC3GPGC
 NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS=SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH
@@ -181,8 +181,9 @@ domain, DNS and deployment are live; previews should use their own public origin
 
 For a testnet preview, use the public values in `testnet.env.example` only in that environment.
 Branch-scoped preview variables are preferred so unrelated deployments retain their own
-configuration. Both networks use the source-equivalent v4/v3/v3 generation under their respective
-deployer addresses.
+configuration. Both current environments select the fee-aware v6/v5 commerce generation with
+`reputation-registry-v3` under their respective deployer addresses. Explicit v5/v4 overrides remain
+supported only for reading and operating immutable historical jobs under their original terms.
 
 The three contract-name variables are intentionally independent. This keeps preview and rollback
 configuration explicit without recompiling contract names into the service layer. Select a name

@@ -16,13 +16,13 @@ Deployer: `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
 | Capability validation | `validation-registry` |
 | SIP-010 interface | `sip-010-trait` |
 | Job-linked reputation | `reputation-registry-v3` |
-| STX escrow | `agentic-commerce-v5` |
-| sBTC escrow | `sbtc-commerce-v4` |
+| STX escrow | `agentic-commerce-v6` |
+| sBTC escrow | `sbtc-commerce-v5` |
 
 The active sBTC contract accepts the canonical mainnet token
 `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`. Both commerce contracts use a fixed
-12 Bitcoin burn-block evaluator window, a 144-block appeal window and source-namespaced outcomes
-in reputation v3.
+12 Bitcoin burn-block evaluator window, a 144-block appeal window, a 200-basis-point evaluated
+settlement fee and source-namespaced outcomes in reputation v3.
 
 ## Versioned security release
 
@@ -31,18 +31,18 @@ in reputation v3.
   <StatusBadge tone="public">Source verified</StatusBadge>
 </StatusRow>
 
-`reputation-registry-v3`, `agentic-commerce-v5` and `sbtc-commerce-v4` are deployed under the
-mainnet deployer above and selected by the application. They add a fixed 12 Bitcoin burn-block
+`reputation-registry-v3`, `agentic-commerce-v6` and `sbtc-commerce-v5` are deployed under the
+mainnet deployer above and selected by current application source defaults. They provide a fixed 12 Bitcoin burn-block
 evaluator window, an explainable evaluator decision, a 144-block appeal period with a separately
 pinned authority, a separate timeout-paid state, retryable reputation synchronization, source/job
-namespacing, per-job sBTC token pinning and two-step ownership.
+namespacing, per-job sBTC token pinning, two-step ownership and an atomic 98/2 evaluated settlement.
 
-All reviewed sources match on-chain byte-for-byte. The v5/v4 deployments confirmed in blocks
-`8905872` and `8905874`; initialization and allowlist transactions confirmed through block
-`8905886`. Two controlled mainnet canaries exercised both assets and both appeal directions:
-STX passed 47/47 checks and sBTC passed 50/50. An independent signer-free postcheck then passed
-75/75 public-state checks. Both jobs reached the correct terminal state with zero escrow, one exact
-settlement and synchronized reputation.
+All reviewed sources match on-chain byte-for-byte. The v6/v5 deployments confirmed in blocks
+`8978368` and `8978377`; initialization and allowlist transactions confirmed through block
+`8978385`, and canonical state was revalidated after two additional Stacks blocks. Exact hashes are
+`8eb55ecc…f40a7b2` for STX and `13256797…052f53` for sBTC. The signer-free verifier also checks
+owner and pending roles, canonical sBTC, both reputation allowlists, 12/144 windows, separate
+authority, treasury and 200 basis points.
 
 The same source generation remains verifiable in isolated QA on testnet under
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`. Its STX and official PoX-5 sBTC complete paths pass,
@@ -50,15 +50,15 @@ and the real-timeout job `u2` settled in state `u6` with zero escrow, one exact 
 completion, reputation or rating credit. The earlier immutable `agentic-commerce-v3` and
 `sbtc-commerce-v2` contracts remain testnet-only at 144 blocks as historical evidence.
 
-The prior `agentic-commerce-v4`, `sbtc-commerce-v3` generation and the earlier v2 contracts are
-preserved as immutable historical release evidence. They are not the default for new jobs. Internal
-deployment and smoke actors are release evidence, not external adoption, non-team usage or revenue.
+The prior `agentic-commerce-v5`/`sbtc-commerce-v4`, v4/v3 and earlier v2 contracts are preserved as
+immutable historical release evidence. They are not defaults for new jobs. Internal deployment and
+smoke actors are release evidence, not external adoption, non-team usage or revenue.
 
 ## Verification
 
-The additive STX `agentic-commerce-v6` / sBTC `sbtc-commerce-v5` earned-fee generation is a
-simnet candidate with opt-in Web/SDK integration, not part of the active deployment above.
-See [earned service fees](/commerce/service-fees) before planning any migration.
+The active STX `agentic-commerce-v6` / sBTC `sbtc-commerce-v5` generation is documented in
+[earned service fees](/commerce/service-fees). Existing v5/v4 job readers must select those
+historical contract names explicitly and preserve their original no-fee economics.
 
 Clone the public repository and run the signer-free verifier:
 
@@ -69,8 +69,9 @@ npm ci
 npm run verify:mainnet
 ```
 
-The verifier compares source, exposed owners, canonical sBTC configuration and authorized
-reputation callers. It requires no wallet or deployer key.
+The verifier compares exact source hashes, owners and pending roles, canonical sBTC, authorized
+reputation callers, 12/144 windows, appeal authority, treasury and 200 basis points. It requires
+no wallet or deployer key and cannot broadcast.
 
 ## Explorer
 

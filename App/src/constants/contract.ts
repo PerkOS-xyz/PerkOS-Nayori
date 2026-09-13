@@ -7,9 +7,9 @@ export const CONTRACT_ADDRESS =
   process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
   (NETWORK_NAME === "mainnet" ? MAINNET_DEPLOYER : TESTNET_DEPLOYER);
 export const STX_COMMERCE_CONTRACT_NAME =
-  process.env.NEXT_PUBLIC_STX_COMMERCE_CONTRACT || "agentic-commerce-v5";
+  process.env.NEXT_PUBLIC_STX_COMMERCE_CONTRACT || "agentic-commerce-v6";
 export const SBTC_COMMERCE_CONTRACT_NAME =
-  process.env.NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT || "sbtc-commerce-v4";
+  process.env.NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT || "sbtc-commerce-v5";
 export const REPUTATION_CONTRACT_NAME =
   process.env.NEXT_PUBLIC_REPUTATION_CONTRACT || "reputation-registry-v3";
 
@@ -64,7 +64,7 @@ export const SBTC_COMMERCE_HAS_AUTONOMOUS_DECISIONS =
   SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v5" ||
   SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v4";
 
-// Capability only; current deployed defaults above intentionally do not enable fees.
+// Capability detection keeps immutable pre-fee generations readable through explicit overrides.
 export const STX_COMMERCE_HAS_SERVICE_FEES = STX_COMMERCE_CONTRACT_NAME === "agentic-commerce-v6";
 export const SBTC_COMMERCE_HAS_SERVICE_FEES = SBTC_COMMERCE_CONTRACT_NAME === "sbtc-commerce-v5";
 
