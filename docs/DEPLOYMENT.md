@@ -361,7 +361,7 @@ It is internal operational evidence and is never external M2 adoption or revenue
 
 ## Frontend production variables
 
-### Workflow timing disclosure (deployed in QA; separate production promotion)
+### Workflow timing disclosure (live in production and QA)
 
 `NAYORI_WORKFLOW_BURN_BLOCKS` and `NAYORI_SETTLEMENT_BURN_BLOCKS` are server-runtime disclosure
 settings, defaulting to 6/6. Both accept integers up to 144; mainnet minimum is 6, testnet minimum
@@ -369,12 +369,13 @@ is 0, and settlement cannot be weaker than workflow. Invalid values cause the ti
 to return 503. These settings do not reconfigure any wallet, existing signer permit, facilitator,
 x402/MPP path or contract. Match the advertised baseline to newly issued operator permits.
 
-Web/docs QA release `0233183efb3e32d09ca0f5bf6c1ac2188921c88d` passed 24 public checks on
-2026-09-09 UTC. Verify `/api/v1/workflow-timing?asset=stx` and `?asset=sbtc` on each target network
-before its separate promotion. Check contract identity, live windows, unavailable behavior,
+Web/docs QA validation passed 24 public checks on 2026-09-09 UTC. Production Web/docs release
+`e4b0e24422631c11c77c1a7945e8b7ece7e1e5af` passed its rollout and public postchecks on
+2026-09-13 UTC. Verify `/api/v1/workflow-timing?asset=stx` and `?asset=sbtc` on every target network.
+Check contract identity, live windows, unavailable behavior,
 terminal decision history and absence of active countdowns on closed jobs. Version-1 SDK permits
 remain six-block; new configurable permits require the separate SDK release and new permissions.
-No active run is migrated and no production deployment accompanies this documentation update.
+No active run is migrated by this configuration or documentation.
 
 Configure these values in the target production build environment:
 

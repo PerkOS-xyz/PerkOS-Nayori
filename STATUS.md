@@ -29,10 +29,10 @@ at block `8982751`; both returned `(ok true)` and now report no pending authorit
 
 Web source/build defaults and the coordinated QA release configuration now select v6/v5. The
 signer-free `verify:mainnet` gate pins exact hashes and every role/policy value. Immutable v5/v4
-jobs remain readable with explicit overrides. A production Web deployment, coordinated SDK and
-Evaluator releases, and controlled STX/sBTC mainnet E2E each require their own receipts; deployment
-activity remains internal operability evidence and is not external adoption, revenue or an
-independent audit.
+jobs remain readable with explicit overrides. Stable SDK 0.9.0 and production Web/docs release
+`e4b0e24422631c11c77c1a7945e8b7ece7e1e5af` are live with independent receipts. Managed Evaluator
+activation and controlled STX/sBTC mainnet E2E remain separate gates. Deployment activity is
+internal operability evidence and is not external adoption, revenue or an independent audit.
 
 ### Historical Agent SDK 0.8.0 publication — 2026-09-11 UTC
 
@@ -71,17 +71,18 @@ and downloaded tarball SHA-256 match the tested VPS artifact. Publication was au
 the operator Mac without provenance attestation. It adds configurable policy for new version-2
 testnet permits, not migration of existing runs, production activation or a funded rc.2 E2E.
 
-### Configurable confirmation and timing disclosure — deployed in QA
+### Configurable confirmation and timing disclosure — live in production
 
 The Jobs panel and read-only workflow-timing endpoint expose selected-contract review/appeal
 windows, active deadline countdowns and non-guaranteed estimates. Operator confirmation baseline
 is configurable with network minimums; it does not enforce or override a wallet's bound permit.
-Web/docs QA were deployed from `0233183efb3e32d09ca0f5bf6c1ac2188921c88d` on 2026-09-09 UTC.
-App 229 tests, portal 24 tests and 24 public postchecks passed. Terminal jobs preserve their
-original/final decisions and have no active countdown; Chrome verified the completed job view.
-The matching SDK change adds version-2 testnet custody policy/progress while keeping version-1
-hashes and six-block defaults. Its npm release is separate from the Web deployment. No contract,
-production deployment or existing permit changed; the runtime baseline remains 6/6.
+Web/docs QA validation from `0233183efb3e32d09ca0f5bf6c1ac2188921c88d` passed App 229 tests,
+portal 24 tests and 24 public postchecks. Production Web/docs release
+`e4b0e24422631c11c77c1a7945e8b7ece7e1e5af` completed its controlled rollout and public postchecks
+on 2026-09-13 UTC. Terminal jobs preserve their original/final decisions and have no active
+countdown. The matching stable SDK 0.9.0 supports version-2 custody policy/progress while keeping
+version-1 hashes and six-block defaults. No contract, existing permit or active run changed; the
+runtime baseline remains 6/6.
 
 ### QA SDK prerelease published — 2026-09-08 UTC
 

@@ -53,10 +53,10 @@ describe('existing-agent onboarding', () => {
       expect(guide).toContain(text);
     expect(guide).not.toContain('A new funded npm-only run remains pending');
   });
-  it('distinguishes deployed QA timing from signer and production releases', () => {
+  it('documents live production timing separately from signer and funded E2E certification', () => {
     const guide = read('commerce/workflow-timing.mdx');
-    for (const text of ['deployed in QA', '0233183efb3e32d09ca0f5bf6c1ac2188921c88d',
-      'Production promotion is separate', 'SDK 0.9.0', 'Version 1 remains unchanged',
+    for (const text of ['live in production', 'e4b0e24422631c11c77c1a7945e8b7ece7e1e5af',
+      'SDK 0.9.0', 'Version 1 remains unchanged',
       'not wallet enforcement', 'terminal jobs have no active countdown',
       'No new funded E2E or external adoption']) {
       expect(guide).toContain(text);
@@ -65,6 +65,7 @@ describe('existing-agent onboarding', () => {
     expect(guide).toContain('npm install --save-exact @perkos/agent-sdk@0.9.0');
     expect(guide).not.toContain('source candidate, not yet deployed');
     expect(guide).not.toContain('After the Web candidate is deployed');
+    expect(guide).not.toContain('Production promotion is separate');
   });
   it('links verified internal QA evidence without promoting the npm or production boundary', () => {
     const page = read('resources/qa-validation.mdx');
