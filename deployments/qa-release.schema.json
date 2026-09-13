@@ -30,8 +30,8 @@
       "additionalProperties": false,
       "required": ["stx", "sbtc", "reputation", "appealWindowBurnBlocks"],
       "properties": {
-        "stx": { "type": "string", "pattern": "^ST[A-Z0-9]+\\.agentic-commerce-v5$" },
-        "sbtc": { "type": "string", "pattern": "^ST[A-Z0-9]+\\.sbtc-commerce-v4$" },
+        "stx": { "type": "string", "pattern": "^ST[A-Z0-9]+\\.agentic-commerce-v6$" },
+        "sbtc": { "type": "string", "pattern": "^ST[A-Z0-9]+\\.sbtc-commerce-v5$" },
         "reputation": { "type": "string", "pattern": "^ST[A-Z0-9]+\\.reputation-registry-v3$" },
         "appealWindowBurnBlocks": { "const": 3 }
       }

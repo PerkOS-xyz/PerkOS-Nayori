@@ -4,7 +4,10 @@
 
 import { request } from "@stacks/connect";
 import { Cl } from "@stacks/transactions";
-import { AGENTIC_COMMERCE_CONTRACT } from "../constants/contract";
+import {
+  AGENTIC_COMMERCE_CONTRACT,
+  assertCommerceContractsWritable,
+} from "../constants/contract";
 import { NETWORK_NAME } from "../constants/network";
 import { fundSbtcJob } from "./sbtc-commerce";
 import { Currency, getCommerceEscrow, getCommerceJob } from "./commerce";
@@ -52,6 +55,7 @@ export async function executeX402Payment(
   paymentRequest: X402PaymentRequest
 ): Promise<X402PaymentResponse> {
   try {
+    assertCommerceContractsWritable();
     if (paymentRequest.currency === "sbtc" && !paymentRequest.sender) {
       throw new Error("A sender address is required for the sBTC post-condition");
     }

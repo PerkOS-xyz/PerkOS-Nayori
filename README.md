@@ -42,7 +42,7 @@ one service:
 | --- | --- |
 | On-chain network | Stacks mainnet for identity, STX escrow, sBTC escrow and reputation |
 | Mainnet contracts | Six current contracts under `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` |
-| Agent SDK | Stable `0.8.0` under `latest`, public on npm with pinned install and MCP onboarding |
+| Agent SDK | Stable npm `0.8.0`; `0.9.0` is the reviewed v6/v5-default candidate, not yet published |
 | Browser wallet | Leather through Stacks Connect; wallet remains the signing boundary |
 | Headless agents | Policy-constrained signer interface for KMS/HSM/secret-manager integrations |
 | x402 | Live same-origin mainnet resource; SDK profiles for STX, sBTC and USDCx |
@@ -93,21 +93,21 @@ job, a provider submits work, and an evaluator completes or rejects it. Completi
 escrow and updates job-linked reputation; rejection or expiry returns funds according to the
 contract lifecycle.
 
-An additive [earned-service-fee candidate](contracts/service-fees-README.md) introduces a 2%
-fee included in an escrow job budget, payable to a pinned treasury only at final evaluated settlement.
-The matching opt-in Web/Docs integration is served in QA and the SDK support is published in
-stable SDK 0.8.0; this is not an active price change. Deployed v5/v4 jobs retain their
-original terms. See the [candidate integration guide](developer-portal/content/docs/commerce/service-fees.mdx)
-and [guarded testnet deployment and 20-path contract test runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
-The fee candidates were deployed and initialized on testnet on 2026-09-04; deployment alone
-does not select them in the application. The twenty controlled contract paths subsequently passed;
-the packaged QA SDK passed 168 public-state checks against their twenty terminal jobs. Evaluator
-v6/v5 compatibility and explicit selection are deployed in isolated QA/testnet. Production still
-selects v5/v4. Separately, one real, operator-supervised Hermes buyer/provider SDK + evaluator
-sBTC lifecycle completed with exact 980/20 settlement and confirmed reputation; see
-[QA validation and release boundaries](developer-portal/content/docs/resources/qa-validation.mdx).
-This does not certify every path or external onboarding. The accounting panel is a separate activation
-prerequisite, not an announcement of production fees.
+The [earned-service-fee generation](contracts/service-fees-README.md) includes a fixed 2% fee in
+the escrow budget, payable to a job-pinned treasury only after an evaluator records a decision and
+final settlement succeeds. `agentic-commerce-v6` and `sbtc-commerce-v5` are deployed, initialized
+and source-verified on Stacks mainnet with the 12/144 policy, 200 basis points, distinct appeal
+authority and canonical PoX-5 sBTC. Current Web build defaults and isolated QA select v6/v5;
+immutable v5/v4 jobs remain readable through explicit historical configuration and retain their
+original no-fee terms. See the [service-fee integration guide](developer-portal/content/docs/commerce/service-fees.mdx),
+the [mainnet runbook](docs/MAINNET_SERVICE_FEE_RUNBOOK.md) and the historical
+[20-path testnet runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
+
+The twenty controlled contract paths passed, the packaged QA SDK passed 168 public-state checks
+against their terminal jobs, and one operator-supervised Hermes buyer/provider SDK + evaluator
+sBTC lifecycle completed with exact 980/20 settlement and confirmed reputation. These internal
+checks demonstrate operability; they do not count as external adoption, an independent audit or
+externally earned revenue. See [QA validation and release boundaries](developer-portal/content/docs/resources/qa-validation.mdx).
 
 ### Direct paid resources
 
@@ -600,15 +600,16 @@ All current contracts are deployed by:
 | Validation | `validation-registry` | Capability and proof-hash attestations |
 | SIP-010 interface | `sip-010-trait` | Canonical fungible-token contract interface |
 | Reputation | `reputation-registry-v3` | Source-namespaced outcomes, job-linked ratings and retryable synchronization |
-| STX escrow | `agentic-commerce-v5` | Explainable evaluator decisions, appeals and liveness-safe STX settlement |
-| sBTC escrow | `sbtc-commerce-v4` | The same lifecycle with canonical, job-pinned sBTC settlement |
+| STX escrow | `agentic-commerce-v6` | Explainable decisions, appeals, liveness-safe settlement and an earned 98/2 split |
+| sBTC escrow | `sbtc-commerce-v5` | The same lifecycle and split with canonical, job-pinned sBTC settlement |
 
 Canonical mainnet sBTC:
 
 `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`
 
 Both current commerce contracts are authorized callers of `reputation-registry-v3`. The prior
-mainnet generation remains immutable historical evidence and is not the default for new jobs.
+v5/v4 mainnet generation remains immutable and readable for historical jobs, but is not the default
+for new jobs.
 
 ### Escrow lifecycle
 
@@ -631,8 +632,8 @@ mainnet promotion.
 | Component | Active contract | Security scope |
 | --- | --- | --- |
 | Reputation | `reputation-registry-v3` | Source- and job-namespaced outcomes/ratings, idempotent writes and two-step ownership |
-| STX escrow | `agentic-commerce-v5` | Fixed review window, explainable pending decisions, role-specific appeals and two settlement timeouts |
-| sBTC escrow | `sbtc-commerce-v4` | The STX controls plus canonical per-job SIP-010 token pinning |
+| STX escrow | `agentic-commerce-v6` | Fixed review window, explainable pending decisions, appeals, liveness and atomic 98/2 settlement |
+| sBTC escrow | `sbtc-commerce-v5` | The STX controls plus canonical per-job SIP-010 token pinning and the same split |
 
 For submitted work, the contracts record a fixed Nayori review window of **12 Bitcoin burn
 blocks**. The evaluator records approve/reject plus evidence and explanation hashes without moving
@@ -654,7 +655,7 @@ checks 10/10. Job `u2` settled at burn `11290` in
 state `u6`, zero escrow, one exact 1,000-atomic-unit sBTC payout and no completion, reputation or
 rating credit. See [the reproducible testnet evidence](docs/TESTNET_SECURITY_EVIDENCE.md).
 
-The frozen v4/v3/v3 sources were promoted on mainnet from exact merge `670d23a`. Deploy and wiring
+The preceding frozen v4/v3/v3 sources were promoted on mainnet from exact merge `670d23a`. Deploy and wiring
 transactions confirmed in blocks 8885885–8885898 with exact source, owner, canonical sBTC,
 allowlist and review-window checks. Exact merge `8782e54` then passed the security gate, 100/100
 tests and an 11/11 signer-free preflight before one internal 100-atomic-sBTC lifecycle passed
@@ -664,15 +665,15 @@ evidence, not external adoption or revenue. The independent external security re
 open delivery item and this release must not be described as externally audited. See the
 [mainnet security-evidence anchor](docs/MAINNET_AUTONOMOUS_SECURITY_EVIDENCE.md).
 
-### Autonomous evaluation and appeals
+### Previous autonomous evaluation generation
 
-`agentic-commerce-v5` and `sbtc-commerce-v4` are live on mainnet and are the production contract
+`agentic-commerce-v5` and `sbtc-commerce-v4` remain live on mainnet as the immutable pre-fee
 generation. Their frozen sources were deployed in blocks `8905872` and `8905874`, configured with
 the mainnet `u144` appeal policy and independently verified. Controlled STX and sBTC canaries then
 passed 47/47 and 50/50 checks: both roles appealed, the human authority reversed both original
 decisions, escrow reached zero, and exactly one refund or payout occurred.
 
-The same source uses only `u3` in isolated QA/testnet. Internal deployer, provider, evaluator and
+That historical source uses only `u3` in isolated QA/testnet. Internal deployer, provider, evaluator and
 authority activity is operability evidence and is explicitly excluded from external adoption,
 non-team wallet and revenue counts. See the
 [architecture and threat model](docs/plans/2026-08-31-autonomous-evaluator-and-qa-design.md).
@@ -814,7 +815,15 @@ npm install --save-exact @perkos/agent-sdk@0.8.0
 ```ts
 import { PerkOSClient } from "@perkos/agent-sdk";
 
-const nayori = new PerkOSClient({ network: "mainnet" });
+const nayori = new PerkOSClient({
+  network: "mainnet",
+  contracts: {
+    stxCommerce:
+      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v6",
+    sbtcCommerce:
+      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v5",
+  },
+});
 
 const agentCount = await nayori.getAgentCount();
 const job = await nayori.getJob("sbtc", 1n);
@@ -823,8 +832,14 @@ const reputation = await nayori.getReputation(
 );
 ```
 
-Read-only operations require no wallet. State changes require a configured browser or enterprise
-signer and explicit spending policy.
+Read-only operations require no wallet. Stable SDK `0.8.0` retains the historical v5/v4
+defaults, so a current-generation integration must keep the explicit v6/v5 IDs above; changing
+only `network` is not sufficient. SDK `0.8.0` can execute v6/v5 writes when those IDs are pinned,
+but funding and submission additionally require the exact live `serviceFeeAcceptance` described
+in the [earned service fee guide](https://docs.nayori.ai/commerce/service-fees). State changes
+also require a configured browser or enterprise signer and an explicit spending policy. The
+unpublished `0.9.0` candidate promotes v6/v5 to SDK defaults; do not install it until npm
+publication and provenance are independently verified.
 
 ### Component documentation
 
@@ -834,7 +849,7 @@ signer and explicit spending policy.
 - [MPP integration](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/MPP_PAYMENTS.md)
 - [Partner pilot](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/PARTNER_PILOT.md)
 - [Deployment guide](docs/DEPLOYMENT.md)
-- [Earned service fee contracts — testnet candidate, not production](contracts/service-fees-README.md)
+- [Earned service fee contracts — active v6/v5 reference](contracts/service-fees-README.md)
 - [Current product status](STATUS.md)
 
 ## Project structure

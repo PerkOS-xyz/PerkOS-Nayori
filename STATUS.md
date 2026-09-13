@@ -1,17 +1,34 @@
 # Nayori — PerkOS Stacks Agentic Commerce: Project Status
 
-Last verified: 2026-09-11 UTC
+Last verified: 2026-09-13 UTC
 
 ## Current status
 
-### Agent SDK 0.8.0 stable and public — 2026-09-11 UTC
+### Mainnet v6/v5 deployment and consumer promotion — 2026-09-13 UTC
+
+`agentic-commerce-v6` and `sbtc-commerce-v5` are deployed, initialized and source-verified under
+`SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`. All seven deployment/wiring transactions returned
+`(ok true)` and were revalidated after two additional Stacks blocks. The exact production policy is
+review window 12, appeal window 144, appeal authority
+`SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH`, treasury
+`SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8`, 200 basis points and canonical PoX-5 sBTC.
+
+Web source/build defaults and the coordinated QA release configuration now select v6/v5. The
+signer-free `verify:mainnet` gate pins exact hashes and every role/policy value. Immutable v5/v4
+jobs remain readable with explicit overrides. A production Web deployment, coordinated SDK and
+Evaluator releases, and controlled STX/sBTC mainnet E2E each require their own receipts; deployment
+activity remains internal operability evidence and is not external adoption, revenue or an
+independent audit.
+
+### Historical Agent SDK 0.8.0 publication — 2026-09-11 UTC
 
 `@perkos/agent-sdk@0.8.0` is published under npm `latest` from merged commit
 `8dc7cc9871858230c401f258cddf005a5c0be637`. Typecheck, build, 415 tests and audit with zero
 vulnerabilities passed. A separate clean registry install verified the exact package, both CLI
-binaries and 12/12 signer-free consumer/provider MCP checks. Stable defaults remain mainnet
-STX v5/sBTC v4; custody and fee-candidate v6/v5 remain explicit testnet-only paths. The clean
-install is internal release evidence, not external adoption or a funded stable-package E2E.
+binaries and 12/12 signer-free consumer/provider MCP checks. At publication its stable defaults
+were mainnet STX v5/sBTC v4, while v6/v5 required explicit selection. The clean install is internal
+release evidence, not external adoption or a funded stable-package E2E. Consult current SDK release
+notes before integrating; package promotion is independent of this repository.
 
 ### Native MCP connection checks — 2026-09-09 UTC
 
@@ -87,12 +104,12 @@ The local Hermes bridge/manuals remain unreleased QA candidates; full funded aut
 E2E and video are not certified by these documentation changes. No model migration or PerkOS-LLM
 account is required for external developers. Publication/deployment follows QA review.
 
-### Additive fee candidate — 2026-09-04
+### Historical additive fee candidate — 2026-09-04
 
 Update 2026-09-06: twenty internal real-chain contract paths are complete; the installed QA SDK
 passed 168/168 public checks across those jobs. Evaluator compatibility is deployed from QA merge
-`66ae96f`; QA Web/Docs merge `9eee547` and the evaluator now select v6/v5 explicitly. Production
-still selects v5/v4. The new Web accounting integration exposes
+`66ae96f`; QA Web/Docs merge `9eee547` and the evaluator selected v6/v5 explicitly. At that
+checkpoint production still selected v5/v4. The new Web accounting integration exposed
 charges/refunds/retained amounts separately from quotes; source availability is not activation.
 Coordinated v6/v5 QA selection is complete; the full two-role SDK/LLM workflow remains pending. No
 production defaults, contracts or npm package change with this integration.
@@ -113,7 +130,7 @@ signer-free preflights and durable single-broadcast journals; their availability
 execution evidence. See [the runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
 QA consumer selection is explicit and operationally separate from source compatibility; no npm
 publication accompanies it. Operational custody/reserves and real QA E2E remain required before
-commercial activation. Production remains v5/v4.
+commercial activation. At that historical checkpoint, production remained v5/v4.
 
 ### Deployed baseline (last verified 2026-09-03)
 
@@ -152,12 +169,14 @@ partner access remains invite-only. QA retains testnet identities and challenges
 The new direct-payment panel and `/api/payments.json` require the opt-in facilitator feed to be
 enabled after QA merge/validation. The existing live escrow counters do not index these transfers.
 
-### Active versioned escrow release
+### Active service-fee escrow release
 
-`reputation-registry-v3`, `agentic-commerce-v5` and `sbtc-commerce-v4` are the active mainnet
+`reputation-registry-v3`, `agentic-commerce-v6` and `sbtc-commerce-v5` are the active mainnet
 generation. The escrow contracts use a fixed 12 Bitcoin burn-block review window, evidence-backed
 pending decisions, a 144-burn-block appeal window, human resolution, permissionless timeout
-liveness and durable reputation retry. sBTC funding pins the exact canonical SIP-010 token.
+liveness and durable reputation retry. Evaluated settlements split the gross budget into 98% for
+the economic recipient and 2% for the job-pinned treasury; sBTC funding pins the exact canonical
+SIP-010 token.
 
 The generation first passed on Stacks testnet under
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`: controlled complete paths pass 27/27 for STX and
@@ -181,7 +200,7 @@ transfer. Web settlement reads the live escrow and job-pinned sBTC token before 
 while zero-balance open expiry uses no transfer post-condition. The earlier immutable v3/v2
 testnet generation and the prior mainnet generation remain historical evidence.
 
-### Mainnet autonomous evaluation release
+### Historical pre-fee autonomous evaluation release
 
 `agentic-commerce-v5` and `sbtc-commerce-v4` are deployed and configured on mainnet. They add
 decision-pending and disputed states, verifiable decision/explanation hashes, role-specific
@@ -201,25 +220,28 @@ with seven successful transactions. Controlled STX and sBTC appeal reversals pas
 | Validation | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.validation-registry` |
 | SIP-010 trait | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sip-010-trait` |
 | Reputation | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.reputation-registry-v3` |
-| STX escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v5` |
-| sBTC escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v4` |
+| STX escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v6` |
+| sBTC escrow | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v5` |
 
-The prior v2/v2 generation remains immutable M1 evidence but is not the default for new jobs.
+The prior v5/v4 and v2/v2 generations remain immutable historical evidence but are not defaults
+for new jobs.
 
 ## Verified wiring
 
-- `sbtc-commerce-v4` accepts only canonical mainnet sBTC:
+- `sbtc-commerce-v5` accepts only canonical mainnet sBTC:
   `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`.
-- `agentic-commerce-v5` and `sbtc-commerce-v4` are authorized callers of
+- `agentic-commerce-v6` and `sbtc-commerce-v5` are authorized callers of
   `reputation-registry-v3`.
 - The four stateful contracts that expose `get-owner` are owned by the mainnet deployer.
-- Production build defaults explicitly select mainnet, the deployer address and the v5/v4/v3
+- Production build defaults explicitly select mainnet, the deployer address and the v6/v5/v3
   generation; the previous VPS image and existing Vercel deployment remain rollback paths.
-- The public API validates wallet-linked OAuth tokens issued independently by `oauth.nayori.ai`,
-  plus short-lived scopes, MCP, quotes,
-  payment verification, one network-pinned broadcast, confirmation reconciliation and a delivery
-  ledger for STX, sBTC and USDCx. Mainnet settlement requires an explicit runtime acknowledgement;
-  fee sponsorship remains disabled.
+- The public API edge validates wallet-linked OAuth tokens issued independently by
+  `oauth.nayori.ai`, plus short-lived scopes, MCP, public resources and quote issuance. Its own
+  payment-verification, settlement, confirmation and delivery-ledger flags are disabled by role.
+- The isolated `facilitator.nayori.ai` runtime owns payment verification, one network-pinned
+  broadcast, confirmation reconciliation and the delivery ledger for STX, sBTC and USDCx. Its
+  live `/supported` response is the authority for those economic capabilities; fee sponsorship
+  remains disabled.
 - The web exposes a credential-stripping same-origin `/api/v1` route. It forwards only x402
   protocol headers to `api.nayori.ai/v1`; the API uses a merchant credential over HTTPS to the
   isolated facilitator. A payment returns 202 until confirmation and the fixed capability report

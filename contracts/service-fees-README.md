@@ -1,13 +1,13 @@
-# Earned service fees — candidate contract reference
+# Earned service fees — active v6/v5 contract reference
 
 `agentic-commerce-v6` (STX) and `sbtc-commerce-v5` (sBTC) add a fixed **200 basis-point
-service fee** to the autonomous-decision escrow lifecycle. They are **QA-verified promotion
-candidates, not current production contracts or application defaults**. Production continues
-to use STX v5 and sBTC v4 without this fee until a separately reviewed mainnet promotion is
-completed and verified. Existing jobs and their terms are unchanged.
+service fee** to the autonomous-decision escrow lifecycle. They are deployed, initialized and
+source-verified on Stacks mainnet and are the current application source defaults. Existing v5/v4
+jobs and their no-fee terms are unchanged and remain readable through explicit configuration.
 
-Isolated QA/testnet explicitly selects v6/v5 in Web and Evaluator for controlled integration
-testing. That selection does not change production defaults or publish the candidate SDK.
+Isolated QA/testnet also selects v6/v5 for controlled integration testing. Deployment and source
+defaults do not by themselves certify a production Web rollout, an SDK publication, external
+adoption, externally earned revenue or an independent security review.
 
 ## Economic policy
 
@@ -50,16 +50,15 @@ Initialization is owner-only, one-time and required before job creation. The tre
 be explicitly supplied and differ from the owner, this escrow contract and appeal authority.
 It cannot participate as a job client, provider or evaluator. Each job pins its treasury and
 appeal authority. Owner/authority rotation rechecks separation at acceptance, including
-overlapping pending rotations. Treasury cannot rotate in this candidate generation.
+overlapping pending rotations. Treasury cannot rotate in this generation.
 
 Review remains 12 Bitcoin burn blocks. Initialization accepts the existing QA 3-block or
 mainnet 144-block appeal policy. Selecting 144 is a deployment gate: the contract does not
 infer which policy to initialize from the network. The dedicated
 [testnet fee runbook](../docs/TESTNET_SERVICE_FEE_RUNBOOK.md) fixes QA initialization to three
 burn blocks and an explicitly confirmed treasury. The isolated
-[mainnet promotion runbook](../docs/MAINNET_SERVICE_FEE_RUNBOOK.md) provides a fail-closed,
-signer-free preflight and a separately armed deploy path. Merely adding that promoter does not
-deploy a contract or change a production default.
+[mainnet promotion runbook](../docs/MAINNET_SERVICE_FEE_RUNBOOK.md) records the fail-closed,
+signer-free preflight, separately armed deploy path and completed production deployment.
 
 The sBTC token remains pinned per funded job. Every SIP-010 transfer checks both the response
 and its boolean result: `(err ...)` and `(ok false)` fail the operation. Only an explicitly
@@ -114,9 +113,9 @@ refund outstanding. A successful refund is recorded once and cannot be replayed.
 outcome and reputation do not change because a fee was refunded.
 
 This is **not guaranteed automatic recovery** from an insolvent, unavailable or uncooperative
-treasury. Commercial launch needs an approved custody/signing policy, funded refund reserves
-and a monitored refund process. The local tests use public simnet fixtures; the separate controlled
-testnet runner uses dedicated QA roles and receipts, not a production treasury.
+treasury. Production operations require the approved Leather custody/signing policy, funded refund
+reserves and a monitored refund process. Local tests use public simnet fixtures; the separate
+controlled testnet runner uses dedicated QA roles and receipts, not the production treasury.
 
 ## Appeals and x402
 
@@ -131,25 +130,23 @@ The service must not replace the eligible party's ability to file an appeal on t
 
 ## Integration boundary and verification
 
-Before enabling these contracts for users:
+The browser displays per-job fee state and requires scoped acceptance before funding or submission.
+SDK support is released on its own version boundary; integrations must confirm the package version
+and selected contracts rather than infer them from this repository. See the
+[service-fee integration guide](../developer-portal/content/docs/commerce/service-fees.mdx).
 
-The opt-in SDK and Web/Docs integration now has a separate QA review track. It does not change
-the deployed defaults or satisfy the real-chain activation gates below. The browser displays
-per-job fee state and requires scoped acceptance before funding/submission; the SDK adds policy
-reads and treasury-signed return plans. The published npm package is unchanged. See the
-[candidate integration guide](../developer-portal/content/docs/commerce/service-fees.mdx).
-
-1. Add SDK ABI/policy support, including the treasury initialization argument and fee getters.
-2. Disclose gross, base fee, net payout/refund and gas before funding/acceptance. Update Web,
-   Docs, evaluator configuration and settlement receipt/indexer logic together.
+1. Read protocol configuration and job fee state before every economic signature; fail closed on
+   unavailable or inconsistent policy.
+2. Disclose gross, base fee, net payout/refund and gas before funding/acceptance. Keep Web, Docs,
+   evaluator configuration and settlement receipt/indexer logic aligned.
 3. Keep deny-mode post-conditions for the **aggregate gross escrow outflow per asset**.
    Stacks post-conditions constrain aggregate sender/asset amounts, not the two recipients;
    validate recipient addresses and amounts using contract policy and confirmed events.
    A treasury refund instead constrains the treasury's exact fee outflow.
 4. Keep direct-transfer x402/MPP verification separate: its exact-single-transfer checks must
    not be relaxed to accommodate escrow splits.
-5. Choose treasury custody/reserves, deploy and initialize in QA/testnet, then run real
-   two-role E2E and independent public-state/transfer verification before promotion review.
+5. Use the attested production treasury custody and reserves. Run controlled two-role E2E and
+   independent public-state/transfer verification before opening the release to external users.
 
 Local validation uses simnet fixtures, with no operational keys, RPC calls or public-chain transactions:
 

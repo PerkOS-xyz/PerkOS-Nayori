@@ -8,14 +8,22 @@ description: Discover Nayori resources and inspect the public API before adding 
   <StatusBadge tone="mainnet">Settlement · Mainnet</StatusBadge>
 </StatusRow>
 
-The API origin is `https://api.nayori.ai`. Start with credential-free discovery.
+The API edge origin is `https://api.nayori.ai`; the isolated economic runtime is
+`https://facilitator.nayori.ai`. Start with credential-free discovery from both roles.
 
 ```bash
 curl -sS https://api.nayori.ai/health
 curl -sS https://api.nayori.ai/supported
+curl -sS https://facilitator.nayori.ai/health
+curl -sS https://facilitator.nayori.ai/supported
 curl -sS https://api.nayori.ai/.well-known/agent.json
 curl -sS https://api.nayori.ai/openapi.json
 ```
+
+The API edge issues challenges and serves public/OAuth/MCP resources; its own verification,
+settlement, confirmation and delivery-ledger flags are intentionally false. The facilitator owns
+those economic capabilities. Require both `/supported` responses to name the same mainnet network,
+mechanisms and assets, and fail closed if either is unavailable or they disagree.
 
 The paid resources intentionally return HTTP `402` without a payment:
 

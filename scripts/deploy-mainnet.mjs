@@ -13,7 +13,7 @@ import { STACKS_MAINNET as network } from "@stacks/network";
 const RETIRED_UNSAFE_SCRIPT = true;
 if (RETIRED_UNSAFE_SCRIPT) {
   throw new Error(
-    "This historical deployer is permanently retired because it uses permissive post-conditions. Use npm run deploy:mainnet after reviewing its typed confirmation guard."
+    "This historical deployer is permanently retired because it uses permissive post-conditions. Historical bootstrap only: use npm run deploy:bootstrap:legacy-v2:mainnet after reviewing its typed confirmation guard."
   );
 }
 

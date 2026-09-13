@@ -1,7 +1,10 @@
-# Nayori v5/v4 mainnet security evidence
+# Nayori v5/v4 mainnet security evidence — historical generation
 
-This record freezes the public, reproducible evidence for the active Nayori autonomous escrow
-generation on Stacks mainnet. It is intended to anchor the independent external security review.
+> Superseded for new jobs by v6/v5 on 2026-09-13. Do not rewrite the hashes or transactions below;
+> v5/v4 remains queryable for immutable historical jobs.
+
+This record freezes the public, reproducible evidence for the former Nayori autonomous escrow
+generation on Stacks mainnet. It can support historical external security review.
 It is not an audit report or a claim of external adoption.
 
 ## Scope

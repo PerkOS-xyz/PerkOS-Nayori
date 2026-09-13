@@ -22,8 +22,15 @@ A push to `qa` or an explicit dispatch of `Deploy exact QA commit` performs:
 5. build on `perkos-cloud-02` using external mode-`0600` environment files;
 6. idempotent database migrations where applicable;
 7. replacement of only the affected QA services;
-8. container and public-origin health checks; and
-9. a secret-free passed/failed receipt tied to repository, commit and archive digest.
+8. exact image-tag, immutable image-ID, release-identity and public HTTPS readiness checks; and
+9. a secret-free version-2 receipt plus authoritative current pointer tied to repository, commit
+   and archive digest.
+
+The VPS Compose document is canonical JSON. Its image, Web/Docs release keys and Evaluator
+migration mount are updated structurally with `jq`; YAML input and missing or duplicate targets are
+rejected. Platform public checks also distinguish the API edge from the settlement facilitator by
+their exact advertised capabilities. A service worker without an HTTP health endpoint must remain
+running with zero restarts across two observations and is not labeled healthy.
 
 The Agent SDK is staged as a package tarball and tested from a clean consumer on the VPS. It is
 not published to npm by this workflow.
@@ -36,6 +43,8 @@ the pull request is the human production approval boundary.
 
 Service rollout promotes the tested source/image through the existing production Compose and
 rollback process. Contract broadcast is never part of a branch workflow or service deployment.
+Promotion verification accepts only the authoritative current version-2 receipt and rechecks the
+live runtime; historical or version-1 receipts cannot authorize a release.
 
 ## Contract boundary
 
