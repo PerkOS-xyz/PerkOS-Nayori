@@ -8,9 +8,14 @@ description: Canonical Nayori domains, responsibilities, networks and access bou
 | `nayori.ai` | Brand, discovery, evidence and same-origin paid resources | Public |
 | `app.nayori.ai` | Human-facing registry and escrow application | Stacks mainnet |
 | `docs.nayori.ai` | This developer portal | Public |
-| `api.nayori.ai` | Resource API, OAuth-protected partner API and MCP | Testnet pilot |
-| `facilitator.nayori.ai` | Quote, verify, settlement confirmation and receipts | Testnet settlement |
+| `api.nayori.ai` | Public resources, quote issuance, OAuth and MCP | Stacks mainnet; economic and partner-registration flags are disabled by service role |
+| `facilitator.nayori.ai` | Isolated quote, verification, settlement confirmation and receipts | Stacks mainnet runtime; verify `/supported` independently before use |
 | `oauth.nayori.ai` | OAuth issuer, wallet claims and JWKS | Public metadata; scoped access |
+
+The v6/v5 contracts accept any job-selected evaluator that satisfies role separation. Nayori's
+managed evaluator is currently active only in QA; a production evaluator origin/runtime has not
+been activated. The Web keeps the reviewed mainnet evaluator address editable and requires the
+client to confirm availability or select another evaluator before creating a job.
 
 ## Isolated QA origins
 
@@ -18,8 +23,8 @@ description: Canonical Nayori domains, responsibilities, networks and access bou
 | --- | --- | --- |
 | `qa.nayori.ai` | Full Web application, discovery, activity and public evidence | Stacks testnet |
 | `docs.qa.nayori.ai` | Documentation candidate matching the QA release | Public |
-| `api.qa.nayori.ai` | Isolated resource API and MCP boundary | Testnet QA |
-| `facilitator.qa.nayori.ai` | x402 and MPP verification/settlement | Testnet only |
+| `api.qa.nayori.ai` | Resource/quote edge with OAuth and MCP; economic flags disabled | Stacks testnet QA |
+| `facilitator.qa.nayori.ai` | Payment verification, settlement confirmation and ledger | Stacks testnet only |
 | `oauth.qa.nayori.ai` | Isolated OAuth issuer, wallet claims and JWKS | QA identities only |
 | `evaluator.qa.nayori.ai` | Nayori evaluation API and durable decision workflow | Testnet only |
 

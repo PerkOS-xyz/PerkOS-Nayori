@@ -1,16 +1,15 @@
 ---
 title: Earned service fees
-description: Candidate 2% escrow economics, consent, treasury settlement and evidence-backed fee returns.
+description: Active v6/v5 2% escrow economics, consent, treasury settlement and evidence-backed fee returns.
 ---
 
-<Callout title="QA fee selection — not a production price change">
-  STX v6 and sBTC v5 are selected in isolated QA/testnet for controlled integration testing.
-  Production v5/v4 contracts and existing jobs retain their original no-service-fee terms.
-  The SDK methods ship in stable 0.8.0. Production rollout, treasury
-  custody and the full buyer/provider SDK + evaluator workflow are required before commercial activation.
-  The twenty controlled contract paths and installed-SDK public reads have passed; evaluator
-  compatibility and explicit v6/v5 selection are deployed in QA. Selection alone does not
-  certify the full two-role SDK/LLM lifecycle or external adoption.
+<Callout title="v6/v5 deployed on mainnet; consumer rollout remains gated">
+  STX v6 and sBTC v5 are deployed, initialized and source-verified on Stacks mainnet and selected
+  by current Web/QA source defaults. Existing v5/v4 contracts and jobs retain their
+  original no-service-fee terms. The SDK 0.9.0 promotion is a candidate until its independent npm
+  publication is verified; stable 0.8.0 remains historical evidence with explicit v6/v5 selection.
+  Controlled mainnet STX/sBTC consumer E2E and each runtime deployment require separate receipts.
+  None of these internal gates counts as external adoption, revenue or an independent audit.
 </Callout>
 
 ## Where the money stays
@@ -38,7 +37,7 @@ An appeal reversal alone is not proof of platform fault and does not automatical
 
 ## Before funding or submitting work
 
-The candidate Web displays gross, potential fee, net approval/net rejection, treasury and gas
+The fee-aware Web displays gross, potential fee, net approval/net rejection, treasury and gas
 on the jobs list and detail page. Client and provider explicitly accept the displayed terms
 before funding or submitting. Acceptance is scoped to wallet, job, asset, contract, budget,
 status and waiver. Live reads are repeated before signing; stale or unavailable policy blocks
@@ -50,12 +49,16 @@ still controlled by the client. No provider marketplace or auto-claim behavior i
 
 ## SDK integration boundary
 
-Stable SDK 0.8.0 adds `getServiceFeePolicy`, `getJobServiceFee`, `quoteServiceFee`,
+Stable SDK 0.8.0 includes opt-in v6/v5 support when callers provide the exact same-network
+contract IDs. It exposes `getServiceFeePolicy`, `getJobServiceFee`, `quoteServiceFee`,
 `initializeServiceFeeProtocol`, `waiveServiceFee` and `refundServiceFee`. Funding and submission
 require a `serviceFeeAcceptance` containing accepted gross amount, `basisPoints: 200`, pinned
-treasury and `rejectionRefund: 'net-after-evaluation'`. Existing generations do not require it.
+treasury and `rejectionRefund: 'net-after-evaluation'`. SDK 0.9.0 promotes v6/v5 to defaults but
+remains an unpublished candidate until npm provenance is independently verified. Existing
+generations do not require this acceptance.
 
-Use the matching reviewed source build in isolated QA, not an unversioned production upgrade.
+Pin the exact published SDK version and verify its release notes before use; do not infer package
+state from a deployed contract or portal page.
 High-level methods validate live state; synchronous transaction builders require the caller
 to supply verified state. Wallet/enterprise custody authorization is always separate from OAuth
 and from an LLM's recommendation. See the [SDK reference](/reference/sdk).
@@ -94,10 +97,10 @@ recipient identities; validate contract source, ledger and canonical transfer ev
 [Stacks documents aggregate post-conditions for multiple transfers](https://docs.stacks.co/post-conditions/examples).
 
 The direct x402/MPP single-transfer verifier is unchanged. This release does not add USDCx
-escrow or advertise an active fee to current jobs. The `/evidence` accounting panel and JSON
+escrow. The `/evidence` accounting panel and JSON
 `serviceFees` section summarize validated ledgers by asset and pinned treasury. Charges, refunds,
 retained amounts and waived refunds still owed are distinct, exact atomic strings; quotes are not
 income. Missing required data marks that asset unavailable, never a partial or false zero total.
 The scope is jobs in the selected contract, not historical generations or a treasury balance.
-The real testnet two-role SDK/evaluator E2E remains an activation gate; these figures are not lifetime revenue.
+Controlled mainnet consumer E2E remains a release gate; these figures are not lifetime revenue.
 Internal validation wallets never count as external revenue or adoption.

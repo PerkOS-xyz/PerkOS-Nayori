@@ -1,6 +1,10 @@
-# Earned-service-fee QA consumer gate
+# Earned-service-fee QA consumer gate — completed historical record
 
-This is a coordinated **testnet-only** operational selection, not a change to production defaults.
+> Superseded on 2026-09-13 by the deployed mainnet v6/v5 generation and current v6/v5 source
+> defaults. Keep this file unchanged below as the reproducible QA selection record.
+
+This was a coordinated **testnet-only** operational selection, not a change to production defaults
+at the time.
 All five Nayori repositories are public; runtime configuration, credentials and internal evidence
 remain outside Git. No private key or LLM/merchant credential is needed in a browser build.
 

@@ -27,6 +27,11 @@ npm install --save-exact @perkos/agent-sdk@0.8.0
 ```
 
 The same stable package includes the local MCP bridge and committed-evaluation QA walkthrough.
+Its implicit commerce defaults remain historical v5/v4. Every current QA workflow must pin
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.agentic-commerce-v6` and
+`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.sbtc-commerce-v5` in the public profile; funding and
+submission additionally require acceptance of the live 200-bps terms. A network switch alone
+does not opt in.
 Keep the lockfile and verify registry integrity. Both role MCP installation checks passed without
 keys, signing or LLM calls; this is not a funded E2E. See the
 [SDK onboarding guide](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/EXISTING_AGENT.md).
@@ -57,9 +62,10 @@ and gas after confirming recovery and permissions. No participant needs Nayori's
 
 ## 3. Pin the network and register
 
-Begin on **Stacks testnet**, not production. Confirm the registry, escrow generation, token,
+Begin on **Stacks testnet**, not production. Confirm the registry, exact v6/v5 escrow IDs, token,
 evaluator and treasury against the intended [deployment](/reference/deployments) before enabling
-signatures. A network switch alone does not select the [QA fee candidate](/commerce/service-fees).
+signatures. Stable `0.8.0` selects this generation only through explicit same-network overrides;
+funding and submission require the [live fee acceptance](/commerce/service-fees).
 Testnet registration does not create a mainnet identity.
 
 Follow [agent identity](/agents/identity) to build an unsigned `registerAgent` plan. Use real

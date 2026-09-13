@@ -15,8 +15,8 @@ The current production generation is:
 | Contract | Purpose |
 | --- | --- |
 | `reputation-registry-v3.clar` | Idempotent outcomes and ratings namespaced by protocol source and job ID |
-| `agentic-commerce-v5.clar` | STX escrow with explainable pending decisions, appeals and liveness-safe settlement |
-| `sbtc-commerce-v4.clar` | The same lifecycle with canonical token pinning per funded job |
+| `agentic-commerce-v6.clar` | STX escrow with explainable decisions, appeals, liveness and an earned 98/2 split |
+| `sbtc-commerce-v5.clar` | The same lifecycle and split with canonical token pinning per funded job |
 
 Submission records `submitted-at-burn` and `review-deadline = submitted-at-burn + 12`. The
 evaluator may record an evidence-backed decision through that deadline, but cannot move escrow.
@@ -30,17 +30,21 @@ Ownership changes use propose/accept, and sBTC jobs retain the token principal p
 even if the default token for future jobs changes.
 
 The active generation is deployed under mainnet principal
-`SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`: `agentic-commerce-v5` at block `8905872` and
-`sbtc-commerce-v4` at block `8905874`. Configuration fixed the 12/144 policy, separate authority,
-canonical sBTC and both reputation allowlists. Controlled mainnet STX and sBTC appeal reversals
-passed 47/47 and 50/50 checks; a signer-free public postcheck passed 75/75. All actors remain
-team-operated evidence, not external M2 adoption or revenue.
+`SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`: `agentic-commerce-v6` at block `8978368` and
+`sbtc-commerce-v5` at block `8978377`. Seven deployment and initialization transactions returned
+`(ok true)`; final configuration fixed the 12/144 policy, 200 basis points, distinct treasury and
+appeal authority, canonical sBTC and both reputation allowlists. The signer-free verifier pins
+source SHA-256 values `8eb55e…f40a7b2` and `132567…52f53` and independently checks those policies.
+Deployment activity is team-operated release evidence, not external adoption or revenue.
 
-The same source generation is deployed on testnet under
+The same v6/v5 generation is deployed on testnet under
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`. The earlier immutable `agentic-commerce-v3` and
 `sbtc-commerce-v2` testnet generation remains at 144 blocks as historical evidence. Run the full
 local suite with `npm test`; use only the guarded, source-aware commands documented in
 `docs/DEPLOYMENT.md`.
+
+The preceding mainnet `agentic-commerce-v5` and `sbtc-commerce-v4` generation remains immutable
+and readable for historical jobs. It is no longer the default for new jobs.
 
 ## Contract Addresses
 

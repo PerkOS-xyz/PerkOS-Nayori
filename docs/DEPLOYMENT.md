@@ -17,9 +17,9 @@ See [`QA_RELEASES.md`](QA_RELEASES.md) for the operational sequence and
 
 ## Production
 
-For opt-in earned-service-fee QA selection, follow [the coordinated consumer gate](QA_FEE_CONSUMERS.md).
 Changing `NEXT_PUBLIC_*` values only at runtime is insufficient: the Web embeds them at build
-time. The default production pair in this guide remains v5/v4, without the candidate fee.
+time. The active source defaults and coordinated QA build select the deployed v6/v5 service-fee
+generation. Follow [the consumer release record](QA_FEE_CONSUMERS.md) for compatibility boundaries.
 
 PerkOS is deployed on Stacks mainnet under:
 
@@ -34,11 +34,11 @@ The current product stack contains:
 - `validation-registry`
 - `sip-010-trait`
 - `reputation-registry-v3`
-- `agentic-commerce-v5` for STX escrow and autonomous decisions
-- `sbtc-commerce-v4` for sBTC escrow and autonomous decisions
+- `agentic-commerce-v6` for STX escrow, autonomous decisions and earned service fees
+- `sbtc-commerce-v5` for sBTC escrow, autonomous decisions and earned service fees
 
-The prior v4/v3 and v2 generations remain immutable historical evidence and are not selected for
-new jobs.
+The prior v5/v4, v4/v3 and v2 generations remain immutable historical evidence and are not
+selected for new jobs.
 
 ## Historical bootstrap deployment
 
@@ -58,7 +58,7 @@ Then run:
 ```bash
 MAINNET_ENV_PATH=/absolute/path/to/.env.mainnet \
 CONFIRM_PERKOS_MAINNET_DEPLOY=yes \
-npm run deploy:mainnet
+npm run deploy:bootstrap:legacy-v2:mainnet
 ```
 
 The script:
@@ -80,15 +80,46 @@ No wallet or private key is needed:
 npm run verify:mainnet
 ```
 
-This compares all deployed source code, verifies exposed owners, confirms the canonical
-sBTC token and both reputation allowlist entries, and reads the current agent and job
-counts.
+This pins and compares exact local/on-chain source hashes, verifies owners and pending roles,
+confirms canonical sBTC, both reputation allowlist entries, the 12/144 windows, the distinct appeal
+authority, the attested treasury and 200-basis-point policy, then reads current agent and active
+v6/v5 job counts. It has no signer or broadcast path.
 
-## Active versioned escrow release
+## Active earned-service-fee release
 
-The repository includes `reputation-registry-v3`, `agentic-commerce-v5` and `sbtc-commerce-v4` as
-the active generation. It combines the 12-block evaluator window with an explainable decision and
-appeal lifecycle. The preceding v4/v3 generation was first deployed on Stacks testnet under
+`agentic-commerce-v6` and `sbtc-commerce-v5` were deployed and initialized on Stacks mainnet from
+exact reviewed merge `887ee9b01d5a880373aa868970e0ff83a6f6731a`. Seven transactions confirmed
+`(ok true)` in Stacks blocks `8978368` through `8978385`; the required two-block finality depth was
+observed. The source hashes are `8eb55ecc…f40a7b2` and `13256797…052f53`. Both contracts use
+`reputation-registry-v3`, review window 12, appeal window 144, appeal authority
+`SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH`, treasury
+`SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8`, 200 basis points and canonical mainnet sBTC.
+
+New Web builds select this generation. Existing v5/v4 jobs remain readable through explicit
+contract overrides and preserve their original no-fee economics. Contract deployment, consumer
+deployment and controlled mainnet E2E are separate receipts; none counts as external adoption,
+externally earned revenue or an independent audit.
+
+The current generation has its own signer-free preflight and guarded E2E alias:
+
+```bash
+STACKS_NETWORK=mainnet \
+SERVICE_FEE_MAINNET_E2E_ACTION=preflight \
+SERVICE_FEE_MAINNET_E2E_REVIEWED_SHA=<exact-clean-reviewed-sha> \
+npm run preflight:e2e:autonomous:mainnet
+```
+
+The wrapper preflights STX and then sBTC. It verifies v6/v5 sources, roles, 12/144 windows, treasury,
+200 basis points, canonical sBTC and reputation allowlists without opening signer files. The
+execution procedure, distinct role files, typed cap and receipt requirements are frozen in
+[the mainnet service-fee runbook](MAINNET_SERVICE_FEE_RUNBOOK.md). Never use the legacy v5/v4
+aliases for a current-generation canary.
+
+## Historical versioned escrow releases
+
+The repository retains `reputation-registry-v3`, `agentic-commerce-v5` and `sbtc-commerce-v4` as
+the immutable pre-fee generation. It introduced the 12-block evaluator window, explainable decisions
+and appeals. The preceding v4/v3 generation was first deployed on Stacks testnet under
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5` from exact merge
 `b15544d601bd4e49610be854f7ad33a0af90c0a7`, then promoted on mainnet from exact merge
 `670d23abe78051cfb3963228650fed5089d6827c`.
@@ -100,7 +131,7 @@ The active PoX-5 testnet sBTC principal is
 `SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token`. The older `ST1F7...` principal is retained
 only in frozen historical sources/evidence. Mainnet remains `SM3VD...` and is unaffected.
 
-### Autonomous evaluator/appeal generation
+### Historical autonomous evaluator/appeal generation
 
 `agentic-commerce-v5` and `sbtc-commerce-v4` were fully exercised in isolated Stacks testnet QA
 with a three-burn-block appeal policy before mainnet promotion. Mainnet uses the same frozen
@@ -113,7 +144,7 @@ mainnet source occupancy, nonce, mempool and maximum fees, and creates no transa
 ```bash
 STACKS_NETWORK=mainnet \
 AUTONOMOUS_ESCROW_MAINNET_APPEAL_AUTHORITY=SP... \
-npm run preflight:autonomous:mainnet
+npm run preflight:autonomous:legacy-v5-v4:mainnet
 ```
 
 The deploy action additionally requires the exact strings
@@ -130,12 +161,11 @@ STACKS_NETWORK=mainnet \
 AUTONOMOUS_ESCROW_MAINNET_E2E_ASSET=sbtc \
 AUTONOMOUS_ESCROW_MAINNET_E2E_SCENARIO=reject-appeal-resolve-approve \
 CONFIRM_AUTONOMOUS_ESCROW_MAINNET_E2E=execute-controlled-v5-v4-mainnet \
-npm run e2e:autonomous:mainnet
+npm run e2e:autonomous:legacy-v5-v4:mainnet
 ```
 
-Internal canaries prove operability but never count as external M2 adoption, non-team wallets or
-revenue. The production-consumer rollout selects v5/v4 only after both asset canaries, independent
-public-state verification and the QA consumer gates pass.
+These completed internal canaries prove historical v5/v4 operability but never count as external
+adoption, non-team wallets or revenue. Generic mainnet aliases no longer target this generation.
 
 Verified v4/v3 testnet evidence on 2026-08-30:
 
@@ -222,10 +252,11 @@ The corresponding testnet preview selects:
 
 ```env
 NEXT_PUBLIC_STACKS_NETWORK=testnet
-NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v5
-NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v4
+NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v6
+NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v5
 NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3
 NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS=STBTXHXFXFGMNPXST7A6XQ1WNGC0V6TB6CDDQZB4
+NEXT_PUBLIC_NAYORI_MANAGED_EVALUATOR_ENABLED=true
 NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS=ST256E5DAXM7RDFZ76ECCTPTBYHRXXJQ29H16DN69
 ```
 
@@ -233,7 +264,7 @@ The separately guarded mainnet promoter defaults to a signer-free preflight and 
 Web/SDK/API variables unchanged:
 
 ```bash
-npm run preflight:versioned:mainnet
+npm run preflight:versioned:legacy-v4-v3:mainnet
 ```
 
 After reviewing the preflight receipt, exact source digests, deployer balance, nonce, empty mempool
@@ -246,7 +277,7 @@ VERSIONED_ESCROW_MAINNET_ACTION=deploy \
 CONFIRM_VERSIONED_ESCROW_MAINNET_DEPLOY=deploy-v4-v3-mainnet \
 CONFIRM_VERSIONED_ESCROW_MAINNET_DEPLOYER=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH \
 VERSIONED_ESCROW_MAINNET_ENV_PATH=/absolute/path/to/.env.mainnet \
-npm run deploy:versioned:mainnet
+npm run deploy:versioned:legacy-v4-v3:mainnet
 ```
 
 The promoter refuses source drift and pending deployer transactions, submits one deny-mode
@@ -265,7 +296,7 @@ release. Its receipt and actor recovery paths must be absolute and outside Git:
 STACKS_NETWORK=mainnet \
 VERSIONED_ESCROW_MAINNET_E2E_ACTION=preflight \
 VERSIONED_ESCROW_MAINNET_E2E_RESULT_PATH=/external/evidence/mainnet-smoke.json \
-npm run e2e:versioned:mainnet
+npm run e2e:versioned:legacy-v4-v3:mainnet
 ```
 
 Execution creates one internal team-operated job for exactly 100 atomic sBTC units. It persists
@@ -280,7 +311,7 @@ CONFIRM_VERSIONED_ESCROW_MAINNET_DEPLOYER=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZS
 VERSIONED_ESCROW_MAINNET_ENV_PATH=/external/secrets/.env.mainnet \
 VERSIONED_ESCROW_MAINNET_ACTOR_ENV_PATH=/external/secrets/.env.mainnet-smoke-actors \
 VERSIONED_ESCROW_MAINNET_E2E_RESULT_PATH=/external/evidence/mainnet-smoke.json \
-npm run e2e:versioned:mainnet
+npm run e2e:versioned:legacy-v4-v3:mainnet
 ```
 
 The required terminal invariants are status `u3`, escrow zero, an exact 100-unit provider payout,
@@ -310,10 +341,12 @@ Configure these values in the target production build environment:
 ```env
 NEXT_PUBLIC_STACKS_NETWORK=mainnet
 NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
-NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v5
-NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v4
+NEXT_PUBLIC_CONTRACT_PROFILE=current-v6-v5
+NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v6
+NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT=sbtc-commerce-v5
 NEXT_PUBLIC_REPUTATION_CONTRACT=reputation-registry-v3
 NEXT_PUBLIC_NAYORI_EVALUATOR_ADDRESS=SP2ENKFX2BGX94HC4KYZCCV7KEN7JXJXZDKC3GPGC
+NEXT_PUBLIC_NAYORI_MANAGED_EVALUATOR_ENABLED=false
 NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS=SP28DBK3Q89F4KRYGPF51QT0RYEZBPXS4BAQ0ETBH
 NEXT_PUBLIC_SITE_URL=https://nayori.ai
 ```
@@ -383,16 +416,17 @@ deployment does not enable settlement, sponsorship, OAuth registration or any co
 
 ## Nayori partner API
 
-The public API is available at [api.nayori.ai](https://api.nayori.ai) as a separate, testnet-only
-service. Its invite-only production contract is intentionally narrow:
+The public API edge is available at [api.nayori.ai](https://api.nayori.ai) on Stacks mainnet. Its
+production role is intentionally narrow and separated from the economic facilitator:
 
 - the separate `oauth.nayori.ai` service binds invited OAuth clients to Stacks wallets through an
   exact Leather-signed challenge;
 - API keys remain backward compatible, while OAuth uses short-lived scoped client-credentials tokens;
-- authenticated partners can issue quotes, verify payments, request one testnet broadcast, read
-  confirmation state and use the idempotent delivery ledger;
-- the experimental MCP endpoint exposes only implemented discovery, quote and settlement-read tools;
-- supported assets are STX, sBTC and USDCx on `stacks:2147483648`;
+- authenticated partners can issue request-bound quotes and use implemented public-resource and
+  MCP operations; the API edge's own verify, settle, confirm and delivery-ledger flags remain false;
+- `facilitator.nayori.ai` owns mainnet payment verification, settlement confirmation, signed
+  receipts and the delivery ledger, with exact capabilities published by its own `/supported`;
+- supported network, mechanisms and assets must be read from both live `/supported` responses;
 - machine discovery is available through
   [the agent manifest](https://api.nayori.ai/.well-known/agent.json),
   [`/supported`](https://api.nayori.ai/supported),
@@ -401,7 +435,7 @@ service. Its invite-only production contract is intentionally narrow:
   [OAuth metadata](https://oauth.nayori.ai/.well-known/oauth-authorization-server),
   [Auth.md](https://nayori.ai/auth.md) and the
   [MCP Server Card](https://api.nayori.ai/.well-known/mcp/server-card.json); and
-- mainnet settlement, fee sponsorship and arbitrary resource proxying are disabled.
+- fee sponsorship, partner self-registration and arbitrary resource proxying are disabled.
 
 Do not treat a signed quote, verification, broadcast or pending response as proof of confirmed
 settlement. OAuth cannot sign a payment; the payer separately authorizes every transaction. The API is deployed independently
@@ -416,7 +450,7 @@ safe request ID. It never forwards cookies, browser authorization, origin header
 body. It preserves 402, 202 and 200 status codes plus the x402, polling and release headers.
 
 The API runtime holds one merchant key and calls `facilitator.nayori.ai` over HTTPS. The
-facilitator runtime owns quote signing, transaction verification, testnet broadcast,
+facilitator runtime owns quote signing, transaction verification, mainnet settlement,
 reconciliation, signed receipts and the delivery ledger in its own database. Both runtimes may be
 built from `PerkOS-Nayori-Platform`, but must use separate environment files, processes, host
 routes and database credentials. Do not expose the merchant key in the web deployment.
@@ -429,7 +463,11 @@ Promotion order is facilitator, API resource server, then web. Before rescoring,
 4. no resource body is delivered before canonical confirmation; and
 5. the confirmed response contains `PAYMENT-RESPONSE` and remains idempotent on retry.
 
-Mainnet settlement stays disabled until the external review gate is closed.
+The current mainnet facilitator advertises payment verification, settlement, confirmation and
+delivery-ledger support. Verify both role-specific `/supported` documents immediately before a
+rollout: the API edge must remain challenge/resource-only for those economic flags, while the
+facilitator must report the matching mainnet network, assets and mechanisms. External contract
+review remains a separate grant/release gate; do not misrepresent it as runtime activation state.
 
 ### Same-origin MPP PaymentAuth resource
 
@@ -440,13 +478,14 @@ The web route `nayori.ai/api/mpp/v1` is an independent GET/OPTIONS proxy to
 200 status codes plus `WWW-Authenticate`, polling, `Payment-Receipt` and release headers.
 
 Enable `MPP_RESOURCE_ENABLED=true` only on the API resource-server runtime after provisioning the
-`MPP_RESOURCE_ROUTE_ID` merchant route as USDCx on Stacks testnet. Keep the flag false on the
-facilitator runtime. The resource server fails closed if that route returns any asset other than
-USDCx. Both runtime roles pin the public `@perkos/agent-sdk@0.5.1` verifier.
+`MPP_RESOURCE_ROUTE_ID` merchant route as USDCx on the exact selected Stacks network. Keep the
+flag false on the facilitator runtime. The resource server fails closed if that route returns any
+asset other than USDCx. Both runtime roles must pin the same reviewed SDK release and lockfile as
+the promoted Platform release; never reuse an obsolete version from a historical runbook.
 
 Promotion order remains facilitator, API resource server, then web. Validate that:
 
-1. the challenge declares `method=usdc`, `intent=charge`, `type=stacks`, the official testnet
+1. the challenge declares `method=usdc`, `intent=charge`, `type=stacks`, the official same-network
    USDCx identity, exact amount and recipient;
 2. OAuth Bearer and `Payment-Authorization` remain independent header domains;
 3. a wallet-approved credential returns 202 and a canonical same-origin polling location;
@@ -454,8 +493,9 @@ Promotion order remains facilitator, API resource server, then web. Validate tha
 5. no report or `Payment-Receipt` exists before canonical confirmation; and
 6. confirmed retries return the same report without a second charge.
 
-MPP sponsorship and every facilitator mainnet settlement remain disabled until the external M2
-review gate closes.
+MPP sponsorship remains disabled. Mainnet economic availability is determined by the live
+facilitator `/supported` response and an end-to-end receipt, not by the API edge flags or the
+external-review schedule.
 
 The credential-free `nayori.ai/openapi.json` route is a narrow read-only view of
 `api.nayori.ai/openapi.json`. It forwards no browser headers or credentials and fails closed with

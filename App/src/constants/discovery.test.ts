@@ -6,6 +6,7 @@ import {
   NAYORI_API_ORIGIN,
   NAYORI_FACILITATOR_ORIGIN,
   NAYORI_OAUTH_ORIGIN,
+  NAYORI_QUOTE_API_SETTLEMENT_ACTIVE,
   resolveServiceOrigin,
 } from "./discovery";
 import { resolveSiteOrigin } from "./site";
@@ -86,6 +87,12 @@ describe("agent discovery", () => {
     );
     expect(manifest.discovery.quoteApi.authGuide).toBe(`${origin}/auth.md`);
     expect(manifest.discovery.quoteApi.mcp).toBe(`${NAYORI_API_ORIGIN}/mcp`);
+    const environmentSuffix = NETWORK_NAME === "testnet" ? ".qa" : "";
+    expect(NAYORI_API_ORIGIN).toBe(`https://api${environmentSuffix}.nayori.ai`);
+    expect(NAYORI_FACILITATOR_ORIGIN).toBe(
+      `https://facilitator${environmentSuffix}.nayori.ai`
+    );
+    expect(NAYORI_OAUTH_ORIGIN).toBe(`https://oauth${environmentSuffix}.nayori.ai`);
     expect(manifest.availability.publicFacilitatorApi).toBe(true);
     expect(manifest.availability.publicPaidResource).toBe(true);
     expect(manifest.availability.mppPaymentAuth).toBe(true);
@@ -97,13 +104,13 @@ describe("agent discovery", () => {
     expect(manifest.availability.sponsorship).toBe(false);
     expect(manifest.availability.a2aProtocolEndpoint).toBe(false);
     expect(manifest.capabilities[3].quoteService).toMatchObject({
-      status: `public-resource-and-invite-only-api-${NETWORK_NAME}-settlement`,
+      status: `${NETWORK_NAME}-challenge-issuance-only`,
       network: COMMERCE_NETWORK_ID,
       quoteIssuance: true,
-      paymentVerification: true,
-      settlement: true,
-      confirmation: true,
-      deliveryLedger: true,
+      paymentVerification: NAYORI_QUOTE_API_SETTLEMENT_ACTIVE,
+      settlement: NAYORI_QUOTE_API_SETTLEMENT_ACTIVE,
+      confirmation: NAYORI_QUOTE_API_SETTLEMENT_ACTIVE,
+      deliveryLedger: NAYORI_QUOTE_API_SETTLEMENT_ACTIVE,
       mcp: true,
       sponsorship: false,
     });
@@ -119,8 +126,9 @@ describe("agent discovery", () => {
     });
   });
 
-  it("publishes the quote API without implying payment settlement", () => {
+  it("separates quote-edge availability from facilitator settlement", () => {
     const text = buildLlmsText(origin);
+    const manifest = buildDiscoveryManifest(origin);
 
     expect(text).toContain(`${origin}/.well-known/agent.json`);
     expect(text).toContain(`${origin}/api/v1`);
@@ -129,24 +137,28 @@ describe("agent discovery", () => {
     expect(text).toContain(STX_COMMERCE_CONTRACT_NAME);
     expect(text).toContain(SBTC_COMMERCE_CONTRACT_NAME);
     expect(text).toContain(`${NAYORI_API_ORIGIN}/supported`);
+    expect(text).toContain(`${NAYORI_FACILITATOR_ORIGIN}/supported`);
     expect(text).toContain(`${origin}/.well-known/api-catalog`);
     expect(text).toContain(`${origin}/.well-known/ard.json`);
     expect(text).toContain(`${origin}/.well-known/agent-skills/index.json`);
     expect(text).toContain("three read-only WebMCP tools");
-    expect(text).toContain("invite-only partner pilot");
-    expect(text).toContain("PAYMENT-REQUIRED");
-    expect(text).toContain("Payment-Authorization");
-    expect(text).toContain("Payment-Receipt");
+    expect(text).toContain(
+      "own payment verification, settlement, confirmation, delivery-ledger and partner-registration flags are disabled"
+    );
+    expect(text).toContain("challenge responses are public");
+    expect(text).toContain("Require matching network/assets and fail closed on disagreement");
     expect(text).toContain("Only the confirmed settlement state and signed receipt");
     expect(text).toContain(`${origin}/api/evidence.json`);
     expect(text).toContain(`${origin}/auth.md`);
     expect(text).toContain(`${NAYORI_OAUTH_ORIGIN}/.well-known/oauth-authorization-server`);
     expect(text).toContain("requires authorization from a Stacks wallet");
     expect(text).toContain(`Stacks ${NETWORK_NAME}`);
-    expect(text).not.toContain(
-      NETWORK_NAME === "mainnet"
-        ? "Mainnet facilitator settlement and sponsorship remain disabled"
-        : "public Nayori API runs an invite-only partner pilot on Stacks mainnet"
-    );
+    expect(NAYORI_QUOTE_API_SETTLEMENT_ACTIVE).toBe(false);
+    expect(manifest.availability.partnerRegistration).toBe(false);
+    expect(manifest.availability.quoteApi.confirmation).toBe(false);
+    expect(manifest.availability.quoteApi.deliveryLedger).toBe(false);
+    expect(manifest.availability.facilitator.confirmation).toBe(true);
+    expect(manifest.availability.facilitator.deliveryLedger).toBe(true);
+    expect(manifest.availability.facilitator.partnerRegistration).toBe(false);
   });
 });

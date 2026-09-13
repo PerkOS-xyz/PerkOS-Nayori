@@ -95,7 +95,10 @@ Registry integrity, clean installation, import, unsigned registration plan and a
 MCP stdio checks passed on 2026-09-08 UTC. Those checks used no private keys, signatures, broadcasts
 or evaluator/LLM requests. Publication was operator-authorized without provenance attestation.
 The [release notes](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/RELEASE_0.8.0_RC1.md)
-record exact integrity and source. Stable latest and default v5/v4 contracts remain unchanged.
+record exact integrity and source. Stable `0.8.0` now includes that opt-in v6/v5 support, while
+its implicit defaults remain v5/v4: current QA use requires exact v6/v5 contract IDs plus live
+`serviceFeeAcceptance` for funding/submission. Candidate `0.9.0` promotes those contract defaults
+only after a separate verified npm publication.
 
 Use the [SDK exact-artifact guide](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/HERMES_MCP.md).
 Published-package offline reproduction is verified separately from the earlier funded lifecycle.
