@@ -1,8 +1,29 @@
 # Nayori — PerkOS Stacks Agentic Commerce: Project Status
 
-Last verified: 2026-09-13 UTC
+Last verified: 2026-09-17 UTC
 
 ## Current status
+
+### Private managed Evaluator runtime — 2026-09-17 UTC
+
+The managed Evaluator production image
+`3a9ce57be94fc3f79c6038f13eca71eaa3527306` is running, healthy, with zero
+restarts and without published ports. `/readyz` reports `production` /
+Stacks mainnet / `agentic-commerce-v6` / `sbtc-commerce-v5`, earned-fee
+200 bps, evaluator principal `SP3GRG5CKEFNYM5BV0NPPHCM51FT176JQ02QWQ9T3`,
+and `mainnetBroadcastEnabled=true`. The public evaluation queue
+(`committedEvaluationsEnabled`) and private-evidence intake remain
+**off**. Hermes/PerkOS-LLM is an inference dependency only; the human
+appeal authority is not installed in the daemon.
+
+This is internal operability evidence. It is not external adoption, a
+public evaluation API, revenue, or an independent audit. A first
+controlled mainnet evaluation remains a separate human gate.
+
+Production Web/docs continue on
+`b95bb27f0f891803b96262101b600d703b18c2bf` (PR163). Platform production
+runtime remains `a29b493…`; later README-only commits on Platform `main`
+were not deployed. npm `@perkos/agent-sdk@0.9.0` remains `latest`.
 
 ### Stable Agent SDK 0.9.0 publication — 2026-09-13 UTC
 
@@ -30,8 +51,9 @@ at block `8982751`; both returned `(ok true)` and now report no pending authorit
 Web source/build defaults and the coordinated QA release configuration now select v6/v5. The
 signer-free `verify:mainnet` gate pins exact hashes and every role/policy value. Immutable v5/v4
 jobs remain readable with explicit overrides. Stable SDK 0.9.0 and production Web/docs release
-`e4b0e24422631c11c77c1a7945e8b7ece7e1e5af` are live with independent receipts. Managed Evaluator
-activation and controlled STX/sBTC mainnet E2E remain separate gates. Deployment activity is
+`b95bb27f0f891803b96262101b600d703b18c2bf` (PR163) are live with independent receipts. The
+managed Evaluator private runtime later reached production (see 2026-09-17); public evaluation
+intake and a funded STX/sBTC mainnet E2E remain separate gates. Deployment activity is
 internal operability evidence and is not external adoption, revenue or an independent audit.
 
 ### Historical Agent SDK 0.8.0 publication — 2026-09-11 UTC
