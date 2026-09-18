@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { trackTx } from "./tx";
+import { SETTLE_REFRESH_DELAYS_MS, trackTx } from "./tx";
 
 const toast = () => ({
   info: vi.fn(),
@@ -45,10 +45,50 @@ describe("transaction tracking", () => {
     await vi.runAllTimersAsync();
     await confirmed;
 
-    expect(onConfirmed).toHaveBeenCalledOnce();
+    // One refresh at confirmation plus one per settle delay.
+    expect(onConfirmed).toHaveBeenCalledTimes(1 + SETTLE_REFRESH_DELAYS_MS.length);
     expect(notifications.success).toHaveBeenCalledWith(
       "Confirmed on-chain",
       expect.stringContaining("0xdef"),
     );
+  });
+
+  it("refreshes again after each settle delay, measured from confirmation", async () => {
+    const respond = (status: string) => new Response(
+      JSON.stringify({ tx_status: status }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(respond("pending"))
+      .mockResolvedValueOnce(respond("success")));
+    const waits: number[] = [];
+    const onConfirmed = vi.fn();
+    const statuses: string[] = [];
+
+    await trackTx("0x123", toast(), onConfirmed, (status) => statuses.push(status), {
+      sleep: async (ms) => { waits.push(ms); },
+    });
+
+    expect(statuses).toEqual(["pending", "success"]);
+    expect(onConfirmed).toHaveBeenCalledTimes(3);
+    expect(waits).toEqual([8000, 8000, 5000, 10000]);
+  });
+
+  it("never refreshes when the transaction aborts on-chain", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ tx_status: "abort_by_response" }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    )));
+    const notifications = toast();
+    const onConfirmed = vi.fn();
+    const statuses: string[] = [];
+
+    await trackTx("0x456", notifications, onConfirmed, (status) => statuses.push(status), {
+      sleep: async () => {},
+    });
+
+    expect(onConfirmed).not.toHaveBeenCalled();
+    expect(statuses).toEqual(["pending", "failed"]);
+    expect(notifications.error).toHaveBeenCalledOnce();
   });
 });

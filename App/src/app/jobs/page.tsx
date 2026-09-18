@@ -172,8 +172,9 @@ export default function JobsPage() {
     setConnected(isConnected() && Boolean(next));
   }, []);
 
-  const loadJobs = useCallback(async () => {
-    setLoading(true);
+  // `silent` refreshes keep the current list on screen instead of showing the loading state.
+  const loadJobs = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const [list, count, tip, burnTip] = await Promise.all([
@@ -285,7 +286,7 @@ export default function JobsPage() {
       if (!id) throw new Error("No transaction id returned");
       after?.();
       setTxProgress({ state: "submitted", label, txid: id });
-      void trackTx(id, toast, loadJobs, (state) => {
+      void trackTx(id, toast, () => void loadJobs(true), (state) => {
         setTxProgress({
           state: state === "success" ? "confirmed" : state === "failed" ? "failed" : "pending",
           label,
@@ -702,7 +703,7 @@ export default function JobsPage() {
       {error && (
         <div className="mt-4 flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           <span>{error}</span>
-          <button onClick={loadJobs} className="font-medium underline underline-offset-2">Retry</button>
+          <button onClick={() => void loadJobs()} className="font-medium underline underline-offset-2">Retry</button>
         </div>
       )}
 
