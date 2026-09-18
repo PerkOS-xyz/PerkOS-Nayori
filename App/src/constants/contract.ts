@@ -165,3 +165,20 @@ if (NAYORI_APPEAL_AUTHORITY_ADDRESS !== expectedAppealAuthority) {
     `NEXT_PUBLIC_NAYORI_APPEAL_AUTHORITY_ADDRESS (${NAYORI_APPEAL_AUTHORITY_ADDRESS}) is not the reviewed ${NETWORK_NAME} authority`
   );
 }
+
+// Marketplace companion registry (job-applications-v1). It may live under a different deployer
+// than the escrows, so the full contract principal is configured. Empty disables the flow.
+const jobApplicationsContract = process.env.NEXT_PUBLIC_JOB_APPLICATIONS_CONTRACT || "";
+if (jobApplicationsContract) {
+  const expectedPrefix = NETWORK_NAME === "mainnet" ? "SP" : "ST";
+  if (
+    !/^S[PT][0-9A-Z]{38,40}\.[a-z][a-z0-9-]{0,39}$/.test(jobApplicationsContract) ||
+    !jobApplicationsContract.startsWith(expectedPrefix)
+  ) {
+    throw new Error(
+      `NEXT_PUBLIC_JOB_APPLICATIONS_CONTRACT (${jobApplicationsContract}) must be a ${NETWORK_NAME} contract principal`
+    );
+  }
+}
+export const JOB_APPLICATIONS_CONTRACT = jobApplicationsContract;
+export const JOB_APPLICATIONS_ENABLED = Boolean(jobApplicationsContract) && !COMMERCE_CONTRACTS_READ_ONLY;

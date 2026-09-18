@@ -86,6 +86,11 @@ epoch = "2.5"
 path = "contracts/sbtc-commerce-v5.clar"
 epoch = "2.5"
 
+# Marketplace companion: on-chain job applications. Holds no funds; reads escrow + registry.
+[contracts.job-applications-v1]
+path = "contracts/job-applications-v1.clar"
+epoch = "2.5"
+
 # Fault-injection token, never deployed outside simnet.
 [contracts.mock-sbtc-token-fees]
 path = "contracts/mock-sbtc-token-fees.clar"
