@@ -63,8 +63,9 @@ export default function AgentsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentPage]);
 
-  async function loadAgents() {
-    setLoading(true);
+  // `silent` refreshes keep the current list on screen instead of showing the loading state.
+  async function loadAgents(silent = false) {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const count = await getAgentCount();
@@ -98,7 +99,7 @@ export default function AgentsPage() {
       const res = await request("stx_callContract", { contract: AGENT_REGISTRY, functionName: fn, functionArgs: args, network: NETWORK_NAME });
       const id = txIdOf(res);
       after?.();
-      if (id) trackTx(id, toast, loadAgents);
+      if (id) void trackTx(id, toast, () => void loadAgents(true));
       else toast.error("No transaction id returned");
     } catch (error) {
       console.error(`Error ${fn}:`, error);
@@ -205,7 +206,7 @@ export default function AgentsPage() {
       {error && (
         <div className="mt-6 flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           <span>{error}</span>
-          <button onClick={loadAgents} className="font-medium underline underline-offset-2">Retry</button>
+          <button onClick={() => void loadAgents()} className="font-medium underline underline-offset-2">Retry</button>
         </div>
       )}
 

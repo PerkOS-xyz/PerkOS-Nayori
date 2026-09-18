@@ -28,22 +28,47 @@ interface Toaster {
   error: (m: string, href?: string) => void;
 }
 
+// Read-only contract calls can trail the transaction index by a block when the confirmation is
+// first observed, so a single refresh may still read the previous state. Refresh again after
+// these delays to pick up the settled state without asking the user to reload.
+export const SETTLE_REFRESH_DELAYS_MS = [5_000, 15_000] as const;
+
+interface TrackOptions {
+  pollIntervalMs?: number;
+  maxPolls?: number;
+  settleRefreshDelaysMs?: readonly number[];
+  sleep?: (ms: number) => Promise<unknown>;
+}
+
 // Toast on submit, poll the chain, then toast + refresh on confirmation.
 export async function trackTx(
   txid: string,
   toast: Toaster,
   onConfirmed?: () => void,
-  onStatus?: (status: "pending" | "success" | "failed") => void
+  onStatus?: (status: "pending" | "success" | "failed") => void,
+  options: TrackOptions = {}
 ) {
+  const wait = options.sleep ?? sleep;
+  const pollIntervalMs = options.pollIntervalMs ?? 8000;
+  const maxPolls = options.maxPolls ?? 24;
+  const settleDelays = options.settleRefreshDelaysMs ?? SETTLE_REFRESH_DELAYS_MS;
   toast.info("Transaction submitted", txExplorer(txid));
   onStatus?.("pending");
-  for (let i = 0; i < 24; i++) {
-    await sleep(8000);
+  for (let i = 0; i < maxPolls; i++) {
+    await wait(pollIntervalMs);
     const s = await txStatus(txid);
     if (s === "success") {
       onStatus?.("success");
       toast.success("Confirmed on-chain", txExplorer(txid));
       onConfirmed?.();
+      if (onConfirmed) {
+        let elapsed = 0;
+        for (const delay of settleDelays) {
+          await wait(Math.max(0, delay - elapsed));
+          elapsed = delay;
+          onConfirmed();
+        }
+      }
       return;
     }
     if (s.startsWith("abort")) {
