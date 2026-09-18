@@ -33,18 +33,30 @@ describe("job applications service", () => {
   });
 
   it("hides the flow when no registry is configured and rejects a wrong-network principal", async () => {
+    // CI runs this suite under mainnet and testnet profiles; pick principals for the active one.
+    const mainnet = (process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet") === "mainnet";
+    const mainnetPrincipal = "SP10Y6Z8SVWPDFBYCJC23R9J8DGSJZFQJRWZRMAZR.job-applications-v1";
+    const testnetPrincipal = "ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.job-applications-v1";
+    const matching = mainnet ? mainnetPrincipal : testnetPrincipal;
+    const foreign = mainnet ? testnetPrincipal : mainnetPrincipal;
+
     vi.stubEnv("NEXT_PUBLIC_JOB_APPLICATIONS_CONTRACT", "");
     vi.resetModules();
     expect((await import("../constants/contract")).JOB_APPLICATIONS_ENABLED).toBe(false);
 
-    vi.stubEnv("NEXT_PUBLIC_JOB_APPLICATIONS_CONTRACT", "ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.job-applications-v1");
+    vi.stubEnv("NEXT_PUBLIC_JOB_APPLICATIONS_CONTRACT", foreign);
     vi.resetModules();
-    await expect(import("../constants/contract")).rejects.toThrow(/mainnet contract principal/);
+    await expect(import("../constants/contract")).rejects.toThrow(/contract principal/);
 
-    vi.stubEnv("NEXT_PUBLIC_JOB_APPLICATIONS_CONTRACT", "SP10Y6Z8SVWPDFBYCJC23R9J8DGSJZFQJRWZRMAZR.job-applications-v1");
+    vi.stubEnv("NEXT_PUBLIC_JOB_APPLICATIONS_CONTRACT", "not-a-principal");
+    vi.resetModules();
+    await expect(import("../constants/contract")).rejects.toThrow(/contract principal/);
+
+    vi.stubEnv("NEXT_PUBLIC_JOB_APPLICATIONS_CONTRACT", matching);
     vi.resetModules();
     const configured = await import("../constants/contract");
-    expect(configured.JOB_APPLICATIONS_ENABLED).toBe(true);
-    expect(configured.JOB_APPLICATIONS_CONTRACT).toBe("SP10Y6Z8SVWPDFBYCJC23R9J8DGSJZFQJRWZRMAZR.job-applications-v1");
+    expect(configured.JOB_APPLICATIONS_CONTRACT).toBe(matching);
+    // Historical read-only profiles never offer a signing flow.
+    expect(configured.JOB_APPLICATIONS_ENABLED).toBe(!configured.COMMERCE_CONTRACTS_READ_ONLY);
   });
 });
