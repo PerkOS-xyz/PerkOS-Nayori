@@ -81,6 +81,11 @@ plan:
       path: contracts/agentic-commerce-v6.clar
       clarity-version: 2
     - transaction-type: emulated-contract-publish
+      contract-name: job-applications-v1
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/job-applications-v1.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
       contract-name: sip-010-trait
       emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
       path: contracts/sip-010-trait.clar
