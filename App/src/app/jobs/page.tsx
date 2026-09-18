@@ -61,6 +61,7 @@ import StatusBadge from "../../components/StatusBadge";
 import JobStepper from "../../components/JobStepper";
 import ServiceFeeBreakdown from "../../components/ServiceFeeBreakdown";
 import WorkflowTiming from "../../components/WorkflowTiming";
+import JobApplications from "../../components/JobApplications";
 import { feeAcceptanceKey, hasServiceFees, verifyFeeAction } from "../../services/service-fees";
 import Addr from "../../components/Addr";
 import { useToast } from "../../components/Toast";
@@ -389,6 +390,19 @@ export default function JobsPage() {
       `assigning-provider-${jobId}`,
       "Assign provider",
       () => setActionForm(null)
+    );
+  }
+
+  // Assign an applicant chosen from the on-chain applications list.
+  function assignApplicant(jobId: number, provider: string) {
+    if (!isValidStacksAddress(provider)) return;
+    void run(
+      () =>
+        isSbtc
+          ? assignSbtcProvider(jobId, provider)
+          : stxCall("assign-provider", [Cl.uint(jobId), Cl.principal(provider)]),
+      `assigning-provider-${jobId}`,
+      "Assign provider"
     );
   }
 
@@ -879,6 +893,16 @@ export default function JobsPage() {
                     <span>I accept the displayed gross budget and 2% included earned fee: provider receives net on approval; client receives net on evaluated rejection. Gas is separate.</span>
                   </label>
                 )}
+
+                <JobApplications
+                  job={job}
+                  currency={currency}
+                  address={address}
+                  connected={connected}
+                  busy={activeAction !== null}
+                  run={run}
+                  onAssign={(provider) => assignApplicant(job.id, provider)}
+                />
 
                 {Boolean(job.escrow) && (
                   <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-bitcoin/25 bg-bitcoin/10 px-2.5 py-1 text-xs text-bitcoin-400">
