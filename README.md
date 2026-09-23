@@ -48,6 +48,7 @@ one service:
 | x402 | Live same-origin mainnet resource; SDK profiles for STX, sBTC and USDCx |
 | MPP PaymentAuth | Live same-origin mainnet USDCx resource using `usdc/charge/stacks` |
 | Authorization | External OAuth issuer, wallet claims, scoped API/MCP tokens and public JWKS |
+| Private evidence | Direct S3 upload, wallet-bound OAuth and read-only Evaluator access; anonymous requests fail closed |
 | Agent readiness | Last verified 2026-08-28: 100/100, Level 5, Commerce 2/2 |
 | Delivery maturity | Mainnet escrow and confirmation-gated direct-payment commerce in production |
 
@@ -565,8 +566,11 @@ custody, exact-value validation and public settlement evidence.
 
 Nayori releases flow from a protected `qa` integration branch to a protected `main` production
 branch. Every participating repository deploys and verifies an exact QA commit on the PerkOS VPS
-before a release branch can open a production pull request. Runtime Compose, Caddy configuration,
-database backups and secret files remain outside GitHub.
+before a release branch can open a production pull request. Runtime Compose, the complete Caddy
+configuration, database backups and secret files remain outside GitHub. The secret-free production
+API POST allowlist is versioned at
+[`ops/vps/caddy/nayori-api-private-evidence.caddy`](ops/vps/caddy/nayori-api-private-evidence.caddy)
+so the externally reachable private-evidence routes can be reproduced and regression-tested.
 
 ### Promotion order
 

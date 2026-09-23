@@ -1,0 +1,7 @@
+# Public, secret-free POST allowlist for the api.nayori.ai site block.
+# Import this file inside that site block; keep the full production Caddyfile private.
+@unsupported_post {
+  method POST
+  not path /v1/quotes /mcp /v1/private-evidence/prepare /v1/private-evidence/complete /v1/private-evidence/download
+}
+respond @unsupported_post 404

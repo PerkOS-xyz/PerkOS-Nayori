@@ -15,6 +15,38 @@ with a signer-free preflight and requires a separately authorized, typed-confirm
 See [`QA_RELEASES.md`](QA_RELEASES.md) for the operational sequence and
 [`the release design`](plans/2026-09-01-qa-first-multi-repo-release-design.md) for trust boundaries.
 
+### Production API edge allowlist
+
+The full production Caddyfile remains private, but its secret-free Nayori API POST policy is
+versioned at [`ops/vps/caddy/nayori-api-private-evidence.caddy`](../ops/vps/caddy/nayori-api-private-evidence.caddy).
+Import that fragment inside the `api.nayori.ai` site block. Do not replace the exact route list
+with `/v1/private-evidence/*`: new operations must receive an explicit review and regression test.
+
+Before reload, validate the candidate with the complete private Caddy directory so every imported
+fragment is available:
+
+```bash
+docker run --rm \
+  -v /absolute/private/caddy:/etc/caddy:ro \
+  caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile
+```
+
+Retain the prior Caddyfile, replace the fragment atomically and reload only after validation. If
+reload fails, restore the retained file and reload the prior configuration. The required external
+negative check is:
+
+```bash
+curl --silent --show-error --dump-header - \
+  --request POST https://api.nayori.ai/v1/private-evidence/download \
+  --header 'content-type: application/json' \
+  --data '{"id":"00000000-0000-4000-8000-000000000000"}'
+```
+
+The expected result is HTTP `403`, `Cache-Control: no-store` and the generic
+`private_evidence_access_denied` body. HTTP `404` means the edge blocked the implemented route
+before authentication; any successful response is a release blocker. This check does not use a
+credential, signer or blockchain transaction.
+
 ### QA controller receipts and quarantine
 
 The VPS controller serializes all repositories with one host-wide lock. A successful runtime
