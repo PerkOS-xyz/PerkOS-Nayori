@@ -1,29 +1,43 @@
 # Nayori — PerkOS Stacks Agentic Commerce: Project Status
 
-Last verified: 2026-09-17 UTC
+Last verified: 2026-09-23 UTC
 
 ## Current status
 
-### Private managed Evaluator runtime — 2026-09-17 UTC
+### Production private evidence and managed Evaluator — 2026-09-23 UTC
 
-The managed Evaluator production image
-`3a9ce57be94fc3f79c6038f13eca71eaa3527306` is running, healthy, with zero
-restarts and without published ports. `/readyz` reports `production` /
-Stacks mainnet / `agentic-commerce-v6` / `sbtc-commerce-v5`, earned-fee
-200 bps, evaluator principal `SP3GRG5CKEFNYM5BV0NPPHCM51FT176JQ02QWQ9T3`,
-and `mainnetBroadcastEnabled=true`. The public evaluation queue
-(`committedEvaluationsEnabled`) and private-evidence intake remain
-**off**. Hermes/PerkOS-LLM is an inference dependency only; the human
-appeal authority is not installed in the daemon.
+The production chain is deployed from exact merged commits: Platform
+`2cbe25efb3ac044a41b6166e6db995742c9c1476`, OAuth
+`c2ac8a67d98ff0690f9af5d95d43a57982740d97` and Evaluator
+`c7d16f9e9385a25e8aabe5484f3a05d39c31b5c9`. API, facilitator, OAuth
+and Evaluator are healthy with zero restarts; the worker is running with
+zero restarts. The API is the only S3-enabled role, and the facilitator
+keeps private-evidence storage disabled.
 
-This is internal operability evidence. It is not external adoption, a
-public evaluation API, revenue, or an independent audit. A first
-controlled mainnet evaluation remains a separate human gate.
+`/readyz` reports `production` / Stacks mainnet /
+`agentic-commerce-v6` / `sbtc-commerce-v5`, earned-fee 200 bps,
+evaluator principal `SP3GRG5CKEFNYM5BV0NPPHCM51FT176JQ02QWQ9T3`,
+`mainnetBroadcastEnabled=true`, `privateEvidenceEnabled=true` and
+`committedEvaluationsEnabled=false`. OAuth contains exactly one active
+Evaluator client bound to that wallet with the single `evidence:read`
+scope. The Platform database contains one active Evaluator merchant.
 
-Production Web/docs continue on
-`b95bb27f0f891803b96262101b600d703b18c2bf` (PR163). Platform production
-runtime remains `a29b493…`; later README-only commits on Platform `main`
-were not deployed. npm `@perkos/agent-sdk@0.9.0` remains `latest`.
+The public edge allows only the implemented `prepare`, `complete` and
+`download` private-evidence POST routes. An anonymous download request
+reaches the API and returns `403`, generic JSON and
+`Cache-Control: no-store`. The facilitator has four confirmed settlements
+and zero pending settlements. The rollout executed source gates, builds,
+mode-0600 database backups, migrations, health checks and rollback checks;
+it did not sign or broadcast a blockchain transaction.
+
+Production Web/docs run `f289bae1389957e8aa14b3ea9a6ab6b3242ba1c7`.
+The only later repository commit, `6159bd9350e392f58105a9db01d8ad1a8433705c`,
+changes release-controller operations/tests rather than Web or Docs code.
+npm `@perkos/agent-sdk@0.9.0` remains `latest`.
+
+This is internal operability evidence. It is not external adoption,
+externally earned revenue, an independent audit or a completed controlled
+mainnet evaluation.
 
 ### Stable Agent SDK 0.9.0 publication — 2026-09-13 UTC
 
