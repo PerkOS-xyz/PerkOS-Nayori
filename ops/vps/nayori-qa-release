@@ -707,6 +707,22 @@ verify_running_migration_mount() {
     }
 }
 
+run_evaluator_migrations() {
+  # Compose injects the existing mode-600 evaluator env file. Build the admin URL only inside
+  # the one-shot container so the password never appears in a host argument, receipt or log.
+  docker compose -f "$COMPOSE" --profile evaluator run --rm --no-deps -T evaluator sh -s <<'NAYORI_EVALUATOR_MIGRATION'
+set -eu
+export DATABASE_ADMIN_URL
+DATABASE_ADMIN_URL=$(node -e '
+const { POSTGRES_USER: user, POSTGRES_PASSWORD: password, POSTGRES_DB: database } = process.env;
+if (!user || !password || !database) throw new Error("missing_evaluator_migration_database_config");
+process.stdout.write(`postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@evaluator-postgres:5432/${encodeURIComponent(database)}`);
+')
+export DATABASE_RUNTIME_ROLE=nayori_evaluator
+exec npm run migrate
+NAYORI_EVALUATOR_MIGRATION
+}
+
 assert_complete_verified_runtime_set() {
   local expected_count actual_count row service container image item matches
   if [[ "$REPOSITORY" == "PerkOS-Nayori-Agent-SDK" ]]; then
@@ -981,7 +997,7 @@ case "$REPOSITORY" in
     docker compose -f "$COMPOSE" --profile evaluator up -d evaluator-postgres
     wait_healthy nayori-qa-evaluator-postgres
     verify_running_migration_mount nayori-qa-evaluator-postgres "$RELEASE/migrations/001_initial.sql"
-    docker exec -i nayori-qa-evaluator-postgres sh -lc 'psql --single-transaction -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$RELEASE/migrations/001_initial.sql"
+    run_evaluator_migrations
     docker compose -f "$COMPOSE" --profile evaluator up -d evaluator
     wait_healthy nayori-qa-evaluator
     verify_running_image nayori-qa-evaluator "$IMAGE" "$IMAGE_ID"
