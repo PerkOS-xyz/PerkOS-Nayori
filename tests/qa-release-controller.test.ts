@@ -281,6 +281,10 @@ if [[ "$command_name" == config ]]; then
 fi
 
 if [[ "$command_name" == run ]]; then
+  if printf '%s\n' "\${args[@]}" | grep -qx evaluator &&
+     [[ "${"$"}{FAKE_EVALUATOR_MIGRATION_FAIL:-0}" == 1 ]]; then
+    exit 72
+  fi
   exit 0
 fi
 
@@ -497,6 +501,7 @@ function runController(
   signalAfterReceipt = false,
   transientPublicUrl = "",
   transientPublicFailures = 0,
+  evaluatorMigrationFail = false,
 ): Harness {
   const sandbox = mkdtempSync(join(tmpdir(), "nayori-qa-controller-"));
   dirs.push(sandbox);
@@ -645,6 +650,7 @@ fi
     FAKE_RECEIPT_PATH: receiptPath,
     FAKE_TRANSIENT_PUBLIC_URL: transientPublicUrl,
     FAKE_TRANSIENT_PUBLIC_FAILURES: String(transientPublicFailures),
+    FAKE_EVALUATOR_MIGRATION_FAIL: evaluatorMigrationFail ? "1" : "0",
   };
   const run = spawnSync(
     "bash",
@@ -745,6 +751,10 @@ describe("QA release controller Compose mutation", () => {
       `${release}/migrations/001_initial.sql:${migrationTarget}:ro`,
     );
     expect(readFileSync(harness.envPath, "utf8")).toBe(`RELEASE_SHA=${sha}\n`);
+    expect(controllerSource).toContain("exec npm run migrate");
+    expect(readFileSync(harness.dockerLog, "utf8")).toContain(
+      "compose -f " + harness.composePath + " --profile evaluator run --rm --no-deps -T evaluator sh -s",
+    );
 
     const receipt = JSON.parse(readFileSync(harness.receiptPath, "utf8"));
     expect(receipt.runtimeImages).toEqual({
@@ -764,6 +774,30 @@ describe("QA release controller Compose mutation", () => {
       publicReleaseIdentity: null,
       workerRuntime: null,
     });
+  });
+
+  it("cannot write a passed receipt when the official Evaluator migrator fails", () => {
+    const harness = runController(
+      "PerkOS-Nayori-Evaluator",
+      currentVpsCompose(),
+      "",
+      false,
+      "",
+      "",
+      false,
+      "",
+      priorEvaluatorSha,
+      "",
+      "",
+      "",
+      false,
+      "",
+      0,
+      true,
+    );
+
+    expect(harness.run.status).not.toBe(0);
+    expect(existsSync(harness.receiptPath)).toBe(false);
   });
 
   it("binds all three Platform services to the exact image and release identity", () => {

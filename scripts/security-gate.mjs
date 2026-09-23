@@ -1014,8 +1014,13 @@ requirePattern(
 );
 requirePattern(
   "ops/vps/nayori-qa-release",
-  /psql --single-transaction -v ON_ERROR_STOP=1/,
-  "QA Evaluator migrations must fail atomically",
+  /run_evaluator_migrations\(\)[\s\S]*?DATABASE_ADMIN_URL=\$\(node -e[\s\S]*?DATABASE_RUNTIME_ROLE=nayori_evaluator[\s\S]*?exec npm run migrate[\s\S]*?run_evaluator_migrations/,
+  "QA Evaluator migrations must use the release's versioned fail-closed runner",
+);
+forbidPattern(
+  "ops/vps/nayori-qa-release",
+  /docker exec -i nayori-qa-evaluator-postgres[\s\S]*?001_initial\.sql/,
+  "QA Evaluator releases must not bypass the versioned migration ledger with raw SQL replay",
 );
 requirePattern(
   "ops/vps/nayori-qa-release",
