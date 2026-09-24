@@ -65,6 +65,7 @@ describe("transparency snapshot", () => {
       stats,
       generatedAt: "2026-08-28T18:00:00.000Z",
       classifyWallet,
+      baselineIncludedInSbtcJobs: true,
     });
 
     expect(snapshot.dataStatus.chain).toBe("live");
@@ -98,6 +99,22 @@ describe("transparency snapshot", () => {
       senderClassification: "external-attested",
       blockHeight: 1,
     });
+  });
+
+  it("does not subtract the M1 baseline job when reading a newer sBTC contract generation", () => {
+    const snapshot = buildTransparencySnapshot({
+      agents,
+      jobs: jobs.filter((job) => !(job.currency === "sbtc" && job.id === 1)),
+      stats,
+      generatedAt: "2026-09-24T00:00:00.000Z",
+      classifyWallet,
+      baselineIncludedInSbtcJobs: false,
+    });
+    expect(snapshot.observed?.completedSbtcJobsMainnet).toBe(1);
+    if (NETWORK_NAME !== "testnet") {
+      expect(snapshot.milestone2.verified.completedSbtcJobsMainnet).toBe(1);
+      expect(snapshot.milestone2.verified.registeredAgentsMainnet).toBe(2);
+    }
   });
 
   it("keeps a static baseline but marks live data unavailable on source failure", () => {

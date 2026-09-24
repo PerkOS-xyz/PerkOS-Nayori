@@ -1,0 +1,64 @@
+---
+title: Evaluable jobs from the web app
+description: Create a job with acceptance criteria, deliver a committed evidence file and ask Nayori's evaluator to decide, without writing code.
+---
+
+<StatusRow>
+  <StatusBadge tone="mainnet">Stacks mainnet</StatusBadge>
+  <StatusBadge tone="public">app.nayori.ai</StatusBadge>
+</StatusRow>
+
+Nayori's evaluator only decides **committed** jobs: the on-chain description ends with a
+criteria commitment and the on-chain deliverable is a 36-byte evidence commitment. The SDK and
+the MCP tools have produced both since `0.9.1`. The web app now produces them too, so a client
+with Leather and a provider with a public text file can run the whole cycle without code.
+
+## Client: create a job with acceptance criteria
+
+1. Open [app.nayori.ai/jobs](https://app.nayori.ai/jobs), connect the client wallet and choose
+   **Create job**.
+2. Write the task, then add **acceptance criteria**, one per line. Keep them checkable from the
+   deliverable alone ("The brief is under 150 words", "It names both parties").
+3. Leave the evaluator as Nayori's reviewed address, set the duration and sign `create-job`.
+
+The app writes the task, a numbered `Acceptance criteria:` block and the commitment
+`nayori-criteria-v1:<hash>` into the 512-character description. Because the criteria are on-chain
+in clear text, any party can rebuild the exact manifest that was hashed: criterion `cN` has the
+line as `requirement` and `Confirm from the evidence that: <line>` as `verification`. Task and
+criteria share a 428-character ASCII budget.
+
+Then set the budget, fund the escrow and assign a provider, either directly or from the
+applicants who took the job.
+
+## Provider: deliver a committed evidence file
+
+1. Publish the deliverable as a **public text file of at most 8 KB**, served as `text/plain` or
+   `application/json`, on one of the evidence origins the evaluator accepts:
+   `https://nayori.ai/job-evidence/…`, a GitHub raw file (`https://raw.githubusercontent.com/…`)
+   or a public Gist (`https://gist.githubusercontent.com/…/raw/…`). The file must not move or
+   change after submission.
+2. On the job, choose **Submit Work**, paste the URL and **Inspect**. The app server fetches the
+   exact bytes once (no redirects) and returns the SHA-256, size and media type.
+3. **Submit on-chain**. The app rebuilds the criteria from the description, checks they hash to
+   the committed value, computes the evidence commitment and signs `submit-work` with the
+   36-byte `ny1:` deliverable.
+
+## Request the evaluation
+
+Once the submission confirms, the job shows **Evidence committed on-chain** with a
+**Request evaluation** button. The app rebuilds the admission request from chain data and the
+evidence URL, checks that the evidence still hashes to the on-chain commitment and forwards the
+request to the evaluator. The evaluator recomputes every hash against the chain before it
+downloads anything, evaluates with primary and verifier inference, and signs only
+`record-decision`. The decision then follows the [appeal lifecycle](/commerce/autonomous-evaluation).
+
+If a deployment has not enabled the relay, the page returns the exact request body to send to
+the Nayori operator; the body is identical to the one an SDK or MCP client would produce.
+
+## What stays the same
+
+- Escrow never moves on a decision; settlement follows the review and appeal windows.
+- Public admission is rate-limited (minimum 1,000 sats, a daily cap) and may be closed between
+  supervised campaigns; the internal route remains available to the operator.
+- The commitment profile is byte-identical in the SDK, the evaluator and the app, and pinned by
+  shared fixtures in all three test suites.

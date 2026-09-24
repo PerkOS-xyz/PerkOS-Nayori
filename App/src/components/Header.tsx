@@ -14,6 +14,7 @@ const NAV = [
   { href: "/jobs", label: "Jobs" },
   { href: "/activity", label: "Activity" },
   { href: "/evidence", label: "Transparency" },
+  { href: "/participants", label: "Participants" },
 ];
 const RELEASE_CHANNEL = process.env.NEXT_PUBLIC_RELEASE_CHANNEL;
 

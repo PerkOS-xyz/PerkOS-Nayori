@@ -139,7 +139,12 @@ type SnapshotInput = {
   stats: OnchainStats;
   generatedAt?: string;
   classifyWallet?: typeof classifyEvidenceWallet;
+  /** Whether the jobs list is read from the contract that holds the approved M1 baseline job. */
+  baselineIncludedInSbtcJobs?: boolean;
 };
+
+export const BASELINE_SBTC_CONTRACT_NAME = evidenceManifest.milestone1.contract.split(".")[1] ?? "";
+export const SBTC_JOBS_INCLUDE_BASELINE = SBTC_COMMERCE_CONTRACT_NAME === BASELINE_SBTC_CONTRACT_NAME;
 
 function uniqueExternalParticipants(
   agents: Agent[],
@@ -179,6 +184,7 @@ export function buildTransparencySnapshot({
   stats,
   generatedAt = new Date().toISOString(),
   classifyWallet = classifyEvidenceWallet,
+  baselineIncludedInSbtcJobs = SBTC_JOBS_INCLUDE_BASELINE,
 }: SnapshotInput): TransparencySnapshot {
   const sbtcJobs = jobs.filter((job) => job.currency === "sbtc");
   const stxJobs = jobs.filter((job) => job.currency === "stx");
@@ -214,9 +220,12 @@ export function buildTransparencySnapshot({
             0,
             observed.registeredAgentsMainnet - m2Baseline.registeredAgentsMainnet,
           ),
+          // The M1 baseline job lives on the original `sbtc-commerce` contract. Subtract it only
+          // when that contract is the one being read; otherwise the observed count never includes it.
           completedSbtcJobsMainnet: Math.max(
             0,
-            observed.completedSbtcJobsMainnet - m2Baseline.completedSbtcJobsMainnet,
+            observed.completedSbtcJobsMainnet -
+              (baselineIncludedInSbtcJobs ? m2Baseline.completedSbtcJobsMainnet : 0),
           ),
           completedJobsFromNonTeamWallets: completedExternalJobs.length,
           participatingNonTeamWallets: externalParticipants.size,

@@ -185,7 +185,8 @@ export default function EvidencePage() {
             ? "QA activity is internal operability evidence and never increments the mainnet adoption counters below."
             : <>Qualifying counts exclude the approved baseline of {milestone2.baseline.registeredAgentsMainnet}
                 {" agent and "}{milestone2.baseline.completedSbtcJobsMainnet} completed sBTC job. External
-                participation requires explicit non-team attestation.</>}
+                participation requires a wallet-signed attestation: see the{" "}
+                <Link href="/participants" className="text-brand-300 hover:text-brand-200">participant directory</Link>.</>}
         </p>
         <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {progress.map(({ label, key, ...definition }) => {

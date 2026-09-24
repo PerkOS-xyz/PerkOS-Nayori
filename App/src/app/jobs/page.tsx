@@ -31,6 +31,7 @@ import {
   settleSbtcAppealTimeout,
   setSbtcBudget,
   submitSbtcWork,
+  submitSbtcWorkCommitted,
 } from "../../services/sbtc-commerce";
 import {
   CommerceJob,
@@ -62,6 +63,9 @@ import JobStepper from "../../components/JobStepper";
 import ServiceFeeBreakdown from "../../components/ServiceFeeBreakdown";
 import WorkflowTiming from "../../components/WorkflowTiming";
 import JobApplications from "../../components/JobApplications";
+import { CommittedSubmitForm, JobCriteria, RequestEvaluationPanel, evaluableContext, jobTaskText } from "../../components/EvaluableJob";
+import { buildEvaluableDescription, hasCriteriaCommitment } from "../../services/evaluable-jobs";
+import type { EvaluationEvidence } from "../../services/evaluation-commitments";
 import { feeAcceptanceKey, hasServiceFees, verifyFeeAction } from "../../services/service-fees";
 import Addr from "../../components/Addr";
 import { useToast } from "../../components/Toast";
@@ -70,8 +74,10 @@ import {
   AGENTIC_COMMERCE_CONTRACT,
   assertCommerceContractsWritable,
   COMMERCE_CONTRACTS_READ_ONLY,
+  CONTRACT_ADDRESS,
   NAYORI_EVALUATOR_ADDRESS,
   NAYORI_MANAGED_EVALUATOR_ENABLED,
+  SBTC_COMMERCE_CONTRACT_NAME,
 } from "../../constants/contract";
 import { decisionLabel } from "../../services/autonomous-decision";
 import { NETWORK_NAME } from "../../constants/network";
@@ -115,6 +121,7 @@ type ActionForm =
   | { jobId: number; mode: "budget"; value: string }
   | { jobId: number; mode: "provider"; value: string }
   | { jobId: number; mode: "deliverable"; value: string }
+  | { jobId: number; mode: "evidence"; value: string }
   | { jobId: number; mode: "appeal"; value: string }
   | { jobId: number; mode: "resolve-approve" | "resolve-reject"; value: string };
 
@@ -158,7 +165,8 @@ export default function JobsPage() {
   const [txProgress, setTxProgress] = useState<TxProgress | null>(null);
   const [formData, setFormData] = useState({
     description: "",
-    evaluator: NAYORI_MANAGED_EVALUATOR_ENABLED ? NAYORI_EVALUATOR_ADDRESS : "",
+    criteria: "",
+    evaluator: NAYORI_EVALUATOR_ADDRESS,
     provider: "",
     duration: "24",
     durationUnit: "hours" as "hours" | "days",
@@ -341,15 +349,36 @@ export default function JobsPage() {
       return;
     }
     const expiredAt = tip + durationToBlocks(duration, formData.durationUnit);
+    let description = formData.description;
+    if (formData.criteria.trim()) {
+      try {
+        description = (
+          await buildEvaluableDescription(
+            {
+              network: NETWORK_NAME === "mainnet" ? "mainnet" : "testnet",
+              asset: currency,
+              contract: isSbtc ? `${CONTRACT_ADDRESS}.${SBTC_COMMERCE_CONTRACT_NAME}` : AGENTIC_COMMERCE_CONTRACT,
+              client: address,
+              evaluator,
+            },
+            formData.description,
+            formData.criteria,
+          )
+        ).description;
+      } catch (reason) {
+        toast.error(reason instanceof Error ? reason.message : "Check the acceptance criteria.");
+        return;
+      }
+    }
     await run(
       () =>
         isSbtc
-          ? createSbtcJob(evaluator, expiredAt, formData.description, provider || undefined)
+          ? createSbtcJob(evaluator, expiredAt, description, provider || undefined)
           : stxCall("create-job", [
               provider ? Cl.some(Cl.principal(provider)) : Cl.none(),
               Cl.principal(evaluator),
               Cl.uint(expiredAt),
-              Cl.stringAscii(formData.description),
+              Cl.stringAscii(description),
             ]),
       "creating",
       `Create ${unit} job`,
@@ -423,6 +452,22 @@ export default function JobsPage() {
       },
       `submitting-${jobId}`,
       "Submit deliverable",
+      () => setActionForm(null)
+    );
+  }
+
+  async function handleSubmitCommittedWork(jobId: number, deliverable: Uint8Array, _evidence: EvaluationEvidence) {
+    await run(
+      async () => {
+        const job = jobs.find((item) => item.id === jobId);
+        if (!job) throw new Error("Refresh the job before submitting.");
+        await withFreshFee(job, async () => undefined, true);
+        return isSbtc
+          ? submitSbtcWorkCommitted(jobId, deliverable)
+          : stxCall("submit-work", [Cl.uint(jobId), Cl.buffer(deliverable)]);
+      },
+      `submitting-${jobId}`,
+      "Submit committed deliverable",
       () => setActionForm(null)
     );
   }
@@ -739,6 +784,22 @@ export default function JobsPage() {
                 required
               />
             </div>
+            <div className="md:col-span-2">
+              <label className="label">Acceptance criteria (optional, one per line)</label>
+              <textarea
+                value={formData.criteria}
+                maxLength={512}
+                onChange={(e) => setFormData({ ...formData, criteria: e.target.value })}
+                className="field"
+                rows={3}
+                placeholder={"The brief is under 150 words\nIt explains how escrow protects both parties"}
+              />
+              <p className="mt-1 text-xs text-mist-500">
+                With criteria, the job is evaluable: the criteria and their commitment are written on-chain
+                with the description, the provider submits an evidence commitment and Nayori&apos;s evaluator
+                records the decision. Task and criteria share a 428-character ASCII budget.
+              </p>
+            </div>
             <div>
               <label className="label">Evaluator</label>
               <input
@@ -756,8 +817,8 @@ export default function JobsPage() {
               )}
               {!NAYORI_MANAGED_EVALUATOR_ENABLED && NETWORK_NAME === "mainnet" && (
                 <p className="mt-1 text-xs text-mist-500">
-                  Nayori&apos;s managed evaluator is not active on mainnet yet. Enter an evaluator whose
-                  availability you have confirmed.
+                  Nayori&apos;s evaluator decides jobs that carry acceptance criteria. You may enter another
+                  evaluator whose availability you have confirmed.
                 </p>
               )}
             </div>
@@ -863,11 +924,12 @@ export default function JobsPage() {
                           : "STX"}
                       </span>
                     </div>
-                    <p className="mt-1 text-sm text-mist-300">{job.description}</p>
+                    <p className="mt-1 text-sm text-mist-300">{jobTaskText(job.description)}</p>
                   </div>
                   <StatusBadge status={job.status} />
                 </div>
 
+                <JobCriteria description={job.description} compact />
                 <JobStepper status={job.status} />
 
                 <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-6">
@@ -943,6 +1005,8 @@ export default function JobsPage() {
                   </div>
                 )}
 
+                <RequestEvaluationPanel job={job} currency={currency} />
+
                 {job.reputationSyncPending && (
                   <div className="mt-3 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2 text-xs text-amber-200">
                     Economic settlement is final. Reputation synchronization is pending
@@ -986,6 +1050,16 @@ export default function JobsPage() {
                         />
                         <p className="mt-2 text-xs text-mist-500">A SHA-256 commitment of this reference will be stored on-chain.</p>
                       </>
+                    )}
+                    {actionForm.mode === "evidence" && (
+                      <CommittedSubmitForm
+                        job={job}
+                        currency={currency}
+                        provider={address}
+                        busy={activeAction !== null}
+                        onSubmit={(deliverable, evidence) => handleSubmitCommittedWork(job.id, deliverable, evidence)}
+                        onCancel={() => setActionForm(null)}
+                      />
                     )}
                     {actionForm.mode === "appeal" && (
                       <>
@@ -1047,7 +1121,7 @@ export default function JobsPage() {
                     <button onClick={() => setActionForm({ jobId: job.id, mode: "provider", value: "" })} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white">Assign Provider</button>
                   )}
                   {permissions.canSubmit && (
-                    <button disabled={hasServiceFees(currency) && (!job.serviceFee || job.serviceFeeUnavailable || !acceptedFees[feeAcceptanceKey(job, address)])} onClick={() => setActionForm({ jobId: job.id, mode: "deliverable", value: "" })} className="btn-sm bg-brand text-white hover:bg-brand-600 disabled:opacity-40">Submit Work</button>
+                    <button disabled={hasServiceFees(currency) && (!job.serviceFee || job.serviceFeeUnavailable || !acceptedFees[feeAcceptanceKey(job, address)])} onClick={() => setActionForm({ jobId: job.id, mode: hasCriteriaCommitment(job.description) ? "evidence" : "deliverable", value: "" })} className="btn-sm bg-brand text-white hover:bg-brand-600 disabled:opacity-40">Submit Work</button>
                   )}
                   {review.canEvaluatorSettle && (
                     <>

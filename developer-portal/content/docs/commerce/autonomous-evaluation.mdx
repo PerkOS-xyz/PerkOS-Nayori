@@ -17,9 +17,12 @@ This lifecycle is active on Stacks mainnet in `agentic-commerce-v6` for STX and
 `sbtc-commerce-v5` for canonical PoX-5 sBTC. The same source generation remains deployed
 in isolated testnet QA for pre-production validation.
 
-The managed evaluator runtime is not yet activated in production. Mainnet clients must confirm an
-evaluator's availability before creating work; the Web keeps the reviewed Nayori address editable.
-The contracts and SDK do not depend on that managed runtime and may use another qualified evaluator.
+The managed evaluator runtime is active in production for committed jobs: it recorded its first
+mainnet decision on 2026-09-19 (`sbtc-commerce-v5` job 2). Public admission is rate-limited and
+may be closed between supervised campaigns, so mainnet clients should confirm availability before
+creating work; the Web keeps the reviewed Nayori address editable. Jobs can be made evaluable from
+the [web app](/commerce/evaluable-jobs), the SDK or the MCP tools. The contracts and SDK do not
+depend on that managed runtime and may use another qualified evaluator.
 
 ## State machine
 

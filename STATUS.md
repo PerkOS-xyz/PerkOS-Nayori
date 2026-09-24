@@ -33,7 +33,7 @@ it did not sign or broadcast a blockchain transaction.
 Production Web/docs run `f289bae1389957e8aa14b3ea9a6ab6b3242ba1c7`.
 The only later repository commit, `6159bd9350e392f58105a9db01d8ad1a8433705c`,
 changes release-controller operations/tests rather than Web or Docs code.
-npm `@perkos/agent-sdk@0.9.0` remains `latest`.
+npm `@perkos/agent-sdk@0.9.1` (published 2026-09-18 UTC) is `latest`; `next` remains `0.8.0-rc.2`.
 
 This is internal operability evidence. It is not external adoption,
 externally earned revenue, an independent audit or a completed controlled

@@ -5,6 +5,7 @@ import {
   NAYORI_EVALUATOR_ADDRESS,
 } from "./contract";
 import { NETWORK_NAME } from "./network";
+import { participants } from "./participants";
 
 export const EVIDENCE_VERSION = 2;
 export const EVIDENCE_UPDATED_AT = "2026-09-03T02:00:00.000Z";
@@ -87,8 +88,16 @@ const mainnetEvidenceWallets = [
   },
 ] as const;
 
-export const evidenceWallets =
-  NETWORK_NAME === "testnet" ? qaEvidenceWallets : mainnetEvidenceWallets;
+const participantWallets = participants.map((participant) => ({
+  address: participant.wallet.address,
+  classification: "external-attested" as const,
+  roles: participant.wallet.roles,
+}));
+
+export const evidenceWallets = [
+  ...(NETWORK_NAME === "testnet" ? qaEvidenceWallets : mainnetEvidenceWallets),
+  ...participantWallets,
+];
 
 export type EvidenceWalletClassification =
   | "team"
