@@ -226,6 +226,12 @@ export function submitSbtcWork(jobId: number, deliverable: string) {
   return call("submit-work", [Cl.uint(jobId), Cl.bufferFromAscii(deliverable.slice(0, 64))]);
 }
 
+/** Committed submission: the 36-byte `ny1:` evidence commitment, passed as raw bytes. */
+export function submitSbtcWorkCommitted(jobId: number, deliverable: Uint8Array) {
+  if (deliverable.length !== 36) throw new Error("A committed deliverable is exactly 36 bytes.");
+  return call("submit-work", [Cl.uint(jobId), Cl.buffer(deliverable)]);
+}
+
 // Settlement moves sBTC held by the contract, not by the caller. Constrain the exact
 // contract outflow so a wallet never authorizes an unspecified token transfer.
 function settlementOptions(sats: number, token: string, allowZero: boolean) {

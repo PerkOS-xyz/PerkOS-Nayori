@@ -20,6 +20,8 @@ import JobStepper from "../../../components/JobStepper";
 import ServiceFeeBreakdown from "../../../components/ServiceFeeBreakdown";
 import WorkflowTiming from "../../../components/WorkflowTiming";
 import Addr from "../../../components/Addr";
+import { JobCriteria, jobTaskText } from "../../../components/EvaluableJob";
+import { committedEvidenceHash } from "../../../services/evaluable-jobs";
 
 export default function JobDetailPage() {
   const id = Number(useParams().id);
@@ -86,7 +88,8 @@ export default function JobDetailPage() {
               {currencyProtocolLabel(currency)}
             </span>
           </div>
-          <p className="mt-2 max-w-2xl text-mist-300">{job.description}</p>
+          <p className="mt-2 max-w-2xl text-mist-300">{jobTaskText(job.description)}</p>
+          <JobCriteria description={job.description} />
         </div>
       </div>
 
@@ -129,7 +132,11 @@ export default function JobDetailPage() {
             <FileCheck2 className="mr-2 inline h-4 w-4 text-brand-300" />
             {job.deliverable}
           </p>
-          <p className="mt-2 text-xs text-mist-500">On-chain buffer commitment. New app submissions use SHA-256.</p>
+          <p className="mt-2 text-xs text-mist-500">
+            {committedEvidenceHash(job.deliverable)
+              ? `Nayori evidence commitment (ny1): ${committedEvidenceHash(job.deliverable)}`
+              : "On-chain buffer commitment. New app submissions use SHA-256."}
+          </p>
         </div>
       )}
 
