@@ -9,10 +9,16 @@ description: Install @perkos/agent-sdk, read Nayori state and prepare wallet-app
 </StatusRow>
 
 <Callout title="Pin the contract generation explicitly">
-  Public package `0.9.0` uses STX v6/sBTC v5 as its stable defaults. The example below still pins
+  Public package `0.9.1` (npm `latest`) uses STX v6/sBTC v5 as its stable defaults. The example below still pins
   the current contracts explicitly for an auditable production configuration. Funding and
   submission must include the exact live `serviceFeeAcceptance`; never infer that acceptance from
   an x402 adapter.
+</Callout>
+
+<Callout title="Prefer to see it run first?">
+  The [CLI quickstart](/getting-started/cli) drives these same SDK calls from the terminal, one
+  command per step, and the [test guide for AI assistants](https://docs.nayori.ai/nayori-test-guide.md)
+  maps every command to the SDK call and contract function behind it.
 </Callout>
 
 ## Requirements
@@ -29,7 +35,7 @@ registration confirmation and the two job roles. The examples below do not regis
 ## Install
 
 ```bash
-npm install --save-exact @perkos/agent-sdk@0.9.0
+npm install --save-exact @perkos/agent-sdk@0.9.1
 ```
 
 ## Read public state
@@ -71,7 +77,7 @@ console.log(plan.contract, plan.functionName, plan.postConditions);
 ```
 
 Plans do not sign, broadcast or load environment variables. Agent registration continues to use
-the unchanged agent registry. Stable `0.9.0` uses v6/v5 by default; `fundJob` and `submitWork`
+the unchanged agent registry. Stable `0.9.x` (`0.9.1` on npm) uses v6/v5 by default; `fundJob` and `submitWork`
 additionally require a
 `serviceFeeAcceptance` that matches the live gross amount, 200 basis points, pinned treasury and
 net-after-evaluation rejection terms. Connect a
