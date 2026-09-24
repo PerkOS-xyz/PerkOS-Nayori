@@ -44,7 +44,7 @@ See the package README for the full exported API and exact release-specific sign
 
 ## Autonomous decision methods
 
-Published `0.9.0` exposes `getAppealWindow`, `getDecision`, `recordDecision`, `appealDecision`,
+Published `0.9.x` (`0.9.1` is npm `latest`) exposes `getAppealWindow`, `getDecision`, `recordDecision`, `appealDecision`,
 `finalizeDecision`, `resolveAppeal` and `settleAppealTimeout` with v6/v5 as the stable defaults.
 High-level settlement methods read the job, live escrow, decision and job-pinned sBTC token before
 creating deny-mode post-conditions. See the [lifecycle guide](/commerce/autonomous-evaluation)
@@ -52,7 +52,7 @@ before enabling a signer.
 
 ## Earned-service-fee support
 
-Stable SDK `0.9.0` includes STX v6/sBTC v5 support for live fee-policy/ledger reads,
+Stable SDK `0.9.x` includes STX v6/sBTC v5 support for live fee-policy/ledger reads,
 gross-budget acceptance for both client and provider, an explicit treasury initialization
 argument, evidence-backed waivers and treasury-funded returns. v6/v5 are the stable defaults;
 explicit contract IDs remain recommended for auditable production configuration. Read

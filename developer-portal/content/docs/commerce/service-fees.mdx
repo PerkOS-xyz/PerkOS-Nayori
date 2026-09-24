@@ -6,8 +6,8 @@ description: Active v6/v5 2% escrow economics, consent, treasury settlement and 
 <Callout title="v6/v5 deployed on mainnet; consumer rollout remains gated">
   STX v6 and sBTC v5 are deployed, initialized and source-verified on Stacks mainnet and selected
   by current Web/QA source defaults. Existing v5/v4 contracts and jobs retain their
-  original no-service-fee terms. The SDK 0.9.0 promotion is a candidate until its independent npm
-  publication is verified; stable 0.8.0 remains historical evidence with explicit v6/v5 selection.
+  original no-service-fee terms. Stable SDK 0.9.1 (npm `latest`) uses v6/v5 by default; stable
+  0.8.0 remains historical evidence with explicit v6/v5 selection.
   Controlled mainnet STX/sBTC consumer E2E and each runtime deployment require separate receipts.
   None of these internal gates counts as external adoption, revenue or an independent audit.
 </Callout>
@@ -49,7 +49,7 @@ still controlled by the client. No provider marketplace or auto-claim behavior i
 
 ## SDK integration boundary
 
-Stable SDK 0.9.0 uses v6/v5 as its mainnet defaults. It exposes `getServiceFeePolicy`,
+Stable SDK 0.9.x uses v6/v5 as its mainnet defaults. It exposes `getServiceFeePolicy`,
 `getJobServiceFee`, `quoteServiceFee`,
 `initializeServiceFeeProtocol`, `waiveServiceFee` and `refundServiceFee`. Funding and submission
 require a `serviceFeeAcceptance` containing accepted gross amount, `basisPoints: 200`, pinned

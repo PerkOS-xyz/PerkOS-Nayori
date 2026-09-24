@@ -8,8 +8,8 @@ description: Developer documentation for Nayori identity, escrow, direct payment
 <StatusRow>
   <StatusBadge tone="mainnet">Identity and escrow · Mainnet</StatusBadge>
   <StatusBadge tone="mainnet">x402 and MPP · Mainnet</StatusBadge>
-  <StatusBadge tone="public">SDK 0.8.0 · Stable npm</StatusBadge>
-  <StatusBadge tone="planned">SDK 0.9.0 · v6/v5 candidate</StatusBadge>
+  <StatusBadge tone="public">SDK 0.9.1 · Stable npm</StatusBadge>
+  <StatusBadge tone="public">CLI @perkos/nayori 0.2.0 · npm</StatusBadge>
 </StatusRow>
 
 Nayori — PerkOS Stacks Agentic Commerce — is the Bitcoin Commerce Agent. It gives applications, autonomous agents and
@@ -64,7 +64,7 @@ For the fastest safe validation, install the SDK and run its signer-free quickst
 chain state and does not need a wallet, secret or funded account.
 
 ```bash
-npm install --save-exact @perkos/agent-sdk@0.9.0
+npm install --save-exact @perkos/agent-sdk@0.9.1
 node --input-type=module -e 'import { PerkOSClient } from "@perkos/agent-sdk"; console.log(await new PerkOSClient({ network: "testnet" }).getAgentCount());'
 ```
 

@@ -32,8 +32,8 @@ describe('versioned public references', () => {
       'utf8',
     );
     expect(overview).not.toMatch(/\b(?:M1|M2|Milestone\s*[12])\b/i);
-    expect(overview).toContain('SDK 0.8.0 · Stable npm');
-    expect(overview).toContain('SDK 0.9.0 · v6/v5 candidate');
+    expect(overview).toContain('SDK 0.9.1 · Stable npm');
+    expect(overview).toContain('CLI @perkos/nayori 0.2.0 · npm');
   });
 
   it('documents the autonomous appeal lifecycle as the active mainnet generation', () => {
@@ -57,7 +57,7 @@ describe('versioned public references', () => {
     );
     expect(guide).toContain('deployed, initialized and source-verified on Stacks mainnet');
     expect(guide).toContain('Existing v5/v4 contracts and jobs retain their');
-    expect(guide).toContain('SDK 0.9.0 promotion is a candidate');
+    expect(guide).toContain('Stable SDK 0.9.1 (npm `latest`) uses v6/v5 by default');
     expect(guide).toContain('require separate receipts');
     expect(guide).not.toContain('Production remains v5/v4');
   });

@@ -56,13 +56,13 @@ describe('existing-agent onboarding', () => {
   it('documents live production timing separately from signer and funded E2E certification', () => {
     const guide = read('commerce/workflow-timing.mdx');
     for (const text of ['live in production', 'e4b0e24422631c11c77c1a7945e8b7ece7e1e5af',
-      'SDK 0.9.0', 'Version 1 remains unchanged',
+      'SDK 0.9.x', 'Version 1 remains unchanged',
       'not wallet enforcement', 'terminal jobs have no active countdown',
       'No new funded E2E or external adoption']) {
       expect(guide).toContain(text);
     }
-    expect(guide).toContain('stable **SDK 0.9.0** under `latest`');
-    expect(guide).toContain('npm install --save-exact @perkos/agent-sdk@0.9.0');
+    expect(guide).toContain('stable **SDK 0.9.x** (`0.9.1` under `latest`)');
+    expect(guide).toContain('npm install --save-exact @perkos/agent-sdk@0.9.1');
     expect(guide).not.toContain('source candidate, not yet deployed');
     expect(guide).not.toContain('After the Web candidate is deployed');
     expect(guide).not.toContain('Production promotion is separate');
