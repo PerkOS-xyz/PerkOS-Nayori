@@ -813,7 +813,7 @@ wallet credential.
 ### Install the agent SDK
 
 ```bash
-npm install --save-exact @perkos/agent-sdk@0.9.0
+npm install --save-exact @perkos/agent-sdk@0.9.1
 ```
 
 ```ts
@@ -836,7 +836,7 @@ const reputation = await nayori.getReputation(
 );
 ```
 
-Read-only operations require no wallet. Stable SDK `0.9.0` selects v6/v5 by default; explicit
+Read-only operations require no wallet. Stable SDK `0.9.1` selects v6/v5 by default; explicit
 contract IDs remain recommended for auditable production configuration. Funding and submission
 additionally require the exact live `serviceFeeAcceptance` described
 in the [earned service fee guide](https://docs.nayori.ai/commerce/service-fees). State changes
