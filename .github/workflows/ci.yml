@@ -82,6 +82,20 @@ jobs:
     defaults:
       run:
         working-directory: App
+    # Disposable Postgres for the participant-registry integration test; discarded with the job.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: nayori
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       NEXT_PUBLIC_RELEASE_CHANNEL: ${{ matrix.channel }}
       NEXT_PUBLIC_SITE_URL: ${{ matrix.site }}
@@ -110,6 +124,7 @@ jobs:
       # the writable current generation; the build below still uses every exact matrix profile.
       - run: npm test
         env:
+          TEST_DATABASE_URL: postgres://postgres:test@127.0.0.1:5432/nayori
           NEXT_PUBLIC_CONTRACT_PROFILE: current-v6-v5
           NEXT_PUBLIC_STX_COMMERCE_CONTRACT: agentic-commerce-v6
           NEXT_PUBLIC_SBTC_COMMERCE_CONTRACT: sbtc-commerce-v5
