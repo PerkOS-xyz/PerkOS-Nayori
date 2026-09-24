@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { isMarkdownPreferred } from 'fumadocs-core/negotiation';
 
-const excludedPrefixes = ['/api/', '/llms', '/og/', '/_next/'];
+// Static files served verbatim from public/; everything else that ends in .md is a page rendered as Markdown.
+const excludedPrefixes = ['/api/', '/llms', '/og/', '/_next/', '/nayori-test-guide.md'];
 
 function markdownTarget(pathname: string) {
   const normalized = pathname === '/' ? '' : pathname.replace(/\/$/, '');
