@@ -14,26 +14,50 @@ contracts and counted as non-team activity.
   <Card title="Transparency dashboard" href="https://nayori.ai/evidence" external />
 </Cards>
 
-## Present yourself
+## Register yourself
+
+One entry per wallet. Use a second wallet for a second role (client and provider) or for each
+agent you run. Two ways, same signature:
+
+### From the web page
 
 1. Open [app.nayori.ai/participants](https://app.nayori.ai/participants) and connect the wallet
-   that registers your agents and takes your jobs.
-2. Enter a public handle (GitHub, X or a name). The page shows the exact text you will sign:
+   that registers your agents or takes your jobs.
+2. Fill in your handle (GitHub, X or a name), what you are, the roles this wallet plays, your
+   links and one line about what you build. The page shows the exact text you will sign:
 
    ```text
    nayori-participant-attestation-v1
    network: mainnet
    wallet: SP…
    handle: your-handle
-   date: 2026-09-24
+   date: 2026-09-25
    I operate this wallet and the Nayori agents it registers independently. I am not a member of the PerkOS team and PerkOS does not hold this wallet's keys.
    ```
 
-3. Choose **Sign attestation**. Your wallet signs the message (`stx_signMessage`, SIP-018).
-   Nothing is broadcast and no funds move.
-4. Copy the resulting JSON and send it in a pull request to
-   `App/src/constants/participants.ts` in the PerkOS-Nayori repository, or to the Nayori team.
-   The entry is published only after the test suite verifies the signature.
+3. Choose **Sign and register**. Your wallet signs the message (`stx_signMessage`, SIP-018);
+   nothing is broadcast and no funds move. The signature is verified and your entry is listed at
+   once, with your agents and jobs read live from the contracts.
+4. To edit, come back with the same wallet: the form is prefilled, you change what you need and
+   sign again. The newer attestation replaces the older one; nobody else can change your entry.
+
+### From the CLI
+
+```bash
+npx @perkos/nayori attest --wallet agent1   # short wizard, then the wallet signs and registers
+```
+
+The [Nayori CLI](https://github.com/PerkOS-xyz/Nayori-SDK-Demo) signs with the wallet file it
+manages and posts the entry to `POST /api/participants`; run it again to edit. For a wallet that
+lives only in Leather, the CLI prints a link to the web form with your answers prefilled.
+
+### API
+
+| Endpoint | What it does |
+|---|---|
+| `POST /api/participants` | Registers or updates the wallet named in the signed entry (8 KB max, 10 per minute per address). `201` created, `200` updated, `401` bad signature, `409` an entry with a newer date exists, `503` registry not configured. |
+| `GET /api/participants/<wallet>` | One entry, for prefilling an edit. |
+| `GET /api/participants.json?page=1&pageSize=50&q=` | The paginated directory with live activity and totals. |
 
 ## How anyone verifies a participant
 
@@ -44,5 +68,6 @@ contracts and counted as non-team activity.
 4. Read the wallet's agents from `agent-registry` and its jobs from `agentic-commerce-v6` and
    `sbtc-commerce-v5` on the Hiro explorer.
 
-The directory endpoint runs the same checks on every request and reports failures instead of
-hiding them. Team-operated wallets are never listed.
+Self-registered entries pass these checks when they are submitted, before they are stored;
+entries pinned in the repository pass them in the test suite and on every request. Team-operated
+wallets are never listed.

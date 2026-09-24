@@ -10,7 +10,7 @@ const network = NETWORK_NAME === "mainnet" ? "mainnet" : "testnet";
 
 async function signedParticipant(handle = "example-dev", overrides: Partial<Participant> = {}): Promise<Participant> {
   const privateKey = randomPrivateKey();
-  const publicKey = privateKeyToPublic(privateKey);
+  const publicKey = privateKeyToPublic(privateKey) as unknown as string;
   const address = getAddressFromPublicKey(publicKey, network);
   const message = participantAttestationMessage({ handle, address, network, date: "2026-09-24" });
   const signature = signMessageHashRsv({ messageHash: await stacksMessageHash(message), privateKey });

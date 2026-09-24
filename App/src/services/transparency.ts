@@ -351,7 +351,22 @@ async function loadJobs(currency: Currency, count: number): Promise<CommerceJob[
   return jobs as CommerceJob[];
 }
 
-export async function loadTransparencySnapshot(): Promise<TransparencySnapshot> {
+export interface SnapshotOptions {
+  /** Wallets attested through the participant registry (upper-cased); classified `external-attested`. */
+  attestedWallets?: Set<string>;
+}
+
+/** The static classification plus the registry: a wallet registered by its owner counts as external. */
+export function classifyWithRegistry(attestedWallets?: Set<string>): typeof classifyEvidenceWallet {
+  if (!attestedWallets || attestedWallets.size === 0) return classifyEvidenceWallet;
+  return (address?: string) => {
+    const base = classifyEvidenceWallet(address);
+    if (base !== "unattested") return base;
+    return address && attestedWallets.has(address.toUpperCase()) ? "external-attested" : "unattested";
+  };
+}
+
+export async function loadTransparencySnapshot(options: SnapshotOptions = {}): Promise<TransparencySnapshot> {
   try {
     const [agentCount, sbtcJobCount, stxJobCount, stats] = await Promise.all([
       readCount("agent-registry", "get-agent-count"),
@@ -368,6 +383,7 @@ export async function loadTransparencySnapshot(): Promise<TransparencySnapshot> 
       agents,
       jobs: [...sbtcJobs, ...stxJobs],
       stats,
+      classifyWallet: classifyWithRegistry(options.attestedWallets),
     });
   } catch (error) {
     console.error("Transparency snapshot unavailable:", error);

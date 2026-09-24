@@ -1,10 +1,12 @@
 import { loadTransparencySnapshot } from "../../../services/transparency";
 import { loadDirectPayments } from "../../../services/direct-payments";
+import { loadAttestedWallets } from "../../../services/participant-registry";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [snapshot, directPayments] = await Promise.all([loadTransparencySnapshot(), loadDirectPayments()]);
+  const attestedWallets = await loadAttestedWallets();
+  const [snapshot, directPayments] = await Promise.all([loadTransparencySnapshot({ attestedWallets }), loadDirectPayments()]);
   return Response.json({ ...snapshot, directPayments }, {
     headers: {
       "Access-Control-Allow-Origin": "*",

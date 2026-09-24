@@ -2,6 +2,8 @@
 const nextConfig = {
   // Emit a self-contained Node.js server for container and VPS deployments.
   output: "standalone",
+  // The participant registry talks to Postgres from route handlers; keep the driver out of the bundle.
+  serverExternalPackages: ["pg"],
   // Lint is decoupled from the production build; run `npm run lint` separately.
   eslint: { ignoreDuringBuilds: true },
   // This repository intentionally has separate lockfiles for contracts and the app.
