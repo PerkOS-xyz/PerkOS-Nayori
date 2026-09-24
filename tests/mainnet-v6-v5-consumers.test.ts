@@ -342,7 +342,7 @@ describe("public production language", () => {
   it("does not send new SDK users to historical commerce defaults", () => {
     const quickstart = read("developer-portal/content/docs/getting-started/sdk.mdx");
     const rootQuickstart = read("README.md");
-    expect(quickstart).toContain("@perkos/agent-sdk@0.9.0");
+    expect(quickstart).toContain("@perkos/agent-sdk@0.9.1");
     expect(quickstart).toContain("agentic-commerce-v6");
     expect(quickstart).toContain("sbtc-commerce-v5");
     expect(quickstart).toContain("serviceFeeAcceptance");
@@ -350,7 +350,7 @@ describe("public production language", () => {
     expect(rootQuickstart).toContain("agentic-commerce-v6");
     expect(rootQuickstart).toContain("sbtc-commerce-v5");
     expect(rootQuickstart).toContain("serviceFeeAcceptance");
-    expect(rootQuickstart).toContain("Stable SDK `0.9.0`");
+    expect(rootQuickstart).toContain("Stable SDK `0.9.1`");
     for (const content of [
       quickstart,
       read("developer-portal/content/docs/reference/sdk.mdx"),
