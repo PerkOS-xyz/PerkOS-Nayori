@@ -5,6 +5,7 @@ import {
   STX_COMMERCE_CONTRACT_NAME,
 } from "../constants/contract";
 import { NETWORK_NAME } from "../constants/network";
+import { hiroFetch } from "./hiro-fetch";
 
 const API =
   NETWORK_NAME === "mainnet" ? "https://api.hiro.so" : "https://api.testnet.hiro.so";
@@ -52,7 +53,7 @@ async function getContractTransactions(contract: string, allPages: boolean, stri
   let total = 0;
   let offset = 0;
   do {
-    const r = await fetch(
+    const r = await hiroFetch(
       `${API}/extended/v1/address/${CONTRACT_ADDRESS}.${contract}/transactions?limit=${PAGE_SIZE}&offset=${offset}`,
       { cache: "no-store" }
     );
@@ -142,7 +143,7 @@ export async function getOnchainStats(
 // Current Stacks tip height, used to compute real job expiry blocks.
 export async function getBlockHeight(): Promise<number> {
   try {
-    const r = await fetch(`${API}/v2/info`, { cache: "no-store" });
+    const r = await hiroFetch(`${API}/v2/info`, { cache: "no-store" });
     if (!r.ok) return 0;
     const d = await r.json();
     return Number(d.stacks_tip_height ?? 0);
@@ -155,7 +156,7 @@ export async function getBlockHeight(): Promise<number> {
 // use burn-block-height, not the faster Stacks block height.
 export async function getBurnBlockHeight(): Promise<number> {
   try {
-    const r = await fetch(`${API}/v2/info`, { cache: "no-store" });
+    const r = await hiroFetch(`${API}/v2/info`, { cache: "no-store" });
     if (!r.ok) return 0;
     const d = await r.json();
     return Number(d.burn_block_height ?? 0);

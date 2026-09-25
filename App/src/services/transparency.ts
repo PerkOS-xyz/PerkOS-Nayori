@@ -19,6 +19,7 @@ import {
 } from "../constants/contract";
 import { NETWORK, NETWORK_NAME } from "../constants/network";
 import { buildFeeEvidence, type FeeEvidence, type FeeEvidenceSelection } from "./fee-evidence";
+import { createTtlCache } from "./snapshot-cache";
 
 const feeSelection: FeeEvidenceSelection = {
   stx: { contract: `${CONTRACT_ADDRESS}.${STX_COMMERCE_CONTRACT_NAME}`, enabled: STX_COMMERCE_HAS_SERVICE_FEES },
@@ -110,6 +111,10 @@ export interface TransparencySnapshot {
     chain: "live" | "unavailable";
     source: string;
     code?: "chain_source_unavailable";
+    /** How this snapshot's chain data was obtained: read now, served from the short server cache, or the last good read after a failed refresh. */
+    cache?: "fresh" | "cached" | "stale";
+    /** When the chain was actually read for this snapshot. */
+    readAt?: string;
   };
   milestone1: typeof evidenceManifest.milestone1;
   milestone2: {
@@ -366,25 +371,47 @@ export function classifyWithRegistry(attestedWallets?: Set<string>): typeof clas
   };
 }
 
+const SNAPSHOT_TTL_MS = Number(process.env.TRANSPARENCY_CACHE_MS ?? 60_000);
+const SNAPSHOT_STALE_MS = Number(process.env.TRANSPARENCY_STALE_MS ?? 30 * 60_000);
+
+async function readChain(): Promise<SnapshotInput> {
+  const [agentCount, sbtcJobCount, stxJobCount, stats] = await Promise.all([
+    readCount("agent-registry", "get-agent-count"),
+    readCount(SBTC_COMMERCE_CONTRACT_NAME, "get-job-count"),
+    readCount(STX_COMMERCE_CONTRACT_NAME, "get-job-count"),
+    getOnchainStats({ strict: true, recentLimit: 50 }),
+  ]);
+  const [agents, sbtcJobs, stxJobs] = await Promise.all([
+    loadAgents(agentCount),
+    loadJobs("sbtc", sbtcJobCount),
+    loadJobs("stx", stxJobCount),
+  ]);
+  return { agents, jobs: [...sbtcJobs, ...stxJobs], stats };
+}
+
+type Global = typeof globalThis & { __nayoriChainCache?: ReturnType<typeof createTtlCache<SnapshotInput>> };
+function chainCache() {
+  const g = globalThis as Global;
+  if (!g.__nayoriChainCache) g.__nayoriChainCache = createTtlCache<SnapshotInput>({ ttlMs: SNAPSHOT_TTL_MS, staleMs: SNAPSHOT_STALE_MS, load: readChain });
+  return g.__nayoriChainCache;
+}
+
+/**
+ * One chain read per minute per process, shared by every page and endpoint; concurrent requests
+ * share the read. If Hiro fails (rate limit, outage) the last good read is served for up to 30
+ * minutes, flagged `cache: "stale"` with its real `readAt`, instead of an empty snapshot.
+ */
 export async function loadTransparencySnapshot(options: SnapshotOptions = {}): Promise<TransparencySnapshot> {
   try {
-    const [agentCount, sbtcJobCount, stxJobCount, stats] = await Promise.all([
-      readCount("agent-registry", "get-agent-count"),
-      readCount(SBTC_COMMERCE_CONTRACT_NAME, "get-job-count"),
-      readCount(STX_COMMERCE_CONTRACT_NAME, "get-job-count"),
-      getOnchainStats({ strict: true, recentLimit: 50 }),
-    ]);
-    const [agents, sbtcJobs, stxJobs] = await Promise.all([
-      loadAgents(agentCount),
-      loadJobs("sbtc", sbtcJobCount),
-      loadJobs("stx", stxJobCount),
-    ]);
-    return buildTransparencySnapshot({
-      agents,
-      jobs: [...sbtcJobs, ...stxJobs],
-      stats,
+    const read = await chainCache().get();
+    const snapshot = buildTransparencySnapshot({
+      ...read.value,
+      generatedAt: read.readAt.toISOString(),
       classifyWallet: classifyWithRegistry(options.attestedWallets),
     });
+    snapshot.dataStatus.cache = read.status;
+    snapshot.dataStatus.readAt = read.readAt.toISOString();
+    return snapshot;
   } catch (error) {
     console.error("Transparency snapshot unavailable:", error);
     return buildUnavailableTransparencySnapshot();
