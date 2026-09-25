@@ -1,4 +1,5 @@
 import { EXPLORER, CHAIN_PARAM } from "./onchain-stats";
+import { hiroFetch } from "./hiro-fetch";
 import { NETWORK_NAME } from "../constants/network";
 
 const API = NETWORK_NAME === "mainnet" ? "https://api.hiro.so" : "https://api.testnet.hiro.so";
@@ -13,7 +14,7 @@ export function txIdOf(res: any): string | undefined {
 
 export async function txStatus(txid: string): Promise<string> {
   try {
-    const r = await fetch(`${API}/extended/v1/tx/${txid}`, { cache: "no-store" });
+    const r = await hiroFetch(`${API}/extended/v1/tx/${txid}`, { cache: "no-store" });
     if (!r.ok) return "pending";
     const d = await r.json();
     return d.tx_status ?? "pending";

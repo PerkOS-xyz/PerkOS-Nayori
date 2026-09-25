@@ -1,4 +1,5 @@
 import { STACKS_MAINNET, STACKS_TESTNET, StacksNetwork } from "@stacks/network";
+import { hiroFetch } from "../services/hiro-fetch";
 
 export type NetworkName = "mainnet" | "testnet";
 
@@ -15,6 +16,7 @@ export const NETWORK_NAME = resolveNetworkName(
   process.env.NEXT_PUBLIC_STACKS_NETWORK
 );
 
-// Network object for read-only calls (fetchCallReadOnlyFunction)
-export const NETWORK: StacksNetwork =
-  NETWORK_NAME === "mainnet" ? STACKS_MAINNET : STACKS_TESTNET;
+// Network object for read-only calls (fetchCallReadOnlyFunction). Server-side reads carry the
+// deployment's Hiro API key when `HIRO_API_KEY` is set; in the browser this is plain fetch.
+const baseNetwork: StacksNetwork = NETWORK_NAME === "mainnet" ? STACKS_MAINNET : STACKS_TESTNET;
+export const NETWORK: StacksNetwork = { ...baseNetwork, client: { ...baseNetwork.client, fetch: hiroFetch } };
