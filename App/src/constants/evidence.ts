@@ -8,7 +8,7 @@ import { NETWORK_NAME } from "./network";
 import { participants } from "./participants";
 
 export const EVIDENCE_VERSION = 2;
-export const EVIDENCE_UPDATED_AT = "2026-09-03T02:00:00.000Z";
+export const EVIDENCE_UPDATED_AT = "2026-10-10T13:00:00.000Z";
 
 export const milestone2Targets = {
   registeredAgentsMainnet: 10,
@@ -109,7 +109,24 @@ export const m2Baseline = {
   completedSbtcJobsMainnet: 1,
 } as const;
 
-export const externalSdkAdoptions = [] as const;
+export const externalSdkAdoptions = [
+  {
+    name: "AgentPay",
+    handle: "agentpaytools",
+    kind: "independent-developer",
+    reportedAt: "2026-10-06T00:00:00.000Z",
+    summary:
+      "Ran the published quickstart (Case 1) end to end on Stacks mainnet with @perkos/nayori on @perkos/agent-sdk, completed job 11 with its own client and provider wallets, and delivered a written independent test report with transaction ids, the deliverable hash and two operational findings.",
+    wallets: [
+      "SPJYS2BY5T3C2NBZ2FJ798W3T2KGZQ9M86P7NB28",
+      "SP3VVW16782T08YDPZ887F89C0EC3NC0GZZHAJM6K",
+    ],
+    jobIds: [11],
+    report:
+      "https://docs.google.com/document/d/1vlLbuOjNAnJyNsSH2kU2iEkUFO7HAehoXc2f7BYMors/edit?usp=sharing",
+    namedWithConsent: true,
+  },
+] as const;
 
 export function classifyEvidenceWallet(address?: string): EvidenceWalletClassification {
   if (!address) return "unattested";
