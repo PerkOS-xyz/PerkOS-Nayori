@@ -148,4 +148,6 @@ jobs:
           cache-dependency-path: developer-portal/package-lock.json
       - run: npm ci
       - run: npm run verify
-      - run: npm audit --audit-level=high
+      # Production scope only, like the App job: the static site ships no devDependencies, and the
+      # eslint toolchain pulls braces (GHSA-vfj7-8cjw-p6xm), which has no patched release yet.
+      - run: npm audit --omit=dev --audit-level=high
