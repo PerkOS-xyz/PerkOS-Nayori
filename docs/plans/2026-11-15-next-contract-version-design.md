@@ -26,7 +26,7 @@ New features are kept to the minimum needed.
 
 1. **No owner, no admin functions.** The token, the contracts allowed to write reputation, the limits and the fee are constants.
 2. **sBTC is a constant.** The escrow calls the canonical sBTC contract (`SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`) directly and does not take a token parameter.
-3. **Bounded payouts.** Every payout uses Clarity 7 `as-contract?` with an allowance limited to the asset and the exact amount of that job.
+3. **Bounded payouts.** Every payout uses Clarity 7 `as-contract?` with an allowance limited to the asset and the exact amount of that job or deposit.
 4. **One clock.** Every deadline is measured in Bitcoin blocks (`burn-block-height`).
 5. **Opt-in delegation, as in PoX.** A party is `tx-sender`. A call that reaches Nayori through another contract counts as the party's only if the party allowed that contract first in `nayori-permissions`, optionally until a Bitcoin block height. Allowing and revoking must be called directly by the party. This keeps composition (for example, one agent applying to several jobs in one call) while a contract the party never allowed cannot act for it.
 6. **Per-job pinning.** At creation, each job stores its evaluator, deadlines, treasury and appeal authority. Later role changes apply only to new jobs.
@@ -79,7 +79,7 @@ Automated agents keep working without any special permission. The evaluator deci
 | Application deposit returned (withdrawn, declined, displaced or job closed) | the applicant | the applicant's deposit |
 
 - **Fee:** the budget divided by 50, so at least 20 sats. It is charged on every decision. There are no fee waivers.
-- **Funding:** in this version, jobs are funded from standard wallets. Funding from smart-contract wallets is a later addition.
+- **Funding:** the client funds from its own wallet, directly or through a contract it allowed (principle 5). A smart-contract wallet acting as the client itself is a later addition.
 
 ## Reputation, agents and applications
 
@@ -113,6 +113,7 @@ These are written in each contract with `;; #[env(simnet)]` and fuzzed with Rend
 3. Each job settles once, and net plus fee equals the budget.
 4. Payouts go only to the job's parties or its treasury.
 5. No funds leave the set of parties and treasuries.
+6. Each job's application list holds at most 50 entries, at most one per agent, sorted by deposit, with no empty entries and every deposit within its bounds.
 
 ## Testing and review
 
