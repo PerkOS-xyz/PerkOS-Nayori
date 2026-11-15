@@ -25,7 +25,7 @@ New features are kept to the minimum needed.
 ## Design principles
 
 1. **No owner, no admin functions.** The token, the contracts allowed to write reputation, the limits and the fee are constants.
-2. **sBTC is a constant.** The escrow calls the canonical sBTC contract (`SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`) directly and does not take a token parameter.
+2. **sBTC is a constant.** The escrow calls the canonical sBTC contract (`SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`) through a constant and does not take a token parameter. A contract that can vary would instead be passed as a trait and verified against the contract stored when the job was funded; the canonical token does not vary, so it stays a constant. Supporting other tokens later would use that trait pattern.
 3. **Bounded payouts.** Every payout uses Clarity 7 `as-contract?` with an allowance limited to the asset and the exact amount of that job or deposit.
 4. **One clock.** Every deadline is measured in Bitcoin blocks (`burn-block-height`).
 5. **Opt-in delegation, as in PoX.** A party is `tx-sender`. A call that reaches Nayori through another contract counts as the party's only if the party allowed that contract first in `nayori-permissions`, optionally until a Bitcoin block height. Allowing and revoking must be called directly by the party. This keeps composition (for example, one agent applying to several jobs in one call) while a contract the party never allowed cannot act for it.
