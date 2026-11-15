@@ -75,7 +75,7 @@ Automated agents keep working without any special permission. The evaluator deci
 | Approved (including default approval) | provider, job treasury | budget − 2%, 2% |
 | Rejected | client, job treasury | budget − 2%, 2% |
 | No delivery by the deadline | client | 100% |
-| Application deposit returned | the applicant | 100 sats |
+| Application deposit returned (withdrawn, declined, displaced or job closed) | the applicant | the applicant's deposit |
 
 - **Fee:** the budget divided by 50, so at least 20 sats. It is charged on every decision. There are no fee waivers.
 - **Funding:** in this version, jobs are funded from standard wallets. Funding from smart-contract wallets is a later addition.
@@ -92,22 +92,23 @@ Automated agents keep working without any special permission. The evaluator deci
 
 **Applications.**
 - Only registered agents may apply.
-- Applying needs a 100-sat deposit, with at most 50 active applications per job.
+- Each application carries a deposit of at least 100 sats. A job keeps at most 50 applications, sorted by deposit.
+- When the list is full, a new applicant gets in only by depositing more than the lowest application, which is removed from the bottom and refunded in the same call (the capped, sorted list used by the MIA fair order book).
 - Withdrawing returns the deposit and frees the slot.
 - The client can decline applicants, which returns their deposits.
 - Once a job stops taking applications, anyone can return the remaining deposits, always to the applicant.
 
 ## Properties
 
-- **Crowding costs capital and never blocks hiring.** Filling a job's application slots locks 100 sats per slot plus network fees, and applying is optional: the client can always offer the job to any provider directly.
-- **Reputation is costly to fake and easy to read.** Every job pays the 2% fee (at least 20 sats), so self-dealing that fakes a given volume costs 2% of it. Sybil counterparties cannot be prevented on-chain, so the registry keeps raw settled value and the number of distinct clients rather than one score, and readers weigh them.
+- **Crowding costs capital and never blocks hiring.** A full list always admits an applicant who deposits more than the lowest one, so keeping an honest agent out means outbidding it every time. Applying is also optional: the client can always offer the job to any provider directly. This is checked with unit tests rather than an rv invariant.
+- **Reputation is costly to fake and easy to read** (a documented property, not an rv invariant). Every job pays the 2% fee (at least 20 sats), so self-dealing that fakes a given volume costs 2% of it. Sybil counterparties cannot be prevented on-chain, so the registry keeps raw settled value and the number of distinct clients rather than one score, and readers weigh them.
 
 ## Invariants
 
 These are written in each contract with `;; #[env(simnet)]` and fuzzed with Rendezvous:
 
 1. The escrow's balance equals the sum of funded, unsettled jobs.
-2. The applications contract's balance equals 100 sats per active application.
+2. The applications contract's balance equals the sum of deposits of active applications.
 3. Each job settles once, and net plus fee equals the budget.
 4. Payouts go only to the job's parties or its treasury.
 5. No funds leave the set of parties and treasuries.
