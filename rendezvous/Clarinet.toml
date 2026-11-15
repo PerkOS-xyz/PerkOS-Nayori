@@ -1,0 +1,30 @@
+# Rendezvous fuzzing project. rv-sync.sh generates contracts/ and settings/
+# from the real project; see README.md.
+[project]
+name = "perkos-nayori-rendezvous"
+description = "Fuzzing harness for the Nayori sBTC escrow"
+authors = []
+telemetry = false
+cache_dir = "./.cache"
+
+[contracts.sip-010-trait]
+path = "contracts/sip-010-trait.clar"
+epoch = "2.5"
+
+# Test-only SIP-010 stand-in for sBTC (canonical sBTC needs epoch 3.0 in simnet).
+[contracts.mock-sbtc-token]
+path = "contracts/mock-sbtc-token.clar"
+epoch = "2.5"
+
+# Second instance of the same token, so the fuzzer can try token substitution.
+[contracts.mock-sbtc-token-alt]
+path = "contracts/mock-sbtc-token.clar"
+epoch = "2.5"
+
+[contracts.reputation-registry-v3]
+path = "contracts/reputation-registry-v3.clar"
+epoch = "2.5"
+
+[contracts.sbtc-commerce-v5]
+path = "contracts/sbtc-commerce-v5.clar"
+epoch = "2.5"

@@ -1,0 +1,18 @@
+{
+  "name": "perkos-nayori-rendezvous",
+  "private": true,
+  "description": "Rendezvous fuzzing for the Nayori escrow contracts",
+  "scripts": {
+    "sync": "sh ./rv-sync.sh",
+    "invariant": "sh ./rv-sync.sh && rv . sbtc-commerce-v5 invariant --config rv.config.json",
+    "test": "sh ./rv-sync.sh && rv . sbtc-commerce-v5 test --config rv.config.json",
+    "lifecycle": "sh ./rv-sync.sh && node lifecycle.mjs --runs 40",
+    "fuzz": "npm run invariant && npm run test && npm run lifecycle"
+  },
+  "devDependencies": {
+    "@stacks/clarinet-sdk": "3.26.0",
+    "@stacks/rendezvous": "1.1.0",
+    "@stacks/transactions": "7.7.0",
+    "fast-check": "4.10.2"
+  }
+}
