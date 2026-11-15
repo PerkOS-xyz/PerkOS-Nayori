@@ -25,12 +25,13 @@ New features are kept to the minimum needed.
 ## Design principles
 
 1. **No owner, no admin functions.** The token, the contracts allowed to write reputation, the limits and the fee are constants.
-2. **sBTC is a constant.** The escrow calls the canonical sBTC contract (`SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`) directly and does not take a token parameter.
-3. **Bounded payouts.** Every payout uses Clarity 7 `as-contract?` with an allowance limited to the asset and the exact amount of that job.
+2. **sBTC is a constant.** The escrow calls the canonical sBTC contract (`SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`) through a constant and does not take a token parameter. A contract that can vary would instead be passed as a trait and verified against the contract stored when the job was funded; the canonical token does not vary, so it stays a constant. Supporting other tokens later would use that trait pattern.
+3. **Bounded payouts.** Every payout uses Clarity 7 `as-contract?` with an allowance limited to the asset and the exact amount of that job or deposit.
 4. **One clock.** Every deadline is measured in Bitcoin blocks (`burn-block-height`).
 5. **Opt-in delegation, as in PoX.** A party is `tx-sender`. A call that reaches Nayori through another contract counts as the party's only if the party allowed that contract first in `nayori-permissions`, optionally until a Bitcoin block height. Allowing and revoking must be called directly by the party. This keeps composition (for example, one agent applying to several jobs in one call) while a contract the party never allowed cannot act for it.
 6. **Per-job pinning.** At creation, each job stores its evaluator, deadlines, treasury and appeal authority. Later role changes apply only to new jobs.
-7. **Distinct parties.** The client, provider, evaluator, appeal authority and treasury of a job are distinct principals. This is checked at creation and at acceptance.
+7. **Bounded inputs.** Every number a user supplies has a lower and an upper bound (budget, deposit, deadlines), so no single entry can push a calculation or a sorted list out of range.
+8. **Distinct parties.** The client, provider, evaluator, appeal authority and treasury of a job are distinct principals. This is checked at creation and at acceptance.
 
 ## Roles
 
@@ -51,7 +52,7 @@ create-job -> OPEN -> fund-job -> FUNDED -> name-provider -> OFFERED -> accept-j
 -> settlement -> COMPLETED / REJECTED
 ```
 
-1. `create-job` sets the budget (minimum 1,000 sats), the evaluator, the delivery deadline and the review window in one call. Both deadlines must fall within these bounds:
+1. `create-job` sets the budget (1,000 sats to 100,000,000 sats), the evaluator, the delivery deadline and the review window in one call. Both deadlines must fall within these bounds:
    - delivery: 144 to 4,320 Bitcoin blocks (about 1 to 30 days);
    - review window: 12 to 1,008 blocks (about 2 hours to 7 days), with 144 as the suggested default.
 2. `fund-job` deposits exactly the budget from the client's wallet.
@@ -78,7 +79,7 @@ Automated agents keep working without any special permission. The evaluator deci
 | Application deposit returned (withdrawn, declined, displaced or job closed) | the applicant | the applicant's deposit |
 
 - **Fee:** the budget divided by 50, so at least 20 sats. It is charged on every decision. There are no fee waivers.
-- **Funding:** in this version, jobs are funded from standard wallets. Funding from smart-contract wallets is a later addition.
+- **Funding:** the client funds from its own wallet, directly or through a contract it allowed (principle 5). A smart-contract wallet acting as the client itself is a later addition.
 
 ## Reputation, agents and applications
 
@@ -92,7 +93,7 @@ Automated agents keep working without any special permission. The evaluator deci
 
 **Applications.**
 - Only registered agents may apply.
-- Each application carries a deposit of at least 100 sats. A job keeps at most 50 applications, sorted by deposit.
+- Each application carries a deposit of 100 to 1,000,000 sats. A job keeps at most 50 applications, sorted by deposit.
 - When the list is full, a new applicant gets in only by depositing more than the lowest application, which is removed from the bottom and refunded in the same call (the capped, sorted list used by the MIA fair order book).
 - Withdrawing returns the deposit and frees the slot.
 - The client can decline applicants, which returns their deposits.
@@ -105,23 +106,26 @@ Automated agents keep working without any special permission. The evaluator deci
 
 ## Invariants
 
-These are written in each contract with `;; #[env(simnet)]` and fuzzed with Rendezvous:
+These are written in each contract with `;; #[env(simnet)]` and fuzzed with Rendezvous. They compare against the real sBTC and STX balances, not only internal totals:
 
 1. The escrow's balance equals the sum of funded, unsettled jobs.
 2. The applications contract's balance equals the sum of deposits of active applications.
 3. Each job settles once, and net plus fee equals the budget.
 4. Payouts go only to the job's parties or its treasury.
 5. No funds leave the set of parties and treasuries.
+6. Each job's application list holds at most 50 entries, at most one per agent, sorted by deposit, with no empty entries and every deposit within its bounds.
 
 ## Testing and review
 
 - Unit tests for every function, on both the success path and each failure path, checking the exact error code. The tests run in the same epoch as mainnet.
+- Round-trip properties: applying then withdrawing, and funding then refunding at the deadline, return exactly what went in; a displaced application is refunded exactly its deposit in the same call.
 - Rendezvous campaigns:
   - one where every account and role calls functions, including adversarial helper contracts;
   - one that walks the full lifecycle;
   - mutation runs that confirm the invariants catch injected bugs.
 - An internal review with independent reviewers and the Clarinet 4 linter. Then external review.
-- Testnet end to end with the real evaluator and keeper agents, the SDK and the CLI.
+- Testnet end to end with the real evaluator and keeper agents, the SDK and the CLI, plus simulations against a copy of mainnet state.
+- `AUDIT.md` (findings, severity, status) and `DECISIONS.md` (short design records) in the repository, and a small public bounty before mainnet.
 
 ## Rollout
 
