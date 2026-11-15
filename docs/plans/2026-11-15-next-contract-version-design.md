@@ -14,6 +14,7 @@ New features are kept to the minimum needed.
 
 | Contract | Purpose |
 |---|---|
+| `nayori-permissions` | Opt-in permissions: which contracts a party allows to act for it. |
 | `nayori-roles` | Holds the two remaining roles: the service treasury and the appeal authority. |
 | `nayori-escrow-sbtc` | Job escrow in sBTC. |
 | `nayori-escrow-stx` | The same escrow in STX. |
@@ -27,7 +28,7 @@ New features are kept to the minimum needed.
 2. **sBTC is a constant.** The escrow calls the canonical sBTC contract (`SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`) directly and does not take a token parameter.
 3. **Bounded payouts.** Every payout uses Clarity 7 `as-contract?` with an allowance limited to the asset and the exact amount of that job.
 4. **One clock.** Every deadline is measured in Bitcoin blocks (`burn-block-height`).
-5. **Authorization by `contract-caller`** for every party action, so a party is the principal that calls the contract directly.
+5. **Opt-in delegation, as in PoX.** A party is `tx-sender`. A call that reaches Nayori through another contract counts as the party's only if the party allowed that contract first in `nayori-permissions`, optionally until a Bitcoin block height. Allowing and revoking must be called directly by the party. This keeps composition (for example, one agent applying to several jobs in one call) while a contract the party never allowed cannot act for it.
 6. **Per-job pinning.** At creation, each job stores its evaluator, deadlines, treasury and appeal authority. Later role changes apply only to new jobs.
 7. **Distinct parties.** The client, provider, evaluator, appeal authority and treasury of a job are distinct principals. This is checked at creation and at acceptance.
 
@@ -95,6 +96,11 @@ Automated agents keep working without any special permission. The evaluator deci
 - Withdrawing returns the deposit and frees the slot.
 - The client can decline applicants, which returns their deposits.
 - Once a job stops taking applications, anyone can return the remaining deposits, always to the applicant.
+
+## Properties
+
+- **Crowding costs capital and never blocks hiring.** Filling a job's application slots locks 100 sats per slot plus network fees, and applying is optional: the client can always offer the job to any provider directly.
+- **Reputation is costly to fake and easy to read.** Every job pays the 2% fee (at least 20 sats), so self-dealing that fakes a given volume costs 2% of it. Sybil counterparties cannot be prevented on-chain, so the registry keeps raw settled value and the number of distinct clients rather than one score, and readers weigh them.
 
 ## Invariants
 
