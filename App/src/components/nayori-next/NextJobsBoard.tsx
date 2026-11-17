@@ -17,6 +17,7 @@ import {
 } from "../../services/nayori-next/status";
 import { buildCreateJob } from "../../services/nayori-next/transactions";
 import { sbtcToSats, stxToMicro } from "../../utils/format";
+import NextPermissionsPanel from "./NextPermissionsPanel";
 import { NextAddr, NextBanner, NextStatusBadge, TxProgressBar } from "./ui";
 import { useNextWallet } from "./useNextWallet";
 
@@ -330,6 +331,15 @@ export default function NextJobsBoard() {
           <button className="btn-ghost" disabled={page === 0} onClick={() => setPage((value) => value - 1)}>Newer</button>
           <span className="text-mist-400">Page {page + 1} of {pages}</span>
           <button className="btn-ghost" disabled={page + 1 >= pages} onClick={() => setPage((value) => value + 1)}>Older</button>
+        </div>
+      )}
+
+      {wallet.connected && (
+        <div className="mt-10">
+          <h2 className="text-lg font-semibold">Your wallet on the next contracts</h2>
+          <div className="mt-3 grid gap-4 lg:grid-cols-2">
+            <NextPermissionsPanel height={height} />
+          </div>
         </div>
       )}
     </div>
