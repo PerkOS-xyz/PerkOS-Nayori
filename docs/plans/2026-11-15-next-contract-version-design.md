@@ -2,11 +2,11 @@
 
 Date: 2026-11-15
 
-Status: Proposed design, shared for review. Not scheduled for deployment; it will take in further review feedback first.
+Status: Design updated after review (2026-11-17). Implemented and tested; first deployment in Clarity 6, then Clarity 7 once epoch 4.1 activates.
 
 ## Goal
 
-A new set of Clarity 7 contracts with no owner and no administrative powers, following the peer review guidance that trustless designs are preferable. Every rule that affects users is fixed in code. The product flow stays the same: create, fund, deliver, decide, appeal, settle, with a 2% service fee.
+A new set of contracts with no owner and no administrative powers, following the peer review guidance that trustless designs are preferable. Every rule that affects users is fixed in code. The product flow stays the same: create, fund, deliver, decide, appeal, settle, with a 2% service fee.
 
 New features are kept to the minimum needed.
 
@@ -26,16 +26,16 @@ New features are kept to the minimum needed.
 
 1. **No owner, no admin functions.** The token, the contracts allowed to write reputation, the limits and the fee are constants.
 2. **sBTC is a constant.** The escrow calls the canonical sBTC contract (`SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`) through a constant and does not take a token parameter. A contract that can vary would instead be passed as a trait and verified against the contract stored when the job was funded; the canonical token does not vary, so it stays a constant. Supporting other tokens later would use that trait pattern.
-3. **Bounded payouts.** Every payout uses Clarity 7 `as-contract?` with an allowance limited to the asset and the exact amount of that job or deposit.
+3. **Bounded payouts.** Every payout uses `as-contract?` with an allowance limited to the asset and the exact amount of that job or deposit.
 4. **One clock.** Every deadline is measured in Bitcoin blocks (`burn-block-height`).
-5. **Opt-in delegation, as in PoX.** A party is `tx-sender`. A call that reaches Nayori through another contract counts as the party's only if the party allowed that contract first in `nayori-permissions`, optionally until a Bitcoin block height. Allowing and revoking must be called directly by the party. This keeps composition (for example, one agent applying to several jobs in one call) while a contract the party never allowed cannot act for it.
+5. **Opt-in delegation, as in PoX.** A party is `tx-sender`. A call that reaches Nayori through another contract counts as the party's only if the party allowed that contract first in `nayori-permissions`, for one target Nayori contract and optionally until a Bitcoin block height. Allowing and revoking must be called directly by the party, and role handovers never accept delegation. This keeps composition (for example, one agent applying to several jobs in one call) while a contract the party never allowed cannot act for it. An allowed helper should check its own caller.
 6. **Per-job pinning.** At creation, each job stores its evaluator, deadlines, treasury and appeal authority. Later role changes apply only to new jobs.
 7. **Bounded inputs.** Every number a user supplies has a lower and an upper bound (budget, deposit, deadlines), so no single entry can push a calculation or a sorted list out of range.
 8. **Distinct parties.** The client, provider, evaluator, appeal authority and treasury of a job are distinct principals. This is checked at creation and at acceptance.
 
 ## Roles
 
-The treasury and the appeal authority start as Leather multisig accounts. Only the current holder can propose a successor. The successor accepts after 144 Bitcoin blocks, and the current holder can cancel before then. The two roles can never be the same principal.
+The treasury and the appeal authority start as Leather multisig accounts. Deployment aborts unless both are principals of the network being deployed to and differ. Only the current holder can propose a successor, always by a direct call. The successor accepts after 144 Bitcoin blocks, and the current holder can cancel before then. The two roles can never be the same principal.
 
 | Role | Can | Cannot |
 |---|---|---|
@@ -52,8 +52,8 @@ create-job -> OPEN -> fund-job -> FUNDED -> name-provider -> OFFERED -> accept-j
 -> settlement -> COMPLETED / REJECTED
 ```
 
-1. `create-job` sets the budget (1,000 sats to 100,000,000 sats), the evaluator, the delivery deadline and the review window in one call. Both deadlines must fall within these bounds:
-   - delivery: 144 to 4,320 Bitcoin blocks (about 1 to 30 days);
+1. `create-job` sets the budget (1,000 sats to 100,000,000 sats), the evaluator, the delivery window and the review window in one call. Both windows must fall within these bounds:
+   - delivery: 144 to 4,320 Bitcoin blocks (about 1 to 30 days); before acceptance it limits funding, offering and accepting, and acceptance restarts it so the provider always gets the full window;
    - review window: 12 to 1,008 blocks (about 2 hours to 7 days), with 144 as the suggested default.
 2. `fund-job` deposits exactly the budget from the client's wallet.
 3. `name-provider` offers the job to a provider. The client can change the offer until the provider accepts.
@@ -64,7 +64,7 @@ create-job -> OPEN -> fund-job -> FUNDED -> name-provider -> OFFERED -> accept-j
 8. Anyone can settle a decided job. The winner receives the budget minus 2%, the job's treasury receives 2%, and reputation is recorded.
 
 Deadline exits:
-- If the delivery deadline passes without a submission, anyone can refund 100% to the client, with no fee.
+- If the delivery deadline passes without a submission, anyone can refund 100% to the client, with no fee. If the provider had accepted, the registry records a non-delivery for it.
 - An unfunded open job simply expires.
 
 Automated agents keep working without any special permission. The evaluator decides with its own wallet, and the keeper settles expired windows. No step requires a specific person to be online.
@@ -87,7 +87,7 @@ Automated agents keep working without any special permission. The evaluator deci
 - Only the two new escrows can write, and this is fixed in code.
 - Each settled job records its outcome, value and client once.
 - Only the client rates, once per completed job.
-- Each provider's aggregates are: completed jobs, rejected jobs, total settled value, number of distinct clients, and average rating.
+- Each provider's aggregates are: completed jobs, rejected jobs, non-deliveries, settled value per asset, number of distinct clients, and average rating.
 
 **Agents.** An agent's wallet is the principal that registers it, with one agent per wallet.
 
@@ -96,7 +96,8 @@ Automated agents keep working without any special permission. The evaluator deci
 - Each application carries a deposit of 100 to 1,000,000 sats. A job keeps at most 50 applications, sorted by deposit.
 - When the list is full, a new applicant gets in only by depositing more than the lowest application, which is removed from the bottom and refunded in the same call (the capped, sorted list used by the MIA fair order book).
 - Withdrawing returns the deposit and frees the slot.
-- The client can decline applicants, which returns their deposits.
+- The client can decline applicants, which returns their deposits; a declined applicant cannot apply to that job again.
+- The job's evaluator, treasury and appeal authority cannot apply, and a job stops taking applications at its deadline.
 - Once a job stops taking applications, anyone can return the remaining deposits, always to the applicant.
 
 ## Properties
@@ -125,11 +126,11 @@ These are written in each contract with `;; #[env(simnet)]` and fuzzed with Rend
   - mutation runs that confirm the invariants catch injected bugs.
 - An internal review with independent reviewers and the Clarinet 4 linter. Then external review.
 - Testnet end to end with the real evaluator and keeper agents, the SDK and the CLI, plus simulations against a copy of mainnet state.
-- `AUDIT.md` (findings, severity, status) and `DECISIONS.md` (short design records) in the repository, and a small public bounty before mainnet.
+- `AUDIT.md` (findings, severity, status) and `DECISIONS.md` (short design records, including the trust each role carries) in the repository, and a small public bounty before mainnet.
 
 ## Rollout
 
-Mainnet deployment requires epoch 4.1, where Clarity 7 becomes the default, and happens only after review. The roles start as Leather multisig accounts. The app, SDK, CLI, evaluator and keeper then move to the new contracts. Earlier contracts stay as they are; they hold no funds, and the new reputation registry does not accept them.
+The contracts are first deployed in Clarity 6, before epoch 4.1 activates. From epoch 4.1, new deployments must use Clarity 7, so a Clarity 7 set follows once it activates. The roles start as Leather multisig accounts. The app, SDK, CLI, evaluator and keeper then move to the new contracts. Earlier contracts stay as they are; they hold no funds, and the new reputation registry does not accept them.
 
 Work order:
 1. roles, sBTC escrow, reputation;
