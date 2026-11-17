@@ -17,6 +17,7 @@ import {
 } from "../../services/nayori-next/status";
 import { buildCreateJob } from "../../services/nayori-next/transactions";
 import { sbtcToSats, stxToMicro } from "../../utils/format";
+import NextAgentPanel from "./NextAgentPanel";
 import NextPermissionsPanel from "./NextPermissionsPanel";
 import { NextAddr, NextBanner, NextStatusBadge, TxProgressBar } from "./ui";
 import { useNextWallet } from "./useNextWallet";
@@ -338,6 +339,7 @@ export default function NextJobsBoard() {
         <div className="mt-10">
           <h2 className="text-lg font-semibold">Your wallet on the next contracts</h2>
           <div className="mt-3 grid gap-4 lg:grid-cols-2">
+            <NextAgentPanel />
             <NextPermissionsPanel height={height} />
           </div>
         </div>
