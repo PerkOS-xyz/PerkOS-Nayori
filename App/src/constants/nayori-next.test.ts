@@ -19,9 +19,9 @@ describe("next contract generation switch", () => {
   it("is off when the deployer variable is unset at module load", async () => {
     vi.stubEnv("NEXT_PUBLIC_NAYORI_NEXT_DEPLOYER", "");
     vi.resetModules();
-    const module = await import("./nayori-next");
-    expect(module.NAYORI_NEXT_ENABLED).toBe(false);
-    expect(() => module.assertNextEnabled()).toThrow(/not enabled/);
+    const config = await import("./nayori-next");
+    expect(config.NAYORI_NEXT_ENABLED).toBe(false);
+    expect(() => config.assertNextEnabled()).toThrow(/not enabled/);
   });
 
   it("derives every contract id from the deployer and pins the network's sBTC", () => {

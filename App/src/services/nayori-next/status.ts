@@ -80,6 +80,11 @@ export function deadlineText(deadline: number, height: number, inclusive = false
   return `Passed at Bitcoin block ${deadline.toLocaleString("en-US")}`;
 }
 
+/** Before acceptance the job deadline limits funding, offering and accepting; after, delivery. */
+export function deadlineLabel(job: Pick<NextJob, "status">): string {
+  return job.status <= NEXT_STATUS.offered ? "Deadline to fund, offer and accept" : "Delivery deadline";
+}
+
 export function formatNextAmount(amount: number, asset: NextAsset): string {
   return asset === "sbtc" ? formatSbtcCompact(amount) : `${formatStx(amount)} STX`;
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   acceptsApplications,
   blocksToDuration,
+  deadlineLabel,
   deadlineText,
   durationToBitcoinBlocks,
   nextApplicationActions,
@@ -162,5 +163,7 @@ describe("next amounts and Bitcoin block deadlines", () => {
     expect(blocksToDuration(1_008)).toBe("about 7 days");
     expect(durationToBitcoinBlocks(1, "days")).toBe(144);
     expect(durationToBitcoinBlocks(6, "hours")).toBe(36);
+    expect(deadlineLabel(job(2))).toBe("Deadline to fund, offer and accept");
+    expect(deadlineLabel(job(3))).toBe("Delivery deadline");
   });
 });
