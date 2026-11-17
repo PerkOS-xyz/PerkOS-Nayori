@@ -91,6 +91,9 @@ export default function NextJobDetailView({ id, asset }: { id: number; asset: Ne
       <div className="container-x py-12">
         {back}
         <p className="mt-8 text-mist-300">{error ?? `${asset === "sbtc" ? "sBTC" : "STX"} job #${id} was not found.`}</p>
+        <button onClick={() => void load()} className="btn-ghost mt-4">
+          <RefreshCw className="h-4 w-4" /> Try again
+        </button>
       </div>
     );
   }
@@ -111,7 +114,7 @@ export default function NextJobDetailView({ id, asset }: { id: number; asset: Ne
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight">Job #{job.id}</h1>
             <NextStatusBadge status={job.status} />
-            <span className={`badge ${asset === "sbtc" ? "border-bitcoin/30 text-bitcoin-400" : "border-white/10 text-mist-400"}`}>
+            <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${asset === "sbtc" ? "border-bitcoin/30 text-bitcoin-400" : "border-white/10 text-mist-400"}`}>
               {asset === "sbtc" && <Bitcoin className="h-3 w-3" />}
               {asset === "sbtc" ? "sBTC" : "STX"}
             </span>

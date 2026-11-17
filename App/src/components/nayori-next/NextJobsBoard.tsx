@@ -30,6 +30,7 @@ export default function NextJobsBoard() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [height, setHeight] = useState(0);
+  const [heightKnown, setHeightKnown] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | NextStatusName>("all");
@@ -47,18 +48,21 @@ export default function NextJobsBoard() {
     async (silent = false) => {
       if (!silent) setLoading(true);
       setError(null);
+      // The Bitcoin height never fails (0 when unknown), so it loads even if the jobs do not.
+      const tip = getNextBurnHeight().then((value) => {
+        setHeight(value);
+        setHeightKnown(true);
+      });
       try {
-        const [list, tip] = await Promise.all([
-          getNextJobs(asset, { limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
-          getNextBurnHeight(),
-        ]);
+        const list = await getNextJobs(asset, { limit: PAGE_SIZE, offset: page * PAGE_SIZE });
         setJobs(list.jobs);
         setTotal(list.total);
-        setHeight(tip);
       } catch (reason) {
         console.error("Error loading next-generation jobs:", reason);
+        setJobs([]);
         setError("Could not load jobs from the next contracts. Try again.");
       } finally {
+        await tip;
         setLoading(false);
       }
     },
@@ -150,7 +154,7 @@ export default function NextJobsBoard() {
           ))}
         </div>
         <span className="text-xs text-mist-500">
-          Height now: {height ? `Bitcoin block ${height.toLocaleString("en-US")}` : "loading"}
+          Height now: {height ? `Bitcoin block ${height.toLocaleString("en-US")}` : heightKnown ? "unknown" : "loading"}
         </span>
       </div>
 
@@ -281,7 +285,7 @@ export default function NextJobsBoard() {
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-brand-400" />
           <p className="mt-3 text-sm text-mist-500">Loading {unit} jobs from chain</p>
         </div>
-      ) : visible.length === 0 ? (
+      ) : error ? null : visible.length === 0 ? (
         <div className="card mt-6 p-12 text-center">
           <Briefcase className="mx-auto h-8 w-8 text-mist-500" strokeWidth={1.5} />
           <p className="mt-3 text-mist-300">No matching {unit} jobs yet.</p>
