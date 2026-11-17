@@ -304,7 +304,7 @@ export function buildRetryReputation(ref: JobRef, config: NextConfig = NAYORI_NE
 
 // ---------------------------------------------------------------- agents and applications
 
-export function buildRegisterAgent(input: { name: string; uri: string }, config: NextConfig = NAYORI_NEXT) {
+function agentArgs(input: { name: string; uri: string }) {
   const name = input.name.trim();
   const uri = input.uri.trim();
   if (!name) throw new Error("Enter an agent name.");
@@ -313,7 +313,16 @@ export function buildRegisterAgent(input: { name: string; uri: string }, config:
   }
   if (name.length > 64) throw new Error("The agent name must be at most 64 characters.");
   if (uri.length > 256) throw new Error("The agent link must be at most 256 characters.");
-  return payload(config, config.contracts.agents, "register", [Cl.stringAscii(name), Cl.stringAscii(uri)]);
+  return [Cl.stringAscii(name), Cl.stringAscii(uri)];
+}
+
+export function buildRegisterAgent(input: { name: string; uri: string }, config: NextConfig = NAYORI_NEXT) {
+  return payload(config, config.contracts.agents, "register", agentArgs(input));
+}
+
+/** The registered wallet changes its agent's name and link. */
+export function buildUpdateAgent(input: { name: string; uri: string }, config: NextConfig = NAYORI_NEXT) {
+  return payload(config, config.contracts.agents, "update", agentArgs(input));
 }
 
 /**

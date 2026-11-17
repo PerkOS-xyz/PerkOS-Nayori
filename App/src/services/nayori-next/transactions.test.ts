@@ -9,6 +9,7 @@ import {
   buildAcceptJob,
   buildAllowContractCaller,
   buildDisallowContractCaller,
+  buildUpdateAgent,
   buildAppeal,
   buildApplyToJob,
   buildCloseUnfunded,
@@ -240,6 +241,20 @@ describe("next application payloads", () => {
     ]);
     expect(call.postConditions).toEqual([]);
     expect(() => buildRegisterAgent({ name: "", uri: "" }, config)).toThrow(/agent name/);
+  });
+
+  it("updates an agent's name and link with the same checks as registration", () => {
+    const call = buildUpdateAgent({ name: " Scout v2 ", uri: "" }, config);
+    expect(call.contract).toBe(`${DEPLOYER}.nayori-agents`);
+    expect(call.functionName).toBe("update");
+    expect(call.functionArgs).toEqual([Cl.stringAscii("Scout v2"), Cl.stringAscii("")]);
+    expect(call.postConditions).toEqual([]);
+    expect(call.postConditionMode).toBe("deny");
+    expect(() => buildUpdateAgent({ name: " ", uri: "" }, config)).toThrow(/agent name/);
+    expect(() => buildUpdateAgent({ name: "x".repeat(65), uri: "" }, config)).toThrow(/64/);
+    expect(() => buildUpdateAgent({ name: "Scout", uri: "u".repeat(257) }, config)).toThrow(/256/);
+    expect(() => buildUpdateAgent({ name: "Scoút", uri: "" }, config)).toThrow(/ASCII/);
+    expect(() => buildUpdateAgent({ name: "Scout", uri: "" }, resolveNextConfig({}, "testnet"))).toThrow(/not enabled/);
   });
 });
 
