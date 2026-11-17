@@ -26,6 +26,7 @@ import {
   buildSubmitWork,
   buildWithdrawApplication,
   deliverableCommitment,
+  evidenceHashFrom,
   hash32,
   sendNextCall,
   textDigestHex,
@@ -260,5 +261,13 @@ describe("next signing helpers", () => {
     );
     await expect(deliverableCommitment("  ")).rejects.toThrow(/deliverable/);
     expect(hash32(HASH)).toEqual(Cl.bufferFromHex(HASH));
+  });
+
+  it("uses a pasted digest as is and hashes a written note", async () => {
+    expect(await evidenceHashFrom(`0x${"AB".repeat(32)}`)).toBe(HASH);
+    expect(await evidenceHashFrom("abc")).toBe(
+      "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    );
+    await expect(evidenceHashFrom(" ")).rejects.toThrow(/note/);
   });
 });

@@ -398,3 +398,11 @@ export async function textDigestHex(text: string): Promise<string> {
   const bytes = await sha256Text(text, "Add a short note that explains the evidence.");
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
+
+/** A 32-byte hex digest pasted as is, or the SHA-256 of a written note. */
+export async function evidenceHashFrom(input: string): Promise<string> {
+  const value = input.trim();
+  const hex = value.replace(/^0x/i, "");
+  if (/^[0-9a-fA-F]{64}$/.test(hex)) return hex.toLowerCase();
+  return textDigestHex(value);
+}
