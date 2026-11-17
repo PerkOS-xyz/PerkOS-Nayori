@@ -149,6 +149,21 @@ describe("next contract reads", () => {
     ]);
   });
 
+  it("checks one allowance on nayori-permissions", async () => {
+    const reads = await loadReads();
+    readOnly.mockResolvedValue(Cl.some(Cl.some(Cl.uint(905_000))));
+    const helper = `${CLIENT}.helper` as const;
+    const target = `${DEPLOYER}.nayori-escrow-sbtc` as const;
+    expect(await reads.getNextAllowance(EVALUATOR, helper, target)).toEqual({ until: 905_000 });
+    expect(readOnly).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contractName: "nayori-permissions",
+        functionName: "get-allowance",
+        functionArgs: [Cl.principal(EVALUATOR), Cl.principal(helper), Cl.principal(target)],
+      })
+    );
+  });
+
   it("reads the Bitcoin height from the next network's API", async () => {
     const reads = await loadReads();
     const fetchMock = vi.fn().mockResolvedValue(

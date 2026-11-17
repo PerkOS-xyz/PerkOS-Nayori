@@ -12,6 +12,11 @@ import {
 } from "../../constants/nayori-next";
 import type { NetworkName } from "../../constants/network";
 import type { NextDecisionKind } from "./parse";
+import {
+  allowanceTargetContract,
+  isNextContractPrincipal,
+  type NextAllowanceTarget,
+} from "./permissions";
 import { selectStxAddressForNetwork } from "../wallet";
 
 // Wallet payloads for every party action on the next Nayori contracts. Every payload uses
@@ -366,6 +371,44 @@ export function buildDeclineApplication(input: RefundInput, config: NextConfig =
 /** Anyone, once the job stops taking applications; the deposit is returned. */
 export function buildReleaseApplication(input: RefundInput, config: NextConfig = NAYORI_NEXT) {
   return applicationRefund("release", input, config);
+}
+
+// ---------------------------------------------------------------- permissions (D4)
+
+function helperOf(caller: string, config: NextConfig): ContractId {
+  const value = caller.trim();
+  if (!isNextContractPrincipal(value, config.network)) {
+    throw new Error(`The helper must be a ${config.network} contract, like ${config.network === "mainnet" ? "SP" : "ST"}...name.`);
+  }
+  return value;
+}
+
+/** The wallet allows a helper contract to act for it on one Nayori contract, optionally until a block. */
+export function buildAllowContractCaller(
+  input: { caller: string; target: NextAllowanceTarget; until?: number },
+  config: NextConfig = NAYORI_NEXT
+) {
+  const caller = helperOf(input.caller, config);
+  const target = allowanceTargetContract(input.target, config);
+  const until = input.until === undefined ? Cl.none() : Cl.some(Cl.uint(integer(input.until, "Expiry block", 1)));
+  return payload(config, config.contracts.permissions, "allow-contract-caller", [
+    Cl.principal(caller),
+    Cl.principal(target),
+    until,
+  ]);
+}
+
+/** The wallet revokes a helper contract on one Nayori contract. */
+export function buildDisallowContractCaller(
+  input: { caller: string; target: NextAllowanceTarget },
+  config: NextConfig = NAYORI_NEXT
+) {
+  const caller = helperOf(input.caller, config);
+  const target = allowanceTargetContract(input.target, config);
+  return payload(config, config.contracts.permissions, "disallow-contract-caller", [
+    Cl.principal(caller),
+    Cl.principal(target),
+  ]);
 }
 
 // ---------------------------------------------------------------- signing

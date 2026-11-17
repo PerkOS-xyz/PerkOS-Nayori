@@ -3,6 +3,7 @@ import { Cl } from "@stacks/transactions";
 import {
   averageRating,
   parseNextAgent,
+  parseNextAllowance,
   parseNextApplication,
   parseNextApplications,
   parseNextDecision,
@@ -176,5 +177,14 @@ describe("next contract read parsers", () => {
         )
       )
     ).toEqual({ provider: PROVIDER, client: CLIENT, completed: true, value: 50_000 });
+  });
+});
+
+describe("parseNextAllowance", () => {
+  it("reads no allowance, an open-ended one and one with an expiry block", () => {
+    expect(parseNextAllowance(Cl.none())).toBeNull();
+    expect(parseNextAllowance(Cl.some(Cl.none()))).toEqual({});
+    expect(parseNextAllowance(Cl.some(Cl.some(Cl.uint(905_000))))).toEqual({ until: 905_000 });
+    expect(() => parseNextAllowance(Cl.uint(1))).toThrow(/get-allowance/);
   });
 });

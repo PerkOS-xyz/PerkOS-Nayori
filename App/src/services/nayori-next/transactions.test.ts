@@ -7,6 +7,8 @@ vi.mock("@stacks/connect", () => ({ request, getLocalStorage: () => null }));
 import { NEXT_SBTC_TOKENS, resolveNextConfig } from "../../constants/nayori-next";
 import {
   buildAcceptJob,
+  buildAllowContractCaller,
+  buildDisallowContractCaller,
   buildAppeal,
   buildApplyToJob,
   buildCloseUnfunded,
@@ -238,6 +240,50 @@ describe("next application payloads", () => {
     ]);
     expect(call.postConditions).toEqual([]);
     expect(() => buildRegisterAgent({ name: "", uri: "" }, config)).toThrow(/agent name/);
+  });
+});
+
+describe("next permission payloads", () => {
+  const HELPER = `${PROVIDER}.helper-v1`;
+
+  it("allows a helper on one Nayori contract, with or without an expiry block", () => {
+    const call = buildAllowContractCaller({ caller: HELPER, target: "escrowSbtc", until: 905_000 }, config);
+    expect(call.contract).toBe(`${DEPLOYER}.nayori-permissions`);
+    expect(call.functionName).toBe("allow-contract-caller");
+    expect(call.functionArgs).toEqual([
+      Cl.principal(HELPER),
+      Cl.principal(ESCROW_SBTC),
+      Cl.some(Cl.uint(905_000)),
+    ]);
+    expect(call.postConditions).toEqual([]);
+    expect(call.postConditionMode).toBe("deny");
+    const open = buildAllowContractCaller({ caller: ` ${HELPER} `, target: "agents" }, config);
+    expect(open.functionArgs).toEqual([
+      Cl.principal(HELPER),
+      Cl.principal(`${DEPLOYER}.nayori-agents`),
+      Cl.none(),
+    ]);
+  });
+
+  it("revokes a helper on one Nayori contract", () => {
+    const call = buildDisallowContractCaller({ caller: HELPER, target: "applications" }, config);
+    expect(call.functionName).toBe("disallow-contract-caller");
+    expect(call.functionArgs).toEqual([
+      Cl.principal(HELPER),
+      Cl.principal(`${DEPLOYER}.nayori-applications`),
+    ]);
+    expect(call.postConditions).toEqual([]);
+  });
+
+  it("rejects a wallet address, a helper on the wrong network and an unknown target", () => {
+    expect(() => buildAllowContractCaller({ caller: CLIENT, target: "escrowSbtc" }, config)).toThrow(/testnet contract/);
+    expect(() =>
+      buildAllowContractCaller({ caller: "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.helper", target: "escrowSbtc" }, config)
+    ).toThrow(/testnet contract/);
+    expect(() =>
+      buildDisallowContractCaller({ caller: HELPER, target: "reputation" as never }, config)
+    ).toThrow(/Nayori contract/);
+    expect(() => buildAllowContractCaller({ caller: HELPER, target: "escrowStx", until: 0 }, config)).toThrow(/Expiry block/);
   });
 });
 

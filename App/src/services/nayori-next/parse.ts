@@ -79,6 +79,11 @@ export interface NextAgent {
   registeredAt: number;
 }
 
+/** A stored allowance in nayori-permissions. `until` absent means no expiry. */
+export interface NextAllowance {
+  until?: number;
+}
+
 export interface NextReputationPending {
   provider: string;
   client: string;
@@ -254,4 +259,15 @@ export function parseNextAgent(value: CV, wallet: string): NextAgent | null {
     uri: asciiOf(t.uri, "agent.uri"),
     registeredAt: uintOf(t["registered-at"], "agent.registered-at"),
   };
+}
+
+/**
+ * `get-allowance` of nayori-permissions: none when the helper is not allowed, some(none) for an
+ * allowance with no expiry, some(some u) for one that ends at that Bitcoin block.
+ */
+export function parseNextAllowance(value: CV): NextAllowance | null {
+  const inner = optional(value, "get-allowance");
+  if (!inner) return null;
+  const until = optional(inner, "allowance.until");
+  return until ? { until: uintOf(until, "allowance.until") } : {};
 }

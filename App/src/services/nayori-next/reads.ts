@@ -11,6 +11,7 @@ import {
 import { hiroFetch } from "../hiro-fetch";
 import {
   parseNextAgent,
+  parseNextAllowance,
   parseNextApplication,
   parseNextApplications,
   parseNextDecision,
@@ -118,6 +119,20 @@ export async function getNextAgent(wallet: string) {
 
 export async function getNextAgentCount(): Promise<number> {
   return uintOf(await read(NAYORI_NEXT.contracts.agents, "get-agent-count"), "get-agent-count");
+}
+
+/**
+ * One allowance of nayori-permissions: may `caller` act for `party` on `target`? The map has no
+ * index, so allowances are checked one helper and target at a time, never listed.
+ */
+export async function getNextAllowance(party: string, caller: ContractId, target: ContractId) {
+  return parseNextAllowance(
+    await read(NAYORI_NEXT.contracts.permissions, "get-allowance", [
+      Cl.principal(party),
+      Cl.principal(caller),
+      Cl.principal(target),
+    ])
+  );
 }
 
 /** Bitcoin height as seen by the next deployment's Stacks network; 0 when unknown. */
