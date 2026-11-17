@@ -1,20 +1,22 @@
 import { EXPLORER, CHAIN_PARAM } from "./onchain-stats";
 import { hiroFetch } from "./hiro-fetch";
-import { NETWORK_NAME } from "../constants/network";
+import { NETWORK_NAME, type NetworkName } from "../constants/network";
 
-const API = NETWORK_NAME === "mainnet" ? "https://api.hiro.so" : "https://api.testnet.hiro.so";
+const apiFor = (network: NetworkName) =>
+  network === "mainnet" ? "https://api.hiro.so" : "https://api.testnet.hiro.so";
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export const txExplorer = (txid: string) => `${EXPLORER}/txid/${txid}?chain=${CHAIN_PARAM}`;
+export const txExplorer = (txid: string, network?: NetworkName) =>
+  `${EXPLORER}/txid/${txid}?chain=${network ?? CHAIN_PARAM}`;
 
 // connect v8 returns the broadcast id under txid or txId depending on the wallet.
 export function txIdOf(res: any): string | undefined {
   return res?.txid ?? res?.txId ?? res?.txID;
 }
 
-export async function txStatus(txid: string): Promise<string> {
+export async function txStatus(txid: string, network: NetworkName = NETWORK_NAME): Promise<string> {
   try {
-    const r = await hiroFetch(`${API}/extended/v1/tx/${txid}`, { cache: "no-store" });
+    const r = await hiroFetch(`${apiFor(network)}/extended/v1/tx/${txid}`, { cache: "no-store" });
     if (!r.ok) return "pending";
     const d = await r.json();
     return d.tx_status ?? "pending";
@@ -39,6 +41,8 @@ interface TrackOptions {
   maxPolls?: number;
   settleRefreshDelaysMs?: readonly number[];
   sleep?: (ms: number) => Promise<unknown>;
+  /** Network the transaction was sent to; defaults to the app network. */
+  network?: NetworkName;
 }
 
 // Toast on submit, poll the chain, then toast + refresh on confirmation.
@@ -53,14 +57,16 @@ export async function trackTx(
   const pollIntervalMs = options.pollIntervalMs ?? 8000;
   const maxPolls = options.maxPolls ?? 24;
   const settleDelays = options.settleRefreshDelaysMs ?? SETTLE_REFRESH_DELAYS_MS;
-  toast.info("Transaction submitted", txExplorer(txid));
+  const network = options.network ?? NETWORK_NAME;
+  const explorer = (id: string) => txExplorer(id, options.network);
+  toast.info("Transaction submitted", explorer(txid));
   onStatus?.("pending");
   for (let i = 0; i < maxPolls; i++) {
     await wait(pollIntervalMs);
-    const s = await txStatus(txid);
+    const s = await txStatus(txid, network);
     if (s === "success") {
       onStatus?.("success");
-      toast.success("Confirmed on-chain", txExplorer(txid));
+      toast.success("Confirmed on-chain", explorer(txid));
       onConfirmed?.();
       if (onConfirmed) {
         let elapsed = 0;
@@ -74,10 +80,10 @@ export async function trackTx(
     }
     if (s.startsWith("abort")) {
       onStatus?.("failed");
-      toast.error("Transaction failed on-chain", txExplorer(txid));
+      toast.error("Transaction failed on-chain", explorer(txid));
       return;
     }
   }
   onStatus?.("pending");
-  toast.info("Still pending, check the explorer", txExplorer(txid));
+  toast.info("Still pending, check the explorer", explorer(txid));
 }
