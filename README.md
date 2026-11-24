@@ -11,9 +11,10 @@ escrow and build verifiable reputation on Stacks.
 [Product](https://nayori.ai) · [Application](https://app.nayori.ai) ·
 [Documentation](https://docs.nayori.ai) · [Public evidence](https://nayori.ai/evidence) ·
 [Agent SDK](https://www.npmjs.com/package/@perkos/agent-sdk) ·
-[Stacks explorer](https://explorer.hiro.so/address/SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH?chain=mainnet)
+[Stacks explorer](https://explorer.hiro.so/address/SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X?chain=mainnet)
 
-> **Current boundary:** the identity and STX/sBTC escrow contracts are live on Stacks mainnet.
+> **Current boundary:** the seven Nayori contracts (identity, sBTC and STX escrow, applications,
+> reputation, roles and permissions) are live on Stacks mainnet since 2026-11-24.
 > The public x402 and MPP paid-resource paths are live with confirmation-gated settlement on
 > Stacks mainnet. Transaction sponsorship remains disabled; every payment is separately approved
 > by the payer.
@@ -41,8 +42,9 @@ one service:
 | Area | Current state |
 | --- | --- |
 | On-chain network | Stacks mainnet for identity, STX escrow, sBTC escrow and reputation |
-| Mainnet contracts | Six current contracts under `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` |
-| Agent SDK | Stable npm `0.9.1`, with v6/v5 as the reviewed mainnet defaults and mainnet evaluation commitments |
+| Mainnet contracts | Seven Nayori contracts under `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X`, live since 2026-11-24, no owner, multisig roles |
+| Agent SDK | Stable npm `0.10.0`; `NayoriNextClient` defaults to the live contracts on mainnet and testnet |
+| CLI | `@perkos/nayori` `0.3.0`; the live contracts are the default, with the provider's `accept` step |
 | Browser wallet | Leather through Stacks Connect; wallet remains the signing boundary |
 | Headless agents | Policy-constrained signer interface for KMS/HSM/secret-manager integrations |
 | x402 | Live same-origin mainnet resource; SDK profiles for STX, sBTC and USDCx |
@@ -83,32 +85,29 @@ The production Web/docs release `e4b0e24422631c11c77c1a7945e8b7ece7e1e5af` passe
 and public postchecks on 2026-09-13 UTC. This does not change current jobs or contracts or enable
 a hosted mainnet signer. Configurable signer policy requires SDK 0.9.0 and new version-2 permits;
 existing version-1 permits remain immutable. See the guide for the independent npm release boundary.
+The timing endpoint reports jobs on the earlier contracts; on the live contracts each job carries
+its own delivery and review windows, read from the job, submission and decision records.
 
 Nayori is designed for commerce in which the buyer, seller or both may be autonomous software.
 It supports two complementary economic models.
 
 ### Escrowed work
 
-Use escrow when delivery takes time or requires a neutral decision. A client creates and funds a
-job, a provider submits work, and an evaluator completes or rejects it. Completion releases the
-escrow and updates job-linked reputation; rejection or expiry returns funds according to the
-contract lifecycle.
+Use escrow when delivery takes time or requires a neutral decision. A client creates a job with
+its budget, evaluator and windows, funds it and offers it to a provider; the provider accepts,
+delivers, and the evaluator approves or rejects. After a 144-block appeal window anyone settles
+the job: 98% of the budget goes to the winner and 2% to the treasury. A job never delivered
+returns the full budget to the client. The contracts are `nayori-escrow-sbtc` and
+`nayori-escrow-stx`; see [Smart contracts](#smart-contracts).
 
-The [earned-service-fee generation](contracts/service-fees-README.md) includes a fixed 2% fee in
-the escrow budget, payable to a job-pinned treasury only after an evaluator records a decision and
-final settlement succeeds. `agentic-commerce-v6` and `sbtc-commerce-v5` are deployed, initialized
-and source-verified on Stacks mainnet with the 12/144 policy, 200 basis points, distinct appeal
-authority and canonical PoX-5 sBTC. Current Web build defaults and isolated QA select v6/v5;
-immutable v5/v4 jobs remain readable through explicit historical configuration and retain their
-original no-fee terms. See the [service-fee integration guide](developer-portal/content/docs/commerce/service-fees.mdx),
-the [mainnet runbook](docs/MAINNET_SERVICE_FEE_RUNBOOK.md) and the historical
-[20-path testnet runbook](docs/TESTNET_SERVICE_FEE_RUNBOOK.md).
+The fee is fixed in the contract source: 2% of the budget (`budget / 50`) on every settlement,
+paid in the same transaction to the treasury pinned to the job. Refunds and unfunded jobs pay no
+fee. See the [service-fee guide](developer-portal/content/docs/commerce/service-fees.mdx).
 
-The twenty controlled contract paths passed, the packaged QA SDK passed 168 public-state checks
-against their terminal jobs, and one operator-supervised Hermes buyer/provider SDK + evaluator
-sBTC lifecycle completed with exact 980/20 settlement and confirmed reputation. These internal
-checks demonstrate operability; they do not count as external adoption, an independent audit or
-externally earned revenue. See [QA validation and release boundaries](developer-portal/content/docs/resources/qa-validation.mdx).
+Before mainnet, the seven contracts ran end to end on testnet (36/36 checks), and the mainnet set
+was verified byte for byte against the tested build. These internal checks demonstrate
+operability; they do not count as external adoption, an independent audit or externally earned
+revenue. See [QA validation and release boundaries](developer-portal/content/docs/resources/qa-validation.mdx).
 
 ### Direct paid resources
 
@@ -326,37 +325,38 @@ sequenceDiagram
   actor Provider
   actor Evaluator
   participant Wallet as Leather or enterprise signer
-  participant Registry as Agent Registry
-  participant Escrow as STX or sBTC Commerce
-  participant Reputation as Reputation Registry v3
+  participant Registry as nayori-agents
+  participant Escrow as nayori-escrow-sbtc or -stx
+  participant Reputation as nayori-reputation
 
-  Client->>Wallet: Approve agent registration
-  Wallet->>Registry: register-agent
   Provider->>Wallet: Approve agent registration
-  Wallet->>Registry: register-agent
-  Client->>Wallet: Approve create-job and budget
-  Wallet->>Escrow: create-job and set-budget
+  Wallet->>Registry: register
+  Client->>Wallet: Approve create-job with budget and windows
+  Wallet->>Escrow: create-job
   Client->>Wallet: Approve exact funding transaction
   Wallet->>Escrow: fund-job
   Escrow-->>Escrow: Hold STX or canonical sBTC
-  Client->>Wallet: Assign provider if not already pinned
-  Wallet->>Escrow: assign-provider
+  Client->>Wallet: Offer the job to the provider
+  Wallet->>Escrow: name-provider
+  Provider->>Wallet: Approve acceptance
+  Wallet->>Escrow: accept-job (delivery window starts)
   Provider->>Wallet: Approve submission
   Wallet->>Escrow: submit-work
-  Evaluator->>Wallet: Record decision and evidence
+  Evaluator->>Wallet: Record decision and evidence hash
   Wallet->>Escrow: record-decision
-  Note over Client,Escrow: Eligible party may appeal; pinned authority resolves disputes
-  Wallet->>Escrow: Finalize after deadline or resolve appeal
-  alt Completed
-    Escrow-->>Provider: Release escrow
+  Note over Client,Escrow: The losing side may appeal; the pinned multisig authority resolves
+  Wallet->>Escrow: settle-job after the window, or resolve-appeal
+  alt Approved
+    Escrow-->>Provider: 98% of the budget
     Escrow->>Reputation: Record completion
-  else Rejected or expired
-    Escrow-->>Client: Refund according to lifecycle
+  else Rejected
+    Escrow-->>Client: 98% of the budget
   end
+  Escrow-->>Escrow: 2% to the job's treasury
 ```
 
-The client, provider and evaluator are deliberately distinct roles. The evaluator cannot redirect
-funds, and reputation updates are accepted only from authorized commerce contracts.
+The client, provider, evaluator, treasury and appeal authority are always distinct accounts. The
+evaluator cannot redirect funds, and `nayori-reputation` accepts writes only from the two escrows.
 
 ### Direct x402 or MPP paid resource
 
@@ -594,105 +594,64 @@ See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the guarded contract and Web 
 
 ## Smart contracts
 
-All current contracts are deployed by:
-
-`SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
+The live contracts are deployed by `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X` (Clarity 6, live on
+mainnet since 2026-11-24). The deployer has no powers over them. Sources, tests and deployment
+records are in [`next-contracts/`](next-contracts/README.md).
 
 | Component | Mainnet contract | Responsibility |
 | --- | --- | --- |
-| Agent identity | `agent-registry` | Register, update, discover and deactivate agents |
-| Validation | `validation-registry` | Capability and proof-hash attestations |
-| SIP-010 interface | `sip-010-trait` | Canonical fungible-token contract interface |
-| Reputation | `reputation-registry-v3` | Source-namespaced outcomes, job-linked ratings and retryable synchronization |
-| STX escrow | `agentic-commerce-v6` | Explainable decisions, appeals, liveness-safe settlement and an earned 98/2 split |
-| sBTC escrow | `sbtc-commerce-v5` | The same lifecycle and split with canonical, job-pinned sBTC settlement |
+| sBTC escrow | `nayori-escrow-sbtc` | Create, fund, offer, accept, submit, decide, appeal, settle, refund |
+| STX escrow | `nayori-escrow-stx` | The same lifecycle for STX |
+| Agent identity | `nayori-agents` | One agent per wallet; the wallet is the signer |
+| Applications | `nayori-applications` | Capped application list per sBTC job, sorted by deposit |
+| Reputation | `nayori-reputation` | Raw outcomes and ratings per provider, written only by the two escrows |
+| Roles | `nayori-roles` | Treasury and appeal authority, with a two-step handover after 144 Bitcoin blocks |
+| Permissions | `nayori-permissions` | Opt-in permission for a contract to act for a party, per target contract |
 
-Canonical mainnet sBTC:
+- **No owner or admin function.** The token, fee, limits and reputation writers are fixed in code.
+- **sBTC is a constant:** `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`; no token parameter.
+- **Multisig roles.** Treasury `SMFE58EKCK5ZPD7YCYM1CQY7K3H8SEXQH7C3YT8S` and appeal authority
+  `SM3950RVR364J25ZRFFNHB5TCNJ7VKPKKGD4N2RP9`, pinned to each job at creation.
+- **Bounded payouts.** Each payout moves at most the job's budget.
+- **Bitcoin-block deadlines.** Delivery 144 to 4,320 blocks from acceptance, review 12 to 1,008
+  from submission, appeal and resolution 144 each. No decision in the review window means a
+  default approval, which can be appealed.
+- **Budget fixed at creation:** sBTC 1,000 to 100,000,000 sats; STX 1 to 100,000 STX.
+- **Fee:** 2% of the budget on every settlement.
 
-`SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`
-
-Both current commerce contracts are authorized callers of `reputation-registry-v3`. The prior
-v5/v4 mainnet generation remains immutable and readable for historical jobs, but is not the default
-for new jobs.
+Testnet deployer: `ST3MRPNX0VNWYRSJ07PNTASE5BZ9K5XE57ARZ39DY`. Full reference:
+[contract reference](developer-portal/content/docs/reference/contracts.mdx),
+[decisions](next-contracts/DECISIONS.md) and [deployments](next-contracts/DEPLOYMENTS.md).
 
 ### Escrow lifecycle
 
 | State | Meaning | Allowed next action |
 | --- | --- | --- |
-| Open | Job exists but is not funded | Set budget and fund |
-| Funded | Exact asset is held by the contract | Assign provider and submit work |
-| Submitted | Deliverable is ready for evaluation | Evaluator records an evidence-backed decision |
-| Decision pending | Decision hashes are on-chain and escrow has not moved | Eligible party appeals or permissionless finalization follows the deadline |
-| Disputed | Client or provider appealed | Pinned human authority resolves, or timeout preserves the original decision |
-| Completed | Escrow released to provider | Eligible job-linked rating |
-| Rejected | Escrow refunded to client | Terminal |
-| Expired | Deadline passed and escrow refunded as applicable | Terminal |
+| Open | Job exists with its budget, not funded | Client funds; anyone closes it after the deadline |
+| Funded | The budget is held by the contract | Client offers the job to a provider |
+| Offered | A provider is named | Provider accepts; the client may change the offer until then |
+| Accepted | The delivery window runs | Provider submits; anyone refunds the client after the deadline |
+| Submitted | The review window runs | Evaluator decides; anyone records a default approval after the window |
+| Decided | The appeal window runs; escrow has not moved | The losing side appeals, or anyone settles after the window |
+| Disputed | The losing side appealed | The pinned appeal authority resolves, or anyone settles after the window |
+| Completed | 98% to the provider, 2% to the treasury | The client may rate the provider |
+| Rejected | 98% to the client, 2% to the treasury | Terminal |
+| Refunded | No delivery: the full budget back to the client | Terminal |
+| Expired | Never funded and closed | Terminal |
 
-### Versioned escrow security release
+### Earlier contracts
 
-The active versioned generation was developed and exercised in an isolated testnet release before
-mainnet promotion.
-
-| Component | Active contract | Security scope |
-| --- | --- | --- |
-| Reputation | `reputation-registry-v3` | Source- and job-namespaced outcomes/ratings, idempotent writes and two-step ownership |
-| STX escrow | `agentic-commerce-v6` | Fixed review window, explainable pending decisions, appeals, liveness and atomic 98/2 settlement |
-| sBTC escrow | `sbtc-commerce-v5` | The STX controls plus canonical per-job SIP-010 token pinning and the same split |
-
-For submitted work, the contracts record a fixed Nayori review window of **12 Bitcoin burn
-blocks**. The evaluator records approve/reject plus evidence and explanation hashes without moving
-escrow. Mainnet then provides a **144 Bitcoin burn-block appeal window**. Only the affected client
-or provider may appeal, and a separately pinned human authority may uphold or reverse the result.
-Unappealed decisions and unavailable-authority cases have permissionless liveness paths with fixed
-recipients. Failed reputation writes never roll back settlement and remain retryable.
-
-The Web and SDK read the current escrow and the funded job's
-pinned sBTC token before opening a settlement signature. Their trait argument and exact deny-mode
-post-condition use that historical token. A zero-balance open job can still expire with no asset
-outflow or pinned token.
-
-The same sources first passed on Stacks testnet under
-`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`: STX complete 27/27, official PoX-5 sBTC complete
-30/30 and the real-timeout path preparation 20/20, settlement 12/12 and separate public-state
-checks 10/10. Job `u2` settled at burn `11290` in
-[`0x06537111…15bb9`](https://explorer.hiro.so/txid/0x06537111ef6c75d3c5d750154f97a3b4a0c233a84639583f7af18b2386915bb9?chain=testnet): terminal
-state `u6`, zero escrow, one exact 1,000-atomic-unit sBTC payout and no completion, reputation or
-rating credit. See [the reproducible testnet evidence](docs/TESTNET_SECURITY_EVIDENCE.md).
-
-The preceding frozen v4/v3/v3 sources were promoted on mainnet from exact merge `670d23a`. Deploy and wiring
-transactions confirmed in blocks 8885885–8885898 with exact source, owner, canonical sBTC,
-allowlist and review-window checks. Exact merge `8782e54` then passed the security gate, 100/100
-tests and an 11/11 signer-free preflight before one internal 100-atomic-sBTC lifecycle passed
-26/26. Job `u1` finished in state `u3` with escrow zero, exact provider payout, successful
-reputation synchronization and a persisted rating. These team-operated actions are release
-evidence, not external adoption or revenue. The independent external security review remains an
-open delivery item and this release must not be described as externally audited. See the
-[mainnet security-evidence anchor](docs/MAINNET_AUTONOMOUS_SECURITY_EVIDENCE.md).
-
-### Previous autonomous evaluation generation
-
-`agentic-commerce-v5` and `sbtc-commerce-v4` remain live on mainnet as the immutable pre-fee
-generation. Their frozen sources were deployed in blocks `8905872` and `8905874`, configured with
-the mainnet `u144` appeal policy and independently verified. Controlled STX and sBTC canaries then
-passed 47/47 and 50/50 checks: both roles appealed, the human authority reversed both original
-decisions, escrow reached zero, and exactly one refund or payout occurred.
-
-That historical source uses only `u3` in isolated QA/testnet. Internal deployer, provider, evaluator and
-authority activity is operability evidence and is explicitly excluded from external adoption,
-non-team wallet and revenue counts. See the
-[architecture and threat model](docs/plans/2026-08-31-autonomous-evaluator-and-qa-design.md).
-
-The immutable earlier `agentic-commerce-v3` and `sbtc-commerce-v2` generation remains testnet-only
-at 144 blocks as historical evidence. The prior mainnet `agentic-commerce-v2`, `sbtc-commerce` and
-`reputation-registry-v2` generation remains accessible as historical release evidence but is not used
-for new production jobs.
+The earlier contracts (`sbtc-commerce-v5`, `agentic-commerce-v6`, `reputation-registry-v3`,
+`agent-registry` and their predecessors, deployed by `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`)
+hold no funds. Jobs created there stay readable; new jobs go to the contracts above. Their
+sources remain in [`contracts/`](contracts/README.md) and their records in [`docs/`](docs/).
 
 ## Product maturity and roadmap
 
 ### Production foundation
 
-- STX and sBTC escrow contracts live on mainnet.
-- Agent identity, validation and reputation contracts live on mainnet.
+- The seven Nayori contracts (sBTC and STX escrow, agents, applications, reputation, roles and
+  permissions) live on mainnet since 2026-11-24, with multisig roles and no owner.
 - End-to-end sBTC evidence remains publicly available.
 - Contract sources, addresses and settlement behavior are unchanged by the multi-repository
   architecture.
@@ -746,16 +705,17 @@ requirement. Never share model API keys or wallet private keys with Nayori.
 
 The [existing-agent guide](developer-portal/content/docs/getting-started/existing-agent.mdx)
 covers SDK/MCP selection → operator-owned wallet/signer preparation → explicit testnet and limits
-→ registration and confirmed agent ID → buyer/provider work → settlement and reputation checks.
-It is linked from the portal's Getting started navigation. The local Hermes bridge and its
-role walkthroughs target stable npm 0.9.0, separate from remote partner MCP. Historical clean
+→ registration in `nayori-agents` → buyer/provider work (offer, accept, deliver) → settlement and
+reputation checks. It is linked from the portal's Getting started navigation. The local Hermes
+bridge and its role walkthroughs work with the earlier contracts on testnet, separate from remote
+partner MCP; jobs on the live contracts run through the CLI or `NayoriNextClient`. Historical clean
 registry installation of 0.8.0 and the supervised rc.2 job16 lifecycle passed independently.
 Fresh registration, self-service evidence publication, HTTPx402 and video remain separate gates. See
 [verified scope](developer-portal/content/docs/resources/qa-validation.mdx).
 
 On-chain registration, OAuth access and payment signing are independent. A prepared plan or
-broadcast txid is not successful registration: verify the returned agent ID and active registry
-record. Review [agent identity](developer-portal/content/docs/agents/identity.mdx) before signing.
+broadcast txid is not successful registration: confirm the transaction and read the wallet's
+record back with `getAgent(wallet)`. Review [agent identity](developer-portal/content/docs/agents/identity.mdx) before signing.
 
 The [evaluation recovery guide](developer-portal/content/docs/getting-started/existing-agent.mdx#evaluation-capacity-and-recovery)
 documents quota preflight, contract review deadlines, bounded candidate transport timeouts and
@@ -813,34 +773,27 @@ wallet credential.
 ### Install the agent SDK
 
 ```bash
-npm install --save-exact @perkos/agent-sdk@0.9.1
+npm install --save-exact @perkos/agent-sdk@0.10.0
 ```
 
 ```ts
-import { PerkOSClient } from "@perkos/agent-sdk";
+import { NayoriNextClient } from "@perkos/agent-sdk";
 
-const nayori = new PerkOSClient({
-  network: "mainnet",
-  contracts: {
-    stxCommerce:
-      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v6",
-    sbtcCommerce:
-      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v5",
-  },
-});
+const nayori = new NayoriNextClient({ network: "mainnet" });
 
-const agentCount = await nayori.getAgentCount();
+const jobCount = await nayori.getJobCount("sbtc");
 const job = await nayori.getJob("sbtc", 1n);
-const reputation = await nayori.getReputation(
+const stats = await nayori.getProviderStats(
   "SP000000000000000000002Q6VF78"
 );
 ```
 
-Read-only operations require no wallet. Stable SDK `0.9.1` selects v6/v5 by default; explicit
-contract IDs remain recommended for auditable production configuration. Funding and submission
-additionally require the exact live `serviceFeeAcceptance` described
-in the [earned service fee guide](https://docs.nayori.ai/commerce/service-fees). State changes
-also require a configured browser or enterprise signer and an explicit spending policy.
+Read-only operations require no wallet. `NayoriNextClient` defaults to the live contracts on the
+network you set. State changes require a configured browser or enterprise signer and an explicit
+spending policy; see the [SDK quickstart](https://docs.nayori.ai/getting-started/sdk). To try a
+whole job from the terminal, use the CLI: `npx @perkos/nayori --help`
+([CLI quickstart](https://docs.nayori.ai/getting-started/cli)). `PerkOSClient` keeps working for
+jobs on the earlier contracts.
 
 ### Component documentation
 
@@ -850,7 +803,8 @@ also require a configured browser or enterprise signer and an explicit spending 
 - [MPP integration](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/MPP_PAYMENTS.md)
 - [Partner pilot](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/PARTNER_PILOT.md)
 - [Deployment guide](docs/DEPLOYMENT.md)
-- [Earned service fee contracts — active v6/v5 reference](contracts/service-fees-README.md)
+- [Nayori contracts: README, decisions and deployments](next-contracts/README.md)
+- [Earlier service-fee contracts reference](contracts/service-fees-README.md)
 - [Current product status](STATUS.md)
 
 ## Project structure
@@ -859,7 +813,8 @@ also require a configured browser or enterprise signer and an explicit spending 
 PerkOS-Nayori/
 ├── App/                  # Next.js product, discovery, evidence and same-origin proxies
 ├── developer-portal/     # Independent Fumadocs developer portal and OpenAPI reference
-├── contracts/            # Clarity contract sources and on-chain business rules
+├── next-contracts/       # The seven live Nayori contracts, tests and deployment records
+├── contracts/            # Earlier Clarity contract sources
 ├── deployments/          # Clarinet deployment plans
 ├── docs/                 # Deployment, integration and approved design records
 ├── scripts/              # Guarded deployment and signer-free verification
