@@ -1,0 +1,46 @@
+# Next Nayori contract version: isolated project. Clarity 6 on epoch 4.0 for
+# now (the Clarinet SDK does not support epoch 4.1 / Clarity 7 yet); mainnet
+# deployment will be Clarity 7.
+[project]
+name = "nayori-next"
+authors = []
+telemetry = false
+cache_dir = "./.cache"
+
+[[project.requirements]]
+contract_id = "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token"
+
+[contracts.nayori-permissions]
+path = "contracts/nayori-permissions.clar"
+clarity_version = 6
+epoch = "4.0"
+
+[contracts.nayori-roles]
+path = "contracts/nayori-roles.clar"
+clarity_version = 6
+epoch = "4.0"
+
+[contracts.nayori-reputation]
+path = "contracts/nayori-reputation.clar"
+clarity_version = 6
+epoch = "4.0"
+
+[contracts.nayori-escrow-sbtc]
+path = "contracts/nayori-escrow-sbtc.clar"
+clarity_version = 6
+epoch = "4.0"
+
+[contracts.nayori-escrow-stx]
+path = "contracts/nayori-escrow-stx.clar"
+clarity_version = 6
+epoch = "4.0"
+
+[contracts.nayori-agents]
+path = "contracts/nayori-agents.clar"
+clarity_version = 6
+epoch = "4.0"
+
+[contracts.nayori-applications]
+path = "contracts/nayori-applications.clar"
+clarity_version = 6
+epoch = "4.0"

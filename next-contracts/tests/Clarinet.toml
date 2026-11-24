@@ -1,0 +1,57 @@
+# Test manifest: the production contracts from ../contracts plus test-only
+# helper contracts. Never used for deployment.
+[project]
+name = "nayori-next-tests"
+authors = []
+telemetry = false
+cache_dir = "../.cache"
+
+[[project.requirements]]
+contract_id = "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token"
+
+[contracts.nayori-permissions]
+path = "../contracts/nayori-permissions.clar"
+clarity_version = 6
+epoch = "4.0"
+
+[contracts.nayori-roles]
+path = "../contracts/nayori-roles.clar"
+clarity_version = 6
+epoch = "4.0"
+
+[contracts.nayori-reputation]
+path = "../contracts/nayori-reputation.clar"
+clarity_version = 6
+epoch = "4.0"
+
+[contracts.nayori-escrow-sbtc]
+path = "../contracts/nayori-escrow-sbtc.clar"
+clarity_version = 6
+epoch = "4.0"
+
+[contracts.nayori-escrow-stx]
+path = "../contracts/nayori-escrow-stx.clar"
+clarity_version = 6
+epoch = "4.0"
+
+[contracts.nayori-agents]
+path = "../contracts/nayori-agents.clar"
+clarity_version = 6
+epoch = "4.0"
+
+[contracts.nayori-applications]
+path = "../contracts/nayori-applications.clar"
+clarity_version = 6
+epoch = "4.0"
+
+# Test-only: a contract a party could be tricked into calling.
+[contracts.phishing-forwarder]
+path = "contracts/phishing-forwarder.clar"
+clarity_version = 6
+epoch = "4.0"
+
+# Test-only: an unrelated contract that routes through an allowed helper.
+[contracts.outer-caller]
+path = "contracts/outer-caller.clar"
+clarity_version = 6
+epoch = "4.0"
