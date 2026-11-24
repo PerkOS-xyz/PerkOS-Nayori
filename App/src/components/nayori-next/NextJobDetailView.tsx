@@ -230,6 +230,13 @@ export default function NextJobDetailView({ id, asset }: { id: number; asset: Ne
                 ` Resolution deadline: ${deadlineText(decision.resolutionDeadline, height, true)}. If it passes, the original decision stands.`}
             </p>
           )}
+          {decision.appellant && (job.status === 7 || job.status === 8) && (
+            <p className="mt-2 text-sm text-mist-200">
+              {(job.status === 7 ? "approve" : "reject") === decision.decision
+                ? "Final: the original decision stands."
+                : `Final: the appeal authority changed the decision. ${job.status === 7 ? "Approved and paid to the provider." : "Rejected and returned to the client."}`}
+            </p>
+          )}
         </div>
       )}
 
