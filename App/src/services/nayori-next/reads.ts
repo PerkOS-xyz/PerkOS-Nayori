@@ -133,7 +133,7 @@ export async function getNextAllowance(party: string, caller: ContractId, target
   );
 }
 
-/** Bitcoin height as seen by the next deployment's Stacks network; 0 when unknown. */
+/** Bitcoin height as seen by the Nayori contracts' Stacks network; 0 when unknown. */
 export async function getNextBurnHeight(): Promise<number> {
   try {
     const response = await hiroFetch(`${NEXT_HIRO_API}/v2/info`, { cache: "no-store" });

@@ -34,7 +34,7 @@ export function NextStatusBadge({ status }: { status: number }) {
   );
 }
 
-/** A principal on the next deployment's network, linked to the explorer. */
+/** A principal on the Nayori contracts' network, linked to the explorer. */
 export function NextAddr({ value, className = "" }: { value?: string | null; className?: string }) {
   if (!value) return <span className={`text-mist-500 ${className}`}>Not set</span>;
   return (
@@ -88,8 +88,8 @@ export function TxProgressBar({ progress }: { progress: NextTxProgress | null })
 export function NextBanner() {
   return (
     <div className="mt-4 rounded-lg border border-violet-500/30 bg-violet-500/10 px-4 py-3 text-sm text-violet-200">
-      Next contract version on {NAYORI_NEXT.network}. Every deadline is counted in Bitcoin blocks
-      (about 10 minutes each). The sBTC escrow uses canonical sBTC, so no token is chosen per job.
+      Nayori contracts on {NAYORI_NEXT.network}. Every deadline is counted in Bitcoin blocks (about
+      10 minutes each), and the sBTC escrow settles in canonical sBTC.
     </div>
   );
 }

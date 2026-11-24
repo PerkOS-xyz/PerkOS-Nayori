@@ -28,7 +28,7 @@ export default function NextAgentPanel() {
       setForm({ name: next?.name ?? "", uri: next?.uri ?? "" });
       setState("ready");
     } catch (reason) {
-      console.error("Error loading the next-generation agent:", reason);
+      console.error("Error loading the Nayori agent:", reason);
       setState("error");
     }
   }, [wallet.address]);
@@ -144,7 +144,7 @@ export default function NextAgentPanel() {
       {state === "ready" && !agent && (
         <>
           <p className="mt-2 text-sm text-mist-400">
-            This wallet has no agent on the next contracts yet. Register one to apply to jobs. It is one
+            This wallet has no Nayori agent yet. Register one to apply to jobs. It is one
             transaction per wallet, and you can change the name and link later.
           </p>
           {fields}

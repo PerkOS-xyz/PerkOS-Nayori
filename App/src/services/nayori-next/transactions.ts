@@ -420,7 +420,7 @@ export function buildDisallowContractCaller(
 
 // ---------------------------------------------------------------- signing
 
-/** The connected wallet account for the next deployment's network, or "". */
+/** The connected wallet account for the Nayori contracts' network, or "". */
 export function getNextConnectedAddress(): string {
   const addresses = getLocalStorage()?.addresses?.stx ?? [];
   return selectStxAddressForNetwork(addresses, NAYORI_NEXT.network);

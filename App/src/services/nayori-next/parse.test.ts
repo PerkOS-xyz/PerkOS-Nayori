@@ -64,7 +64,7 @@ describe("next contract read parsers", () => {
       "open", "funded", "offered", "accepted", "submitted", "decided",
       "disputed", "completed", "rejected", "refunded", "expired",
     ]);
-    expect(() => parseNextJob(jobTuple(11), "sbtc", 1)).toThrow(/Unknown next-generation job status/);
+    expect(() => parseNextJob(jobTuple(11), "sbtc", 1)).toThrow(/Unknown Nayori job status/);
   });
 
   it("fails loudly on a shape from another contract generation", () => {

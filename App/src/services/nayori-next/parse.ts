@@ -139,7 +139,7 @@ export function bufferOf(value: CV, context: string): string {
 
 export function statusName(code: number): NextStatusName {
   const name = NEXT_STATUS_NAMES[code];
-  if (!name) throw new Error(`Unknown next-generation job status ${code}`);
+  if (!name) throw new Error(`Unknown Nayori job status ${code}`);
   return name;
 }
 

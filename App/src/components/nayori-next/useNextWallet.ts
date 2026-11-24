@@ -19,7 +19,7 @@ export type NextTxProgress = {
 };
 
 /**
- * The connected wallet on the next deployment's network, and a runner that opens the wallet
+ * The connected wallet on the Nayori contracts' network, and a runner that opens the wallet
  * with a deny-mode payload, then follows the transaction until it confirms.
  */
 export function useNextWallet(onConfirmed: () => void) {

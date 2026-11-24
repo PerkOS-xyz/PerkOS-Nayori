@@ -57,8 +57,8 @@ export default function NextJobDetailView({ id, asset }: { id: number; asset: Ne
           setIsAgent(Boolean(agent));
         }
       } catch (reason) {
-        console.error("Error loading next-generation job:", reason);
-        setError("Could not load this job from the next contracts. Try again.");
+        console.error("Error loading the Nayori job:", reason);
+        setError("Could not load this job from the Nayori contracts. Try again.");
       } finally {
         setLoading(false);
       }
@@ -73,8 +73,8 @@ export default function NextJobDetailView({ id, asset }: { id: number; asset: Ne
   }, [load]);
 
   const back = (
-    <Link href="/jobs/next" className="inline-flex items-center gap-1.5 text-sm text-mist-500 transition hover:text-white">
-      <ArrowLeft className="h-4 w-4" /> Back to jobs on the next contracts
+    <Link href="/jobs" className="inline-flex items-center gap-1.5 text-sm text-mist-500 transition hover:text-white">
+      <ArrowLeft className="h-4 w-4" /> Back to Jobs
     </Link>
   );
 
@@ -247,7 +247,7 @@ function ProviderRecord({ stats }: { stats: NextProviderStats }) {
         <Star className="h-5 w-5 text-brand-300" /> Provider record
       </h2>
       <p className="mt-1 text-sm text-mist-400">
-        Counted across all jobs on the next contracts. Look at value and distinct clients, not only the counts.
+        Counted across all jobs on the Nayori contracts. Look at value and distinct clients, not only the counts.
       </p>
       <dl className="mt-4 grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
         {items.map(([label, value]) => (

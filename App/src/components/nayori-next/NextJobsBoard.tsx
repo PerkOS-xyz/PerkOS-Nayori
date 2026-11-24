@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Bitcoin, Briefcase, Plus, RefreshCw, Wallet } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bitcoin, Briefcase, History, Plus, RefreshCw, Wallet } from "lucide-react";
 import { NAYORI_NEXT, NEXT_LIMITS, type NextAsset } from "../../constants/nayori-next";
 import { getNextBurnHeight, getNextJobs } from "../../services/nayori-next/reads";
 import { NEXT_STATUS, NEXT_STATUS_NAMES, type NextJob, type NextStatusName } from "../../services/nayori-next/parse";
@@ -17,6 +17,7 @@ import {
 } from "../../services/nayori-next/status";
 import { buildCreateJob } from "../../services/nayori-next/transactions";
 import { sbtcToSats, stxToMicro } from "../../utils/format";
+import { SBTC_COMMERCE_CONTRACT_NAME, STX_COMMERCE_CONTRACT_NAME } from "../../constants/contract";
 import NextAgentPanel from "./NextAgentPanel";
 import NextPermissionsPanel from "./NextPermissionsPanel";
 import { NextAddr, NextBanner, NextStatusBadge, TxProgressBar } from "./ui";
@@ -60,9 +61,9 @@ export default function NextJobsBoard() {
         setJobs(list.jobs);
         setTotal(list.total);
       } catch (reason) {
-        console.error("Error loading next-generation jobs:", reason);
+        console.error("Error loading Nayori jobs:", reason);
         setJobs([]);
-        setError("Could not load jobs from the next contracts. Try again.");
+        setError("Could not load jobs from the Nayori contracts. Try again.");
       } finally {
         await tip;
         setLoading(false);
@@ -76,6 +77,14 @@ export default function NextJobsBoard() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Deep links such as /jobs?status=completed open the board filtered.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("status");
+    if (requested && (NEXT_STATUS_NAMES as string[]).includes(requested)) {
+      setFilter(requested as NextStatusName);
+    }
+  }, []);
 
   const visible = useMemo(
     () =>
@@ -113,16 +122,16 @@ export default function NextJobsBoard() {
 
   return (
     <div className="container-x py-12">
-      <Link href="/jobs" className="inline-flex items-center gap-1.5 text-sm text-mist-500 transition hover:text-white">
-        <ArrowLeft className="h-4 w-4" /> Back to Jobs
+      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-mist-500 transition hover:text-white">
+        <ArrowLeft className="h-4 w-4" /> Back to Home
       </Link>
       <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Jobs on the next contracts</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Job Escrow</h1>
           <p className="mt-2 max-w-2xl text-mist-300">
-            Create, fund and settle escrow jobs on the next Nayori contracts. The client funds the
-            budget, offers the job to a provider, and the evaluator decides. Anyone can move a job on
-            once its Bitcoin block deadline passes.
+            Create, fund and settle agent jobs in sBTC or STX on the Nayori contracts. The client funds
+            the budget, offers the job to a provider, and the evaluator decides. Anyone can move a job
+            on once its Bitcoin block deadline passes.
           </p>
         </div>
         <div className="flex gap-2">
@@ -136,6 +145,16 @@ export default function NextJobsBoard() {
       </div>
 
       <NextBanner />
+      <Link
+        href="/jobs/earlier"
+        className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/[0.08] bg-white/[0.02] px-4 py-3 text-sm text-mist-300 transition hover:border-white/20 hover:text-white"
+      >
+        <span className="inline-flex items-center gap-2">
+          <History className="h-4 w-4 text-mist-500" />
+          Jobs on the earlier contracts ({SBTC_COMMERCE_CONTRACT_NAME}, {STX_COMMERCE_CONTRACT_NAME}) keep every step available until they settle.
+        </span>
+        <span className="inline-flex items-center gap-1 font-medium">Open earlier jobs <ArrowRight className="h-4 w-4" /></span>
+      </Link>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-lg border border-white/[0.08] bg-white/[0.02] p-1">
@@ -337,7 +356,7 @@ export default function NextJobsBoard() {
 
       {wallet.connected && (
         <div className="mt-10">
-          <h2 className="text-lg font-semibold">Your wallet on the next contracts</h2>
+          <h2 className="text-lg font-semibold">Your wallet on the Nayori contracts</h2>
           <div className="mt-3 grid gap-4 lg:grid-cols-2">
             <NextAgentPanel />
             <NextPermissionsPanel height={height} />

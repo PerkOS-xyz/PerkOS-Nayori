@@ -1,11 +1,6 @@
-import type { Metadata } from "next";
-import NextJobsBoard from "../../../components/nayori-next/NextJobsBoard";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Jobs on the next contracts",
-  robots: { index: false, follow: false },
-};
-
+// The Nayori contracts are the default board now; keep the earlier preview link working.
 export default function NextJobsPage() {
-  return <NextJobsBoard />;
+  redirect("/jobs");
 }

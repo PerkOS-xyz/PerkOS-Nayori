@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import NextJobDetailView from "../../../../components/nayori-next/NextJobDetailView";
 
 export const metadata: Metadata = {
-  title: "Job on the next contracts",
-  robots: { index: false, follow: false },
+  title: "Nayori job",
 };
 
 interface Props {
