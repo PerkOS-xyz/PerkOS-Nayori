@@ -3,7 +3,6 @@ import {
   NAYORI_NEXT,
   NEXT_HIRO_API,
   NEXT_STACKS_NETWORK,
-  assertNextEnabled,
   nextEscrowContract,
   type ContractId,
   type NextAsset,
@@ -26,11 +25,10 @@ import {
   type NextJob,
 } from "./parse";
 
-// Read-only calls against the next Nayori contracts. Every read targets the configured next
-// deployment and network, never the current production contracts.
+// Read-only calls against the Nayori contracts of the live deployment on the app network. Jobs on
+// the earlier contracts (agentic-commerce-v6, sbtc-commerce-v5) are read by services/commerce.
 
 async function read(contract: ContractId, functionName: string, functionArgs: ClarityValue[] = []) {
-  assertNextEnabled();
   const [contractAddress, contractName] = contract.split(".");
   return fetchCallReadOnlyFunction({
     contractAddress,

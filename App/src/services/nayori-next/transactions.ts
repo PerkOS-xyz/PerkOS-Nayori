@@ -4,7 +4,6 @@ import {
   NAYORI_NEXT,
   NEXT_LIMITS,
   NEXT_SBTC_ASSET_NAME,
-  assertNextEnabled,
   nextEscrowContract,
   type ContractId,
   type NextAsset,
@@ -19,7 +18,7 @@ import {
 } from "./permissions";
 import { selectStxAddressForNetwork } from "../wallet";
 
-// Wallet payloads for every party action on the next Nayori contracts. Every payload uses
+// Wallet payloads for every party action on the Nayori contracts. Every payload uses
 // post-condition mode deny: funding and applying bind the signer to the exact amount it pays,
 // and every contract payout binds the contract principal to its exact outflow. Calls that move
 // no funds carry no post-conditions, so deny mode rejects any transfer at all.
@@ -120,7 +119,6 @@ function payload(
   functionArgs: ClarityValue[],
   postConditions: PostCondition[] = []
 ): NextCallPayload {
-  assertNextEnabled(config);
   return { contract, functionName, functionArgs, postConditions, postConditionMode: "deny", network: config.network };
 }
 

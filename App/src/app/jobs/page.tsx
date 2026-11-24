@@ -83,7 +83,6 @@ import { decisionLabel } from "../../services/autonomous-decision";
 import { NETWORK_NAME } from "../../constants/network";
 import { BRANDED_RATING_MEMO } from "../../constants/brand";
 import { getConnectedStxAddress } from "../../services/wallet";
-import { NAYORI_NEXT_ENABLED } from "../../constants/nayori-next";
 
 const AGENTIC_COMMERCE =
   AGENTIC_COMMERCE_CONTRACT as `${string}.${string}`;
@@ -699,12 +698,10 @@ export default function JobsPage() {
         </button>
       </div>
 
-      {NAYORI_NEXT_ENABLED && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-violet-500/30 bg-violet-500/10 px-4 py-3 text-sm text-violet-200">
-          Jobs on the next contract version, with Bitcoin block deadlines and deposit-sorted applications.
-          <Link href="/jobs/next" className="font-medium underline underline-offset-2">Open next-version jobs</Link>
-        </div>
-      )}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-violet-500/30 bg-violet-500/10 px-4 py-3 text-sm text-violet-200">
+        Jobs on the Nayori contracts, with Bitcoin block deadlines and deposit-sorted applications.
+        <Link href="/jobs/next" className="font-medium underline underline-offset-2">Open Nayori jobs</Link>
+      </div>
       <WorkflowTiming asset={currency} />
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-lg border border-white/[0.08] bg-white/[0.02] p-1">

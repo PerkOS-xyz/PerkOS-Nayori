@@ -11,9 +11,9 @@ import {
   parseExpiryBlock,
 } from "./permissions";
 
-const DEPLOYER = "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM";
+const DEPLOYER = "ST3MRPNX0VNWYRSJ07PNTASE5BZ9K5XE57ARZ39DY";
 const MAINNET = "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH";
-const config = resolveNextConfig({ deployer: DEPLOYER, network: "testnet" }, "testnet");
+const config = resolveNextConfig({}, "testnet");
 
 describe("next permission targets", () => {
   it("offers the four Nayori contracts that accept an allowed helper", () => {

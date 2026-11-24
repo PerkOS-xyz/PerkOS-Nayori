@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import NextJobDetailView from "../../../../components/nayori-next/NextJobDetailView";
-import { NAYORI_NEXT_ENABLED } from "../../../../constants/nayori-next";
 
 export const metadata: Metadata = {
   title: "Job on the next contracts",
@@ -14,7 +13,6 @@ interface Props {
 }
 
 export default async function NextJobPage({ params, searchParams }: Props) {
-  if (!NAYORI_NEXT_ENABLED) notFound();
   const { id } = await params;
   const { asset } = await searchParams;
   const jobId = Number(id);

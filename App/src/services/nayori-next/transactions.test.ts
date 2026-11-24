@@ -35,11 +35,11 @@ import {
   textDigestHex,
 } from "./transactions";
 
-const DEPLOYER = "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM";
+const DEPLOYER = "ST3MRPNX0VNWYRSJ07PNTASE5BZ9K5XE57ARZ39DY";
 const CLIENT = "ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5";
 const PROVIDER = "ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG";
 const EVALUATOR = "ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC";
-const config = resolveNextConfig({ deployer: DEPLOYER, network: "testnet" }, "testnet");
+const config = resolveNextConfig({}, "testnet");
 const ESCROW_SBTC = `${DEPLOYER}.nayori-escrow-sbtc`;
 const ESCROW_STX = `${DEPLOYER}.nayori-escrow-stx`;
 const APPLICATIONS = `${DEPLOYER}.nayori-applications`;
@@ -187,9 +187,10 @@ describe("next escrow payloads", () => {
     expect(() => buildSettleJob({ asset: "sbtc", jobId: 1, budget: 0 }, config)).toThrow(/Budget/);
   });
 
-  it("refuses to build anything while the next generation is off", () => {
-    const off = resolveNextConfig({}, "testnet");
-    expect(() => buildAcceptJob({ asset: "sbtc", jobId: 1 }, off)).toThrow(/not enabled/);
+  it("targets the live mainnet deployment on mainnet", () => {
+    const call = buildAcceptJob({ asset: "stx", jobId: 1 }, resolveNextConfig({}, "mainnet"));
+    expect(call.contract).toBe("SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X.nayori-escrow-stx");
+    expect(call.network).toBe("mainnet");
   });
 });
 
@@ -254,7 +255,6 @@ describe("next application payloads", () => {
     expect(() => buildUpdateAgent({ name: "x".repeat(65), uri: "" }, config)).toThrow(/64/);
     expect(() => buildUpdateAgent({ name: "Scout", uri: "u".repeat(257) }, config)).toThrow(/256/);
     expect(() => buildUpdateAgent({ name: "Scoút", uri: "" }, config)).toThrow(/ASCII/);
-    expect(() => buildUpdateAgent({ name: "Scout", uri: "" }, resolveNextConfig({}, "testnet"))).toThrow(/not enabled/);
   });
 });
 

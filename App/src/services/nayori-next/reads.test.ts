@@ -7,7 +7,7 @@ vi.mock("@stacks/transactions", async (importOriginal) => {
   return { ...actual, fetchCallReadOnlyFunction: readOnly };
 });
 
-const DEPLOYER = "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM";
+const DEPLOYER = "ST3MRPNX0VNWYRSJ07PNTASE5BZ9K5XE57ARZ39DY";
 const CLIENT = "ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5";
 const EVALUATOR = "ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC";
 const TREASURY = "ST2NEB84ASENDXKYGJPQW86YXQCEFEX2ZQPG87ND";
@@ -31,8 +31,7 @@ const jobCv = (status: number) =>
   );
 
 async function loadReads() {
-  vi.stubEnv("NEXT_PUBLIC_NAYORI_NEXT_DEPLOYER", DEPLOYER);
-  vi.stubEnv("NEXT_PUBLIC_NAYORI_NEXT_NETWORK", "testnet");
+  vi.stubEnv("NEXT_PUBLIC_STACKS_NETWORK", "testnet");
   vi.resetModules();
   return import("./reads");
 }
@@ -47,15 +46,7 @@ describe("next contract reads", () => {
     vi.resetModules();
   });
 
-  it("refuses to read while the next generation is off", async () => {
-    vi.stubEnv("NEXT_PUBLIC_NAYORI_NEXT_DEPLOYER", "");
-    vi.resetModules();
-    const reads = await import("./reads");
-    await expect(reads.getNextJobCount("sbtc")).rejects.toThrow(/not enabled/);
-    expect(readOnly).not.toHaveBeenCalled();
-  });
-
-  it("reads jobs from the configured next escrow on the next network", async () => {
+  it("reads jobs from the live escrow with no configuration", async () => {
     const reads = await loadReads();
     readOnly.mockResolvedValue(jobCv(1));
     const job = await reads.getNextJob("sbtc", 4);
