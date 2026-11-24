@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nayori deploy</title>
+<style>
+  :root { --bg: #f7f7f8; --fg: #16161a; --muted: #5f6170; --card: #fff; --line: #e3e3e8; --ok: #127a3a; --bad: #b3261e; --accent: #eb1b69; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #121216; --fg: #ececf1; --muted: #a0a2b0; --card: #1c1c22; --line: #2e2e36; --ok: #4cc27a; --bad: #ff6b60; } }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.lead { color: var(--muted); margin: 0 0 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .row:first-child { border-top: 0; }
+  code { font: 13px ui-monospace, Menlo, monospace; word-break: break-all; }
+  button { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .4; cursor: default; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); } .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Nayori: publish the next contracts</h1>
+  <p class="lead">Each contract is published from your Leather wallet as Clarity 6, in order. Leather asks you to confirm each one; nothing leaves this page without your approval.</p>
+
+  <div class="card" id="setup"></div>
+  <div class="card"><button id="connect">Connect Leather</button> <span id="who" class="muted"></span></div>
+  <div class="card" id="list"></div>
+  <div class="card muted" id="log">Waiting.</div>
+</main>
+<script src="connect.bundle.js"></script>
+<script>
+const CONTRACTS = ["nayori-permissions", "nayori-roles", "nayori-reputation", "nayori-escrow-sbtc", "nayori-escrow-stx", "nayori-agents", "nayori-applications"];
+const q = new URLSearchParams(location.search);
+const NETWORK = q.get("network") === "testnet" ? "testnet" : "mainnet";
+const EXPECTED = q.get("deployer") || "";
+const API = NETWORK === "mainnet" ? "https://api.hiro.so" : "https://api.testnet.hiro.so";
+const $ = (id) => document.getElementById(id);
+const log = (m) => { $("log").textContent = m; };
+const sources = {};
+let address = "";
+
+$("setup").innerHTML = `Network: <b>${NETWORK}</b><br>Expected wallet: <code>${EXPECTED || "(none given)"}</code>`;
+
+async function onChain(name) {
+  const r = await fetch(`${API}/v2/contracts/source/${address}/${name}?proof=0`);
+  if (r.status !== 200) return null;
+  return (await r.json()).source;
+}
+
+async function waitFor(txid) {
+  for (let i = 0; i < 180; i += 1) {
+    const r = await fetch(`${API}/extended/v1/tx/0x${txid.replace(/^0x/, "")}`);
+    if (r.status === 200) {
+      const b = await r.json();
+      if (b.tx_status === "success") return "success";
+      if (b.tx_status && b.tx_status !== "pending") return b.tx_status;
+    }
+    await new Promise((ok) => setTimeout(ok, 10000));
+  }
+  return "timeout";
+}
+
+async function render() {
+  const rows = [];
+  let nextEnabled = true;
+  for (const name of CONTRACTS) {
+    const chain = address ? await onChain(name) : null;
+    let state;
+    if (chain === null) { state = nextEnabled && address ? `<button data-name="${name}">Publish</button>` : `<span class="muted">pending</span>`; if (address) nextEnabled = false; }
+    else if (chain === sources[name]) state = `<span class="ok">published, matches the build</span>`;
+    else { state = `<span class="bad">exists but DIFFERS from the build</span>`; nextEnabled = false; }
+    rows.push(`<div class="row"><code>${address ? address + "." : ""}${name}</code>${state}</div>`);
+  }
+  $("list").innerHTML = rows.join("");
+  for (const b of document.querySelectorAll("button[data-name]")) b.onclick = () => publish(b.dataset.name);
+}
+
+async function publish(name) {
+  document.querySelectorAll("button[data-name]").forEach((b) => { b.disabled = true; });
+  log(`Confirm ${name} in Leather...`);
+  try {
+    const res = await window.NayoriConnect.request("stx_deployContract", {
+      name, clarityCode: sources[name], clarityVersion: 6, network: NETWORK, postConditionMode: "deny",
+    });
+    const txid = res.txid || res.txId;
+    log(`${name}: sent ${txid}. Waiting for the block (a few minutes)...`);
+    const status = await waitFor(txid);
+    log(`${name}: ${status} (${txid})`);
+  } catch (e) {
+    log(`${name}: not sent (${e?.message || e}). You can try again.`);
+  }
+  await render();
+}
+
+$("connect").onclick = async () => {
+  try {
+    for (const name of CONTRACTS) {
+      const r = await fetch(`../build/${NETWORK}/contracts/${name}.clar`);
+      if (r.status !== 200) throw new Error(`build/${NETWORK} is missing ${name}.clar`);
+      sources[name] = await r.text();
+    }
+    const res = await window.NayoriConnect.connect({ network: NETWORK });
+    const stx = (res.addresses || []).find((a) => a.address && a.address.startsWith(NETWORK === "mainnet" ? "SP" : "ST"));
+    address = stx ? stx.address : "";
+    if (!address) throw new Error("Leather returned no Stacks address for this network");
+    if (EXPECTED && address !== EXPECTED) {
+      $("who").innerHTML = `<span class="bad">Connected ${address}, expected ${EXPECTED}. Switch account in Leather and connect again.</span>`;
+      address = ""; return render();
+    }
+    $("who").innerHTML = `Connected <code>${address}</code>`;
+    log("Publish each contract in order.");
+    await render();
+  } catch (e) { log(`Could not connect: ${e?.message || e}`); }
+};
+render();
+</script>
+</body>
+</html>
