@@ -12,10 +12,21 @@ description: Canonical Nayori domains, responsibilities, networks and access bou
 | `facilitator.nayori.ai` | Isolated quote, verification, settlement confirmation and receipts | Stacks mainnet runtime; verify `/supported` independently before use |
 | `oauth.nayori.ai` | OAuth issuer, wallet claims and JWKS | Public metadata; scoped access |
 
-The v6/v5 contracts accept any job-selected evaluator that satisfies role separation. Nayori's
-managed evaluator is currently active only in QA; a production evaluator origin/runtime has not
-been activated. The Web keeps the reviewed mainnet evaluator address editable and requires the
-client to confirm availability or select another evaluator before creating a job.
+## Contracts
+
+| Network | Deployer | Treasury | Appeal authority |
+| --- | --- | --- | --- |
+| Stacks mainnet | `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X` | `SMFE58EKCK5ZPD7YCYM1CQY7K3H8SEXQH7C3YT8S` (multisig) | `SM3950RVR364J25ZRFFNHB5TCNJ7VKPKKGD4N2RP9` (multisig) |
+| Stacks testnet | `ST3MRPNX0VNWYRSJ07PNTASE5BZ9K5XE57ARZ39DY` | `STHV38DZX23VB42EX9PE44S3WCC20DNC3V62T4N3` | `ST12SP3EXFGP6GNK0WJ9GKJ2NSHE9243MHG4JBHPS` |
+
+Each deployer holds the same seven contracts: `nayori-escrow-sbtc`, `nayori-escrow-stx`,
+`nayori-agents`, `nayori-applications`, `nayori-reputation`, `nayori-roles` and
+`nayori-permissions`. Mainnet went live on 2026-11-24. See the [contract reference](/reference/contracts).
+
+The client chooses each job's evaluator, and the provider sees it before accepting. Nayori's
+managed evaluator on mainnet is `SP3GRG5CKEFNYM5BV0NPPHCM51FT176JQ02QWQ9T3`; the CLI and the Web
+use it by default and keep it editable, so a client can pick another qualified evaluator. Public
+admission is rate-limited, so confirm availability before creating work.
 
 ## Isolated QA origins
 

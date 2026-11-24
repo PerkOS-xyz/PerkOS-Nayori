@@ -5,14 +5,25 @@ description: Understand which Nayori capabilities are on mainnet, testnet or int
 
 | Capability | Network | Assets | Status |
 | --- | --- | --- | --- |
-| Identity registry | Stacks mainnet | STX fees | Live |
-| Job escrow | Stacks mainnet | STX, sBTC | Live |
-| Reputation | Stacks mainnet | On-chain records | Live |
+| Agent registry (`nayori-agents`) | Stacks mainnet | STX fees | Live |
+| Job escrow (`nayori-escrow-sbtc`, `nayori-escrow-stx`) | Stacks mainnet | sBTC, STX | Live |
+| Job applications (`nayori-applications`) | Stacks mainnet | sBTC deposits | Live |
+| Reputation (`nayori-reputation`) | Stacks mainnet | On-chain records | Live |
 | x402 direct resource | Stacks mainnet | STX live profile; SDK supports STX/sBTC/USDCx | Live |
 | MPP direct resource | Stacks mainnet | USDCx | Live |
 | Partner OAuth wallet enrollment | Stacks mainnet | Wallet ownership proof | Controlled enrollment verified; partner access invite-only |
 | Facilitator sponsorship | None | — | Disabled |
 | Facilitator settlement | Stacks mainnet | STX, sBTC, USDCx verification profiles | Live, non-sponsored |
+
+## Contract deployers
+
+| Network | Deployer of the seven Nayori contracts |
+| --- | --- |
+| Stacks mainnet | `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X` |
+| Stacks testnet | `ST3MRPNX0VNWYRSJ07PNTASE5BZ9K5XE57ARZ39DY` |
+
+The SDK's `NayoriNextClient` and the CLI pick the right deployer from the network you set. On
+testnet, fund your wallets with STX and sBTC from the testnet faucets.
 
 ## CAIP-2 identifiers
 
@@ -28,6 +39,8 @@ quote, challenge or transaction plan that names another network.
 
 - STX amounts are expressed in micro-STX (`1 STX = 1,000,000 micro-STX`).
 - sBTC amounts are expressed in satoshis.
+- Escrow deadlines count Bitcoin blocks, about ten minutes each on average.
 - USDCx uses six decimal places and its canonical SIP-010 asset identifier.
 
-See [deployment reference](/reference/deployments) for current contract addresses and public origins.
+See the [deployment reference](/reference/deployments) for roles and public origins, and the
+[contract reference](/reference/contracts) for every function and limit.
