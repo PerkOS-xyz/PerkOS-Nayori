@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Pencil, Power, Fingerprint, Star, BadgeCheck, Wallet, Search } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Power, Fingerprint, Star, BadgeCheck, Wallet, Search, Users } from "lucide-react";
+import NextAgentPanel from "../../components/nayori-next/NextAgentPanel";
+import { NAYORI_NEXT } from "../../constants/nayori-next";
+import { getNextAgentCount } from "../../services/nayori-next/reads";
 import { getAgent, getAgentCount, Agent } from "../../services/agent-registry";
 import { getReputationV2 } from "../../services/reputation-v2";
 import { isVerified } from "../../services/validation";
@@ -44,6 +47,13 @@ export default function AgentsPage() {
   const [query, setQuery] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [activeOnly, setActiveOnly] = useState(false);
+  const [nayoriAgents, setNayoriAgents] = useState<number | null>(null);
+
+  useEffect(() => {
+    getNextAgentCount()
+      .then(setNayoriAgents)
+      .catch((reason) => console.error("Error loading the Nayori agent count:", reason));
+  }, []);
 
   useEffect(() => {
     const wallet = getConnectedStxAddress();
@@ -172,10 +182,36 @@ export default function AgentsPage() {
         <ArrowLeft className="h-4 w-4" /> Back to Home
       </Link>
 
-      <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+      <div className="mt-5">
+        <h1 className="text-3xl font-bold tracking-tight">Agent Registry</h1>
+        <p className="mt-1.5 text-mist-300">On-chain identity for autonomous agents on Stacks.</p>
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <NextAgentPanel />
+        <section className="card p-6">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Users className="h-5 w-5 text-brand-300" /> Agents on the Nayori contracts
+          </h2>
+          <p className="mt-3 text-3xl font-semibold text-white">
+            {nayoriAgents === null ? "..." : nayoriAgents.toLocaleString("en-US")}
+          </p>
+          <p className="mt-2 text-sm text-mist-400">
+            Registered on nayori-agents on {NAYORI_NEXT.network}. One registration per wallet, with a name and a
+            profile link. It lets the wallet apply to sBTC jobs on the{" "}
+            <Link href="/jobs" className="text-brand-300 hover:text-brand-200">Jobs</Link> board, and job outcomes build
+            its on-chain provider record.
+          </p>
+        </section>
+      </div>
+
+      <div className="mt-10 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Agent Registry</h1>
-          <p className="mt-1.5 text-mist-300">On-chain identity for autonomous agents on Stacks.</p>
+          <h2 className="text-xl font-semibold">Agent directory</h2>
+          <p className="mt-1 max-w-2xl text-sm text-mist-400">
+            Profiles with a description and endpoints on the agent-registry contract. Ratings shown here come from
+            jobs on the earlier contracts.
+          </p>
         </div>
         <button
           onClick={() => {
@@ -193,13 +229,13 @@ export default function AgentsPage() {
           disabled={!connected || !!activeAction}
           title={!connected ? "Connect a wallet first" : undefined}
         >
-          {showForm ? "Cancel" : <><Plus className="h-4 w-4" /> Register Agent</>}
+          {showForm ? "Cancel" : <><Plus className="h-4 w-4" /> Add directory profile</>}
         </button>
       </div>
 
       {!connected && (
         <div className="mt-6 flex items-center gap-2 rounded-lg border border-brand/25 bg-brand/[0.06] px-4 py-3 text-sm text-mist-300">
-          <Wallet className="h-4 w-4 text-brand-300" /> Connect your wallet to register and rate agents.
+          <Wallet className="h-4 w-4 text-brand-300" /> Connect your wallet to register your agent.
         </div>
       )}
 
@@ -212,10 +248,11 @@ export default function AgentsPage() {
 
       {(showForm || editingAgent) && (
         <form onSubmit={editingAgent ? handleUpdate : handleRegister} className="card mt-6 p-6">
-          <h2 className="text-lg font-semibold">{editingAgent ? "Update Agent" : "Register New Agent"}</h2>
+          <h2 className="text-lg font-semibold">{editingAgent ? "Update directory profile" : "Add a directory profile"}</h2>
           {!editingAgent && (
             <p className="mt-1 text-sm text-mist-500">
-              Connect your wallet, then register on Stacks {NETWORK_NAME} in seconds. Only a name and description are required.
+              Add a profile to the agent directory on Stacks {NETWORK_NAME}. Only a name and description are required.
+              To apply to jobs, register the wallet as a Nayori agent above.
             </p>
           )}
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -253,7 +290,7 @@ export default function AgentsPage() {
           </div>
           <div className="mt-5 flex gap-2">
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? (editingAgent ? "Updating…" : "Registering…") : (editingAgent ? "Update Agent" : "Submit Registration")}
+              {submitting ? (editingAgent ? "Updating…" : "Adding…") : (editingAgent ? "Update profile" : "Add profile")}
             </button>
             {editingAgent && (
               <button
@@ -289,7 +326,7 @@ export default function AgentsPage() {
       ) : visibleAgents.length === 0 ? (
         <div className="card mt-6 p-12 text-center">
           <Fingerprint className="mx-auto h-8 w-8 text-mist-500" strokeWidth={1.5} />
-          <p className="mt-3 text-mist-300">No agents registered yet. Be the first.</p>
+          <p className="mt-3 text-mist-300">No matching directory profiles yet.</p>
         </div>
       ) : (
         <div className="mt-6 grid gap-4">
@@ -351,7 +388,7 @@ export default function AgentsPage() {
                     )}
                   </>
                 )}
-                <Link href="/jobs?status=completed" className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white">
+                <Link href="/jobs/earlier?status=completed" className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white">
                   <Star className="h-3.5 w-3.5" /> Ratings come from completed jobs
                 </Link>
               </div>

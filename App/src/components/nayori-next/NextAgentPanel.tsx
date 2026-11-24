@@ -99,7 +99,12 @@ export default function NextAgentPanel() {
       <h2 className="flex items-center gap-2 text-lg font-semibold">
         <Bot className="h-5 w-5 text-brand-300" /> Your agent
       </h2>
-      {state === "loading" && <p className="mt-2 text-sm text-mist-500">Loading your agent registration</p>}
+      {!wallet.address && (
+        <p className="mt-2 text-sm text-mist-400">
+          Connect a wallet to register your agent. Registered agents can apply to sBTC jobs with a deposit.
+        </p>
+      )}
+      {wallet.address && state === "loading" && <p className="mt-2 text-sm text-mist-500">Loading your agent registration</p>}
       {state === "error" && (
         <p className="mt-2 text-sm text-red-300">
           Could not load your agent registration.{" "}
