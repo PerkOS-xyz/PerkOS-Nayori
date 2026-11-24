@@ -12,6 +12,7 @@ import type { ParticipantKind, ParticipantRole } from "../../constants/participa
 import { verifyParticipantAttestation } from "../../services/participant-attestation";
 import { getConnectedStxAddress } from "../../services/wallet";
 import Addr from "../../components/Addr";
+import { CONTRACT_SET_LABELS } from "../../services/nayori-next/contract-sets";
 import { useToast } from "../../components/Toast";
 
 const network = NETWORK_NAME === "mainnet" ? "mainnet" : "testnet";
@@ -23,7 +24,7 @@ const KINDS: { value: ParticipantKind; label: string }[] = [
   { value: "community-member", label: "Community member" },
 ];
 const ROLES: { value: ParticipantRole; label: string; hint: string }[] = [
-  { value: "agent-owner", label: "Agent owner", hint: "registers agents in agent-registry" },
+  { value: "agent-owner", label: "Agent owner", hint: "registers agents on nayori-agents or agent-registry" },
   { value: "provider", label: "Provider", hint: "takes jobs and delivers" },
   { value: "client", label: "Client", hint: "posts and funds jobs" },
 ];
@@ -176,7 +177,7 @@ export default function ParticipantsPage() {
           <li>Take the <code>message</code>, <code>signature</code> and <code>publicKey</code> from the directory.</li>
           <li>Hash the message as a SIP-018 string message and recover the public key from the RSV signature; it must equal <code>publicKey</code>.</li>
           <li>Derive the Stacks address from that public key; it must equal the listed wallet.</li>
-          <li>Read the wallet&apos;s agents from <code>agent-registry</code> and its jobs from the escrow contracts on the Hiro explorer.</li>
+          <li>Read the wallet&apos;s agents from <code>nayori-agents</code> and <code>agent-registry</code>, and its jobs from the Nayori and earlier escrow contracts, on the Hiro explorer.</li>
         </ol>
         <p className="mt-3 text-xs text-mist-500">
           Self-registered entries pass these checks when they are submitted; entries pinned in the repository pass them in the test suite and on every request.
@@ -231,9 +232,13 @@ function ParticipantCard({ participant, mine }: { participant: ParticipantRecord
           ) : (
             <ul className="mt-1 space-y-1 text-sm">
               {participant.activity.agents.map((agent) => (
-                <li key={agent.id}>
-                  <Link href={`/agents/${agent.id}`} className="text-white hover:text-brand-200">#{agent.id} · {agent.name || "Unnamed agent"}</Link>
-                  <span className="ml-2 text-xs text-mist-500">{agent.active ? "active" : "inactive"}</span>
+                <li key={`${agent.contractSet}-${agent.id ?? agent.href}`}>
+                  {agent.id === null ? (
+                    <a href={agent.href} target="_blank" rel="noopener noreferrer" className="text-white hover:text-brand-200">{agent.name || "Unnamed agent"}</a>
+                  ) : (
+                    <Link href={agent.href} className="text-white hover:text-brand-200">#{agent.id} · {agent.name || "Unnamed agent"}</Link>
+                  )}
+                  <span className="ml-2 text-xs text-mist-500">{CONTRACT_SET_LABELS[agent.contractSet]} · {agent.active ? "active" : "inactive"}</span>
                 </li>
               ))}
             </ul>
@@ -248,11 +253,11 @@ function ParticipantCard({ participant, mine }: { participant: ParticipantRecord
           ) : (
             <ul className="mt-1 space-y-1 text-sm">
               {participant.activity.jobs.map((job) => (
-                <li key={`${job.currency}-${job.id}`}>
-                  <Link href={`/jobs/${job.id}?currency=${job.currency}`} className="text-white hover:text-brand-200">
+                <li key={`${job.contractSet}-${job.currency}-${job.id}`}>
+                  <Link href={job.href} className="text-white hover:text-brand-200">
                     {job.currency === "sbtc" ? "sBTC" : "STX"} job #{job.id}
                   </Link>
-                  <span className="ml-2 text-xs text-mist-500">{job.role} · {job.statusLabel}</span>
+                  <span className="ml-2 text-xs text-mist-500">{CONTRACT_SET_LABELS[job.contractSet]} · {job.role} · {job.statusLabel}</span>
                   {job.completed && <CheckCircle2 className="ml-1 inline h-3.5 w-3.5 text-emerald-300" />}
                 </li>
               ))}
