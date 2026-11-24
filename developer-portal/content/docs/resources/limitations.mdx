@@ -8,11 +8,18 @@ description: Current product and documentation boundaries developers must accoun
 - Controlled mainnet STX/x402 and USDCx/MPP settlement-and-delivery canaries completed on
   2026-09-03. These team-operated payments demonstrate operation, not independent adoption or revenue.
 - Transaction sponsorship is disabled.
-- Earned 2% escrow fees are implemented by the active STX v6/sBTC v5 contracts. The contracts are
-  deployed and the source defaults are promoted; controlled mainnet STX/sBTC consumer E2E and each
-  runtime deployment still require separate receipts before external onboarding. One
-  [supervised internal fee lifecycle](/resources/qa-validation) passed on testnet. Optional paid
-  appeal analysis is not implemented. See [fee policy](/commerce/service-fees).
+- The Nayori contracts live since 2026-11-24 charge 2% of the budget on every settlement. Their
+  rules are fixed in code: a changed rule needs a new deployment. A
+  [testnet end-to-end run](/resources/qa-validation) passed before mainnet. Optional paid appeal
+  analysis is not implemented. See [fee policy](/commerce/service-fees).
+- The evaluator and the appeal authority are trusted for the jobs they serve: the client chooses
+  the evaluator and the provider sees it before accepting; the appeal authority is a multisig
+  account pinned to each job.
+- sBTC or STX sent directly to a contract, outside a job or application, stays in that contract.
+  Fund jobs only through `fund-job` and `apply-to-job`.
+- The SDK's local MCP bridge, Nayori-Agent-MCP 0.2.0 and the workflow-timing API work with the
+  earlier contracts. For jobs on the live contracts, use the CLI or `NayoriNextClient` and read
+  deadlines from the job, submission and decision records.
 - Partner OAuth/MCP enrollment remains invite-only.
 - Production OAuth uses mainnet wallet claims with controlled enrollment verified. Partner
   access remains invite-only and does not confer payment-signing authority.
