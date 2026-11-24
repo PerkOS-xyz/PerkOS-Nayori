@@ -16,6 +16,10 @@ const observed = {
   distinctWallets: 9,
   indexedTransactions: 60,
   truncated: false,
+  byContractSet: {
+    nayori: { agents: 1, jobs: 3, sbtcJobs: 1, stxJobs: 2, completedSbtcJobs: 0, completedStxJobs: 1, settledSbtcSats: 0, settledStxMicrostx: 100000, contractTransactions: 10 },
+    earlier: { agents: 6, jobs: 9, sbtcJobs: 4, stxJobs: 5, completedSbtcJobs: 3, completedStxJobs: 3, settledSbtcSats: 3000, settledStxMicrostx: 300000, contractTransactions: 50 },
+  },
 };
 
 describe("home transparency stats", () => {

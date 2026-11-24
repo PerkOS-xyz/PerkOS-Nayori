@@ -20,6 +20,11 @@ import {
 import { NETWORK, NETWORK_NAME } from "../constants/network";
 import { buildFeeEvidence, type FeeEvidence, type FeeEvidenceSelection } from "./fee-evidence";
 import { createTtlCache } from "./snapshot-cache";
+import { CONTRACT_SETS, earlierJobHref, nextJobHref, type ContractSet } from "./nayori-next/contract-sets";
+import { getNextAgentsFor, getNextJobsOverview, nextIsCompleted } from "./nayori-next/overview";
+import type { NextAgent, NextJob } from "./nayori-next/parse";
+import { getNextAgentCount } from "./nayori-next/reads";
+import { NEXT_STATUS_LABELS, NEXT_STATUS_TONE } from "./nayori-next/status";
 
 const feeSelection: FeeEvidenceSelection = {
   stx: { contract: `${CONTRACT_ADDRESS}.${STX_COMMERCE_CONTRACT_NAME}`, enabled: STX_COMMERCE_HAS_SERVICE_FEES },
@@ -28,8 +33,8 @@ const feeSelection: FeeEvidenceSelection = {
 
 const CHAIN_SOURCE =
   NETWORK_NAME === "testnet"
-    ? "Stacks testnet contracts + Hiro API"
-    : "Stacks mainnet contracts + Hiro API";
+    ? "Stacks testnet Nayori and earlier contracts + Hiro API"
+    : "Stacks mainnet Nayori and earlier contracts + Hiro API";
 const CHAIN_PARAM = NETWORK_NAME === "testnet" ? "testnet" : "mainnet";
 
 const JOB_STATUS = [
@@ -44,8 +49,14 @@ const JOB_STATUS = [
   "Disputed",
 ] as const;
 
+export type StatusTone = "neutral" | "active" | "warn" | "good" | "bad";
+
 export interface TransparencyAgent {
-  id: number;
+  /** Agent id on agent-registry; null on nayori-agents, where the wallet is the identity. */
+  id: number | null;
+  contractSet: ContractSet;
+  /** Where the agent opens: its page for agent-registry, the explorer for nayori-agents. */
+  href: string;
   name: string;
   creator: string;
   wallet: string;
@@ -55,9 +66,14 @@ export interface TransparencyAgent {
 
 export interface TransparencyJob {
   id: number;
+  contractSet: ContractSet;
   currency: Currency;
+  /** Status code of the job's own contract set; read `statusLabel`, `completed` and `tone` across sets. */
   status: number;
   statusLabel: string;
+  completed: boolean;
+  tone: StatusTone;
+  href: string;
   budget: number;
   client: string;
   provider?: string;
@@ -73,6 +89,8 @@ export interface TransparencyJob {
 export interface TransparencyTransaction {
   txId: string;
   contract: string;
+  contractId: string;
+  contractSet: ContractSet;
   function: string;
   sender: string;
   senderClassification: ReturnType<typeof classifyEvidenceWallet>;
@@ -82,6 +100,20 @@ export interface TransparencyTransaction {
   explorer: string;
 }
 
+/** One contract set's share of the observed totals. */
+export interface ContractSetMetrics {
+  agents: number;
+  jobs: number;
+  sbtcJobs: number;
+  stxJobs: number;
+  completedSbtcJobs: number;
+  completedStxJobs: number;
+  settledSbtcSats: number;
+  settledStxMicrostx: number;
+  contractTransactions: number;
+}
+
+/** Totals combine the Nayori contracts and the earlier contracts; `byContractSet` splits them. */
 export interface ObservedTransparencyMetrics {
   registeredAgentsMainnet: number;
   totalJobsMainnet: number;
@@ -97,6 +129,7 @@ export interface ObservedTransparencyMetrics {
   distinctWallets: number;
   indexedTransactions: number;
   truncated: boolean;
+  byContractSet: Record<ContractSet, ContractSetMetrics>;
 }
 
 export interface TransparencySnapshot {
@@ -139,8 +172,16 @@ export interface TransparencySnapshot {
 }
 
 type SnapshotInput = {
+  /** Agents on agent-registry (earlier contracts). */
   agents: Agent[];
+  /** Jobs on the earlier escrow contracts. */
   jobs: CommerceJob[];
+  /** Agents found on nayori-agents. */
+  nayoriAgents?: NextAgent[];
+  /** get-agent-count of nayori-agents; defaults to the agents found. */
+  nayoriAgentCount?: number;
+  /** Jobs on nayori-escrow-sbtc and nayori-escrow-stx. */
+  nayoriJobs?: NextJob[];
   stats: OnchainStats;
   generatedAt?: string;
   classifyWallet?: typeof classifyEvidenceWallet;
@@ -151,10 +192,92 @@ type SnapshotInput = {
 export const BASELINE_SBTC_CONTRACT_NAME = evidenceManifest.milestone1.contract.split(".")[1] ?? "";
 export const SBTC_JOBS_INCLUDE_BASELINE = SBTC_COMMERCE_CONTRACT_NAME === BASELINE_SBTC_CONTRACT_NAME;
 
+const EARLIER_COMPLETED = 3;
+
+function earlierTone(status: number): StatusTone {
+  if (status === EARLIER_COMPLETED) return "good";
+  if (status === 4 || status === 5) return "bad";
+  if (status === 1 || status === 2 || status === 7 || status === 8) return "active";
+  return "neutral";
+}
+
+type Classify = typeof classifyEvidenceWallet;
+
+const classificationsOf = (job: { client: string; provider?: string; evaluator: string }, classifyWallet: Classify) => ({
+  client: classifyWallet(job.client),
+  provider: classifyWallet(job.provider),
+  evaluator: classifyWallet(job.evaluator),
+});
+
+function earlierJobView(job: CommerceJob, classifyWallet: Classify): TransparencyJob {
+  return {
+    id: job.id,
+    contractSet: "earlier",
+    currency: job.currency,
+    status: job.status,
+    statusLabel: JOB_STATUS[job.status] ?? `Unknown (${job.status})`,
+    completed: job.status === EARLIER_COMPLETED,
+    tone: earlierTone(job.status),
+    href: earlierJobHref(job.id, job.currency),
+    budget: job.budget,
+    client: job.client,
+    provider: job.provider,
+    evaluator: job.evaluator,
+    description: job.description,
+    classifications: classificationsOf(job, classifyWallet),
+  };
+}
+
+function nayoriJobView(job: NextJob, classifyWallet: Classify): TransparencyJob {
+  return {
+    id: job.id,
+    contractSet: "nayori",
+    currency: job.asset,
+    status: job.status,
+    statusLabel: NEXT_STATUS_LABELS[job.statusName],
+    completed: nextIsCompleted(job),
+    tone: NEXT_STATUS_TONE[job.statusName],
+    href: nextJobHref(job.id, job.asset),
+    budget: job.budget,
+    client: job.client,
+    provider: job.provider,
+    evaluator: job.evaluator,
+    description: job.description,
+    classifications: classificationsOf(job, classifyWallet),
+  };
+}
+
+function earlierAgentView(agent: Agent, classifyWallet: Classify): TransparencyAgent {
+  return {
+    id: agent.id,
+    contractSet: "earlier",
+    href: `/agents/${agent.id}`,
+    name: agent.name,
+    creator: agent.creator,
+    wallet: agent.wallet,
+    active: agent.active,
+    classification: classifyWallet(agent.wallet),
+  };
+}
+
+function nayoriAgentView(agent: NextAgent, classifyWallet: Classify): TransparencyAgent {
+  return {
+    id: null,
+    contractSet: "nayori",
+    href: `https://explorer.hiro.so/address/${agent.wallet}?chain=${CHAIN_PARAM}`,
+    name: agent.name,
+    creator: agent.wallet,
+    wallet: agent.wallet,
+    // nayori-agents has no deactivation: a registered agent stays registered.
+    active: true,
+    classification: classifyWallet(agent.wallet),
+  };
+}
+
 function uniqueExternalParticipants(
-  agents: Agent[],
-  jobs: CommerceJob[],
-  classifyWallet: typeof classifyEvidenceWallet,
+  agents: TransparencyAgent[],
+  jobs: TransparencyJob[],
+  classifyWallet: Classify,
 ): Set<string> {
   const participants = new Set<string>();
   const add = (address?: string) => {
@@ -174,47 +297,83 @@ function uniqueExternalParticipants(
   return participants;
 }
 
-function hasExternalParticipant(
-  job: CommerceJob,
-  classifyWallet: typeof classifyEvidenceWallet,
-): boolean {
+function hasExternalParticipant(job: TransparencyJob, classifyWallet: Classify): boolean {
   return [job.client, job.provider, job.evaluator].some(
     (address) => classifyWallet(address) === "external-attested",
   );
 }
 
+function setMetrics(jobs: TransparencyJob[], agents: number, contractTransactions: number): ContractSetMetrics {
+  const completed = (currency: Currency) => jobs.filter((job) => job.currency === currency && job.completed);
+  return {
+    agents,
+    jobs: jobs.length,
+    sbtcJobs: jobs.filter((job) => job.currency === "sbtc").length,
+    stxJobs: jobs.filter((job) => job.currency === "stx").length,
+    completedSbtcJobs: completed("sbtc").length,
+    completedStxJobs: completed("stx").length,
+    settledSbtcSats: completed("sbtc").reduce((sum, job) => sum + job.budget, 0),
+    settledStxMicrostx: completed("stx").reduce((sum, job) => sum + job.budget, 0),
+    contractTransactions,
+  };
+}
+
 export function buildTransparencySnapshot({
   agents,
   jobs,
+  nayoriAgents = [],
+  nayoriAgentCount = nayoriAgents.length,
+  nayoriJobs = [],
   stats,
   generatedAt = new Date().toISOString(),
   classifyWallet = classifyEvidenceWallet,
   baselineIncludedInSbtcJobs = SBTC_JOBS_INCLUDE_BASELINE,
 }: SnapshotInput): TransparencySnapshot {
-  const sbtcJobs = jobs.filter((job) => job.currency === "sbtc");
-  const stxJobs = jobs.filter((job) => job.currency === "stx");
-  const completedSbtcJobs = sbtcJobs.filter((job) => job.status === 3);
-  const completedStxJobs = stxJobs.filter((job) => job.status === 3);
-  const completedExternalJobs = jobs.filter(
-    (job) => job.status === 3 && hasExternalParticipant(job, classifyWallet),
+  // The Nayori contracts first, newest first; then the earlier contracts as before.
+  const jobViews = [
+    ...nayoriJobs.map((job) => nayoriJobView(job, classifyWallet)),
+    ...jobs.map((job) => earlierJobView(job, classifyWallet)),
+  ];
+  const agentViews = [
+    ...nayoriAgents.map((agent) => nayoriAgentView(agent, classifyWallet)),
+    ...agents.map((agent) => earlierAgentView(agent, classifyWallet)),
+  ];
+  const transactionsOf = (set: ContractSet) =>
+    stats.perContract.filter((contract) => contract.set === set).reduce((sum, contract) => sum + contract.total, 0);
+  const byContractSet = Object.fromEntries(
+    CONTRACT_SETS.map((set) => [
+      set,
+      setMetrics(
+        jobViews.filter((job) => job.contractSet === set),
+        set === "nayori" ? nayoriAgentCount : agents.length,
+        transactionsOf(set),
+      ),
+    ]),
+  ) as Record<ContractSet, ContractSetMetrics>;
+  const both = (pick: (metrics: ContractSetMetrics) => number) =>
+    CONTRACT_SETS.reduce((sum, set) => sum + pick(byContractSet[set]), 0);
+
+  const completedExternalJobs = jobViews.filter(
+    (job) => job.completed && hasExternalParticipant(job, classifyWallet),
   );
-  const externalParticipants = uniqueExternalParticipants(agents, jobs, classifyWallet);
+  const externalParticipants = uniqueExternalParticipants(agentViews, jobViews, classifyWallet);
 
   const observed: ObservedTransparencyMetrics = {
-    registeredAgentsMainnet: agents.length,
-    totalJobsMainnet: jobs.length,
-    sbtcJobsMainnet: sbtcJobs.length,
-    stxJobsMainnet: stxJobs.length,
-    completedSbtcJobsMainnet: completedSbtcJobs.length,
-    completedStxJobsMainnet: completedStxJobs.length,
-    settledSbtcSats: completedSbtcJobs.reduce((sum, job) => sum + job.budget, 0),
-    settledStxMicrostx: completedStxJobs.reduce((sum, job) => sum + job.budget, 0),
+    registeredAgentsMainnet: both((m) => m.agents),
+    totalJobsMainnet: both((m) => m.jobs),
+    sbtcJobsMainnet: both((m) => m.sbtcJobs),
+    stxJobsMainnet: both((m) => m.stxJobs),
+    completedSbtcJobsMainnet: both((m) => m.completedSbtcJobs),
+    completedStxJobsMainnet: both((m) => m.completedStxJobs),
+    settledSbtcSats: both((m) => m.settledSbtcSats),
+    settledStxMicrostx: both((m) => m.settledStxMicrostx),
     contractTransactions: stats.totalTx,
     contractCalls: stats.contractCalls,
     successfulContractCalls: stats.successfulContractCalls,
     distinctWallets: stats.distinctWallets,
     indexedTransactions: stats.indexedTransactions,
     truncated: stats.truncated,
+    byContractSet,
   };
 
   const verified =
@@ -239,6 +398,7 @@ export function buildTransparencySnapshot({
         };
 
   return {
+    // Service fees are a feature of the earlier contracts; the Nayori contracts charge a fixed 2%.
     serviceFees: buildFeeEvidence(jobs, feeSelection),
     schemaVersion: evidenceManifest.schemaVersion,
     generatedAt,
@@ -256,33 +416,13 @@ export function buildTransparencySnapshot({
       verified,
     },
     observed,
-    agents: agents.map((agent) => ({
-      id: agent.id,
-      name: agent.name,
-      creator: agent.creator,
-      wallet: agent.wallet,
-      active: agent.active,
-      classification: classifyWallet(agent.wallet),
-    })),
-    jobs: jobs.map((job) => ({
-      id: job.id,
-      currency: job.currency,
-      status: job.status,
-      statusLabel: JOB_STATUS[job.status] ?? `Unknown (${job.status})`,
-      budget: job.budget,
-      client: job.client,
-      provider: job.provider,
-      evaluator: job.evaluator,
-      description: job.description,
-      classifications: {
-        client: classifyWallet(job.client),
-        provider: classifyWallet(job.provider),
-        evaluator: classifyWallet(job.evaluator),
-      },
-    })),
+    agents: agentViews,
+    jobs: jobViews,
     transactions: stats.recent.map((transaction) => ({
       txId: transaction.txId,
       contract: transaction.contract,
+      contractId: transaction.contractId,
+      contractSet: transaction.set,
       function: transaction.fn,
       sender: transaction.sender,
       senderClassification: classifyWallet(transaction.sender),
@@ -381,12 +521,22 @@ async function readChain(): Promise<SnapshotInput> {
     readCount(STX_COMMERCE_CONTRACT_NAME, "get-job-count"),
     getOnchainStats({ strict: true, recentLimit: 50 }),
   ]);
-  const [agents, sbtcJobs, stxJobs] = await Promise.all([
+  const [agents, sbtcJobs, stxJobs, nayori, nayoriAgents, nayoriAgentCount] = await Promise.all([
     loadAgents(agentCount),
     loadJobs("sbtc", sbtcJobCount),
     loadJobs("stx", stxJobCount),
+    getNextJobsOverview({ strict: true }),
+    getNextAgentsFor(stats.nayoriAgentCandidates, { strict: true }),
+    getNextAgentCount(),
   ]);
-  return { agents, jobs: [...sbtcJobs, ...stxJobs], stats };
+  return {
+    agents,
+    jobs: [...sbtcJobs, ...stxJobs],
+    nayoriAgents,
+    nayoriAgentCount,
+    nayoriJobs: nayori.jobs,
+    stats,
+  };
 }
 
 type Global = typeof globalThis & { __nayoriChainCache?: ReturnType<typeof createTtlCache<SnapshotInput>> };
