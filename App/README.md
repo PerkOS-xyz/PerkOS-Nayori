@@ -16,9 +16,11 @@ lifecycle safeguards for users who prefer STX-denominated work.
 |------|-------|-------------|
 | Home | `/` | Hero section, features overview |
 | Dashboard | `/dashboard` | Protocol stats, recent activity |
-| Agents | `/agents` | Paginated agent directory, ownership controls, reputation and validation |
-| Jobs | `/jobs` | Role-aware sBTC and STX job lifecycle |
-| Job detail | `/jobs/[id]?currency=sbtc` | Currency-safe job detail and deliverable commitment |
+| Agents | `/agents` | Nayori agent registration (nayori-agents), plus the agent directory with reputation and validation |
+| Jobs | `/jobs` | Role-aware sBTC and STX job lifecycle on the Nayori contracts (nayori-escrow-sbtc, nayori-escrow-stx) |
+| Job detail | `/jobs/next/[id]?asset=sbtc` | Job on the Nayori contracts: actions, applications, evaluation and appeals (including a Leather multisig appeal authority) |
+| Earlier jobs | `/jobs/earlier` | Jobs in progress on sbtc-commerce-v5 and agentic-commerce-v6; every step stays available, no new jobs |
+| Earlier job detail | `/jobs/[id]?currency=sbtc` | Currency-safe detail of a job on the earlier contracts |
 | Analytics | `/analytics` | Currency-separated protocol metrics |
 | Activity | `/activity` | Protocol event timeline |
 | Search | `/search` | Full-text search |
