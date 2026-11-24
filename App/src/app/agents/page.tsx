@@ -235,7 +235,7 @@ export default function AgentsPage() {
 
       {!connected && (
         <div className="mt-6 flex items-center gap-2 rounded-lg border border-brand/25 bg-brand/[0.06] px-4 py-3 text-sm text-mist-300">
-          <Wallet className="h-4 w-4 text-brand-300" /> Connect your wallet to register your agent.
+          <Wallet className="h-4 w-4 text-brand-300" /> Connect your wallet to add or manage a directory profile.
         </div>
       )}
 
