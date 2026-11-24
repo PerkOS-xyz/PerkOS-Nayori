@@ -11,11 +11,15 @@ import { type ParticipantListQuery, type StoredParticipant, getParticipantStore 
 import { NETWORK_NAME } from "../constants/network";
 import { type AttestationVerification, verifyParticipantAttestation } from "./participant-attestation";
 import { type TransparencySnapshot, loadTransparencySnapshot } from "./transparency";
+import type { ContractSet } from "./nayori-next/contract-sets";
 
 export interface ParticipantActivity {
-  agents: { id: number; name: string; active: boolean }[];
+  /** `id` is null for agents on nayori-agents, where the wallet is the identity. */
+  agents: { id: number | null; contractSet: ContractSet; href: string; name: string; active: boolean }[];
   jobs: {
     id: number;
+    contractSet: ContractSet;
+    href: string;
     currency: "sbtc" | "stx";
     role: "client" | "provider";
     status: number;
@@ -76,7 +80,7 @@ export function activityTotals(snapshot: TransparencySnapshot | null, wallets: S
   const has = (address?: string) => Boolean(address && wallets.has(address.toUpperCase()));
   return {
     agentsRegistered: snapshot.agents.filter((agent) => has(agent.wallet) || has(agent.creator)).length,
-    completedJobs: snapshot.jobs.filter((job) => job.status === 3 && (has(job.client) || has(job.provider))).length,
+    completedJobs: snapshot.jobs.filter((job) => job.completed && (has(job.client) || has(job.provider))).length,
   };
 }
 
@@ -87,17 +91,19 @@ export function participantActivity(participant: Participant, snapshot: Transpar
   const address = participant.wallet.address;
   const agents = snapshot.agents
     .filter((agent) => sameAddress(agent.wallet, address) || sameAddress(agent.creator, address))
-    .map((agent) => ({ id: agent.id, name: agent.name, active: agent.active }));
+    .map((agent) => ({ id: agent.id, contractSet: agent.contractSet, href: agent.href, name: agent.name, active: agent.active }));
   const jobs = snapshot.jobs
     .filter((job) => sameAddress(job.client, address) || sameAddress(job.provider, address))
     .map((job) => ({
       id: job.id,
+      contractSet: job.contractSet,
+      href: job.href,
       currency: job.currency,
       role: sameAddress(job.client, address) ? ("client" as const) : ("provider" as const),
       status: job.status,
       statusLabel: job.statusLabel,
       budget: job.budget,
-      completed: job.status === 3,
+      completed: job.completed,
     }));
   return { agents, jobs, completedJobs: jobs.filter((job) => job.completed).length };
 }
@@ -144,7 +150,7 @@ export async function buildParticipantDirectory(
       verification:
         "Recover the public key from the RSV signature over the SIP-018 hash of the message, derive the Stacks address, and compare both with the listed wallet. Self-registered entries are verified when submitted; pinned entries on every request. Anyone can re-run the check from the published fields.",
       counting:
-        "Only listed wallets with a valid attestation count toward non-team adoption in the public evidence. Agents and completed jobs are read live from agent-registry and the escrow contracts.",
+        "Only listed wallets with a valid attestation count toward non-team adoption in the public evidence. Agents and completed jobs are read live from the Nayori contracts (nayori-agents and the Nayori escrows) and the earlier contracts (agent-registry and its escrows).",
     },
     totals: {
       participants: list.length + storedTotal,

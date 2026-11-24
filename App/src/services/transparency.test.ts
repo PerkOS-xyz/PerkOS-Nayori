@@ -4,6 +4,7 @@ import type { EvidenceWalletClassification } from "../constants/evidence";
 import type { Agent } from "./agent-registry";
 import type { CommerceJob } from "./commerce";
 import type { OnchainStats } from "./onchain-stats";
+import type { NextAgent, NextJob } from "./nayori-next/parse";
 import {
   buildTransparencySnapshot,
   buildUnavailableTransparencySnapshot,
@@ -36,6 +37,7 @@ const jobs: CommerceJob[] = [
 const stats: OnchainStats = {
   network: "mainnet",
   deployer: TEAM,
+  nayoriDeployer: "SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X",
   totalTx: 30,
   contractCalls: 25,
   successfulContractCalls: 24,
@@ -43,11 +45,14 @@ const stats: OnchainStats = {
   feesSTX: 0.25,
   indexedTransactions: 30,
   truncated: false,
-  perContract: [{ name: "sbtc-commerce", total: 10 }],
+  perContract: [{ name: "sbtc-commerce", id: `${TEAM}.sbtc-commerce`, set: "earlier", total: 10 }],
+  nayoriAgentCandidates: [],
   recent: [
     {
       txId: `0x${"a".repeat(64)}`,
       contract: "sbtc-commerce",
+      contractId: `${TEAM}.sbtc-commerce`,
+      set: "earlier",
       fn: "complete-job",
       sender: EXTERNAL_A,
       status: "success",
@@ -114,6 +119,87 @@ describe("transparency snapshot", () => {
     if (NETWORK_NAME !== "testnet") {
       expect(snapshot.milestone2.verified.completedSbtcJobsMainnet).toBe(1);
       expect(snapshot.milestone2.verified.registeredAgentsMainnet).toBe(2);
+    }
+  });
+
+  it("combines the Nayori contracts with the earlier ones and keeps a per-set split", () => {
+    const nayoriJob = (id: number, asset: "sbtc" | "stx", status: number, statusName: NextJob["statusName"], provider?: string): NextJob => ({
+      id,
+      asset,
+      client: TEAM,
+      evaluator: TEAM,
+      ...(provider ? { provider } : {}),
+      treasury: TEAM,
+      appealAuthority: TEAM,
+      budget: asset === "sbtc" ? 5_000 : 2_000_000,
+      description: "nayori",
+      deliveryDeadline: 10,
+      deliveryBlocks: 144,
+      reviewBlocks: 144,
+      status,
+      statusName,
+    });
+    const nayoriJobs = [
+      nayoriJob(2, "stx", 7, "completed", EXTERNAL_A),
+      nayoriJob(1, "stx", 1, "funded"),
+      nayoriJob(1, "sbtc", 6, "disputed", TEAM),
+    ];
+    const nayoriAgents: NextAgent[] = [{ wallet: EXTERNAL_B, name: "Nayori agent", uri: "", registeredAt: 5 }];
+    const snapshot = buildTransparencySnapshot({
+      agents,
+      jobs,
+      nayoriAgents,
+      nayoriAgentCount: 2,
+      nayoriJobs,
+      stats: {
+        ...stats,
+        perContract: [
+          ...stats.perContract,
+          { name: "nayori-escrow-stx", id: "SPX.nayori-escrow-stx", set: "nayori", total: 7 },
+        ],
+      },
+      generatedAt: "2026-11-24T00:00:00.000Z",
+      classifyWallet,
+      baselineIncludedInSbtcJobs: false,
+    });
+
+    // EXTERNAL_B has an agent on both registries and counts once: TEAM, EXTERNAL_A, EXTERNAL_B,
+    // plus one Nayori agent outside the listed history.
+    expect(snapshot.observed).toMatchObject({
+      registeredAgentsMainnet: 4,
+      totalJobsMainnet: 7,
+      sbtcJobsMainnet: 3,
+      stxJobsMainnet: 4,
+      completedSbtcJobsMainnet: 2,
+      completedStxJobsMainnet: 2,
+      settledStxMicrostx: 3_500_000,
+    });
+    expect(snapshot.observed?.byContractSet.nayori).toEqual({
+      agents: 2,
+      jobs: 3,
+      sbtcJobs: 1,
+      stxJobs: 2,
+      completedSbtcJobs: 0,
+      completedStxJobs: 1,
+      settledSbtcSats: 0,
+      settledStxMicrostx: 2_000_000,
+      contractTransactions: 7,
+    });
+    expect(snapshot.observed?.byContractSet.earlier).toMatchObject({ agents: 3, jobs: 4, contractTransactions: 10 });
+    expect(snapshot.jobs[0]).toMatchObject({
+      contractSet: "nayori",
+      statusLabel: "Completed",
+      completed: true,
+      tone: "good",
+      href: "/jobs/next/2?asset=stx",
+    });
+    expect(snapshot.jobs[2]).toMatchObject({ statusLabel: "Appealed", tone: "warn", href: "/jobs/next/1?asset=sbtc" });
+    expect(snapshot.jobs[3]).toMatchObject({ contractSet: "earlier", href: "/jobs/1?currency=sbtc", completed: true });
+    expect(snapshot.agents[0]).toMatchObject({ id: null, contractSet: "nayori", wallet: EXTERNAL_B });
+    expect(snapshot.agents[1]).toMatchObject({ id: 1, contractSet: "earlier", href: "/agents/1" });
+    if (NETWORK_NAME !== "testnet") {
+      // EXTERNAL_A completed a Nayori job too: three completed jobs with an attested wallet.
+      expect(snapshot.milestone2.verified.completedJobsFromNonTeamWallets).toBe(3);
     }
   });
 

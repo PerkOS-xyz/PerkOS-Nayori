@@ -6,6 +6,11 @@
  * and returns the Evaluator's status. Without it, the app answers 503 and hands the exact body
  * back so an operator can submit it. The Evaluator recomputes every hash against the chain, so the
  * relay adds no trust: it only removes the network hop that participants cannot make themselves.
+ *
+ * Both escrow generations are accepted: the earlier contracts (agentic-commerce-v6,
+ * sbtc-commerce-v5) and the Nayori contracts (nayori-escrow-stx, nayori-escrow-sbtc). A
+ * `nayori-escrow-*` contract must be the live deployment of the request's network and match its
+ * asset, so a look-alike contract never reaches the Evaluator.
  */
 import {
   type EvaluationRequestBody,
@@ -13,6 +18,16 @@ import {
   parseEvaluableDescription,
 } from "./evaluable-jobs";
 import { isContractIdForNetwork, isPrincipalForNetwork } from "./evaluation-commitments";
+import { nextEscrowAsset } from "../constants/nayori-deployment";
+
+const NAYORI_ESCROW_NAME = /\.nayori-escrow-/;
+
+/** True when the contract may carry a relayed evaluation for this asset. */
+export function isRelayableEscrow(contract: string, network: "testnet" | "mainnet", asset: "stx" | "sbtc"): boolean {
+  if (!isContractIdForNetwork(contract, network)) return false;
+  if (NAYORI_ESCROW_NAME.test(contract)) return nextEscrowAsset(contract, network) === asset;
+  return true;
+}
 
 export const RELAY_MAX_BODY_BYTES = 65_536;
 
@@ -35,7 +50,7 @@ export function parseRelayBody(raw: unknown): EvaluationRequestBody {
   if (network !== "testnet" && network !== "mainnet") throw fail();
   const asset = raw.asset;
   if (asset !== "stx" && asset !== "sbtc") throw fail();
-  if (!nonEmpty(raw.contract, 128) || !isContractIdForNetwork(raw.contract, network)) throw fail();
+  if (!nonEmpty(raw.contract, 128) || !isRelayableEscrow(raw.contract, network, asset)) throw fail();
   if (!nonEmpty(raw.jobId, 40) || !/^[1-9][0-9]*$/.test(raw.jobId)) throw fail();
   if (!nonEmpty(raw.evaluationId, 36) || !/^[0-9a-f-]{36}$/.test(raw.evaluationId)) throw fail();
   const job = raw.job;

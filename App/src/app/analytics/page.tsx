@@ -6,11 +6,16 @@ import { ArrowLeft, RefreshCw, Fingerprint, Briefcase, CheckCircle2, Activity as
 import { getAgentCount } from "../../services/agent-registry";
 import { getAllCommerceJobs, getCommerceJobCount } from "../../services/commerce";
 import { getOnchainStats, OnchainStats } from "../../services/onchain-stats";
+import { getNextAgentCount } from "../../services/nayori-next/reads";
+import { getNextJobsOverview, nextIsCompleted } from "../../services/nayori-next/overview";
+import { NEXT_STATUS_NAMES } from "../../services/nayori-next/parse";
+import { NEXT_STATUS_LABELS } from "../../services/nayori-next/status";
+import { CONTRACT_SETS, CONTRACT_SET_LABELS, shortContractName, type ContractSet } from "../../services/nayori-next/contract-sets";
 import { formatSbtcCompact, formatStx } from "../../utils/format";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorMessage from "../../components/ErrorMessage";
 
-const STATUS_LABELS = [
+const EARLIER_STATUS_LABELS = [
   "Open",
   "Funded",
   "Submitted",
@@ -21,21 +26,65 @@ const STATUS_LABELS = [
   "Decision pending",
   "Disputed",
 ];
+const NAYORI_STATUS_LABELS = NEXT_STATUS_NAMES.map((name) => NEXT_STATUS_LABELS[name]);
+const EARLIER_COMPLETED = 3;
 
-interface Data {
+/** The common shape of a job from either contract set, enough for these analytics. */
+interface JobPoint {
+  asset: "sbtc" | "stx";
+  status: number;
+  budget: number;
+  escrow: number;
+  completed: boolean;
+}
+
+interface SetData {
   agents: number;
   jobs: number;
-  indexedJobs: number;
   sbtcJobs: number;
   stxJobs: number;
+  indexed: JobPoint[];
   byStatus: number[];
-  sbtcEscrow: number;
-  stxEscrow: number;
-  sbtcAvgBudget: number;
-  stxAvgBudget: number;
-  completionRate: number;
+}
+
+interface Data {
+  sets: Record<ContractSet, SetData | null>;
   chain: OnchainStats;
 }
+
+function buildSetData(agents: number, sbtcJobs: number, stxJobs: number, indexed: JobPoint[], labels: string[]): SetData {
+  const byStatus = Array.from({ length: labels.length }, () => 0);
+  for (const job of indexed) {
+    if (job.status >= 0 && job.status < labels.length) byStatus[job.status]++;
+  }
+  return { agents, jobs: sbtcJobs + stxJobs, sbtcJobs, stxJobs, indexed, byStatus };
+}
+
+async function loadNayori(): Promise<SetData | null> {
+  try {
+    const [agents, overview] = await Promise.all([
+      getNextAgentCount(),
+      getNextJobsOverview({ limitPerAsset: 100, includeEscrow: true }),
+    ]);
+    const indexed = overview.jobs.map((job) => ({
+      asset: job.asset,
+      status: job.status,
+      budget: job.budget,
+      escrow: job.escrow ?? 0,
+      completed: nextIsCompleted(job),
+    }));
+    return buildSetData(agents, overview.counts.sbtc, overview.counts.stx, indexed, NAYORI_STATUS_LABELS);
+  } catch (error) {
+    console.error("Analytics: the Nayori contracts did not answer:", error);
+    return null;
+  }
+}
+
+const sum = (jobs: JobPoint[], pick: (job: JobPoint) => number) => jobs.reduce((total, job) => total + pick(job), 0);
+const average = (jobs: JobPoint[]) => {
+  const budgeted = jobs.filter((job) => job.budget > 0);
+  return budgeted.length ? sum(budgeted, (job) => job.budget) / budgeted.length : 0;
+};
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<Data | null>(null);
@@ -50,40 +99,26 @@ export default function AnalyticsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [agents, sbtcCount, stxCount, jobs, chain] = await Promise.all([
+      const [agents, sbtcCount, stxCount, jobs, chain, nayori] = await Promise.all([
         getAgentCount(),
         getCommerceJobCount("sbtc"),
         getCommerceJobCount("stx"),
         getAllCommerceJobs({ includeEscrow: true, limitPerCurrency: 100 }),
         getOnchainStats(),
+        loadNayori(),
       ]);
-
-      const byStatus = Array.from({ length: STATUS_LABELS.length }, () => 0);
-      for (const j of jobs) {
-        if (j.status >= 0 && j.status < STATUS_LABELS.length) byStatus[j.status]++;
-      }
-      const sbtc = jobs.filter((job) => job.currency === "sbtc");
-      const stx = jobs.filter((job) => job.currency === "stx");
-      const sbtcBudgeted = sbtc.filter((job) => job.budget > 0);
-      const stxBudgeted = stx.filter((job) => job.budget > 0);
-      const completed = byStatus[3];
-
+      const earlierIndexed = jobs.map((job) => ({
+        asset: job.currency,
+        status: job.status,
+        budget: job.budget,
+        escrow: job.escrow || 0,
+        completed: job.status === EARLIER_COMPLETED,
+      }));
       setData({
-        agents,
-        jobs: sbtcCount + stxCount,
-        indexedJobs: jobs.length,
-        sbtcJobs: sbtcCount,
-        stxJobs: stxCount,
-        byStatus,
-        sbtcEscrow: sbtc.reduce((sum, job) => sum + (job.escrow || 0), 0),
-        stxEscrow: stx.reduce((sum, job) => sum + (job.escrow || 0), 0),
-        sbtcAvgBudget: sbtcBudgeted.length
-          ? sbtcBudgeted.reduce((sum, job) => sum + job.budget, 0) / sbtcBudgeted.length
-          : 0,
-        stxAvgBudget: stxBudgeted.length
-          ? stxBudgeted.reduce((sum, job) => sum + job.budget, 0) / stxBudgeted.length
-          : 0,
-        completionRate: jobs.length > 0 ? Math.round((completed / jobs.length) * 100) : 0,
+        sets: {
+          nayori,
+          earlier: buildSetData(agents, sbtcCount, stxCount, earlierIndexed, EARLIER_STATUS_LABELS),
+        },
         chain,
       });
     } catch (err) {
@@ -104,7 +139,7 @@ export default function AnalyticsPage() {
       <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-          <p className="mt-1.5 text-mist-300">Protocol metrics, computed live from on-chain state.</p>
+          <p className="mt-1.5 text-mist-300">Protocol metrics across the Nayori contracts and the earlier contracts, computed live from on-chain state.</p>
         </div>
         <button onClick={load} className="btn-ghost">
           <RefreshCw className="h-4 w-4" /> Refresh
@@ -113,26 +148,77 @@ export default function AnalyticsPage() {
 
       {error && <div className="mt-6"><ErrorMessage message={error} onRetry={load} /></div>}
 
-      {data && (
+      {data && (() => {
+        const loaded = CONTRACT_SETS.map((set) => data.sets[set]).filter((set): set is SetData => Boolean(set));
+        const total = (pick: (set: SetData) => number) => loaded.reduce((acc, set) => acc + pick(set), 0);
+        const indexed = loaded.flatMap((set) => set.indexed);
+        const sbtc = indexed.filter((job) => job.asset === "sbtc");
+        const stx = indexed.filter((job) => job.asset === "stx");
+        const completed = indexed.filter((job) => job.completed).length;
+        const jobs = total((set) => set.jobs);
+        const completionRate = indexed.length > 0 ? Math.round((completed / indexed.length) * 100) : 0;
+        const split = (pick: (set: SetData) => number) =>
+          CONTRACT_SETS.map((set) => `${data.sets[set] ? pick(data.sets[set]!) : "—"} ${set === "nayori" ? "Nayori" : "earlier"}`).join(" · ");
+        return (
         <>
           <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-            <KPICard icon={Fingerprint} title="Agents" value={String(data.agents)} />
-            <KPICard icon={Briefcase} title={`Jobs (${data.sbtcJobs} sBTC · ${data.stxJobs} STX)`} value={String(data.jobs)} />
-            <KPICard icon={CheckCircle2} title="Completed" value={String(data.byStatus[3])} />
-            <KPICard icon={ActivityIcon} title="Indexed completion rate" value={`${data.completionRate}%`} />
+            <KPICard icon={Fingerprint} title={`Agents (${split((set) => set.agents)})`} value={String(total((set) => set.agents))} />
+            <KPICard
+              icon={Briefcase}
+              title={`Jobs (${total((set) => set.sbtcJobs)} sBTC · ${total((set) => set.stxJobs)} STX)`}
+              value={String(jobs)}
+            />
+            <KPICard icon={CheckCircle2} title="Completed" value={String(completed)} />
+            <KPICard icon={ActivityIcon} title="Indexed completion rate" value={`${completionRate}%`} />
           </div>
 
-          {data.indexedJobs < data.jobs && (
+          {data.sets.nayori === null && (
             <p className="mt-3 text-xs text-amber-300">
-              Status and budget analytics use the newest {data.indexedJobs} of {data.jobs} jobs; total job and transaction counts remain complete.
+              The Nayori contracts are still on their way from the chain. Refresh in a moment to include them.
+            </p>
+          )}
+          {indexed.length < jobs && (
+            <p className="mt-3 text-xs text-amber-300">
+              Status and budget analytics use the newest {indexed.length} of {jobs} jobs; total job and transaction counts remain complete.
             </p>
           )}
 
           <div className="mt-4 grid gap-4 md:grid-cols-4">
-            <StatCard title="sBTC escrow" value={formatSbtcCompact(data.sbtcEscrow)} description="Bitcoin-denominated jobs" />
-            <StatCard title="STX escrow" value={`${formatStx(data.stxEscrow)} STX`} description="STX-denominated jobs" />
-            <StatCard title="Average sBTC budget" value={formatSbtcCompact(data.sbtcAvgBudget)} description="Per budgeted sBTC job" />
-            <StatCard title="Average STX budget" value={`${formatStx(data.stxAvgBudget)} STX`} description="Per budgeted STX job" />
+            <StatCard title="sBTC escrow" value={formatSbtcCompact(sum(sbtc, (job) => job.escrow))} description="Bitcoin-denominated jobs" />
+            <StatCard title="STX escrow" value={`${formatStx(sum(stx, (job) => job.escrow))} STX`} description="STX-denominated jobs" />
+            <StatCard title="Average sBTC budget" value={formatSbtcCompact(average(sbtc))} description="Per budgeted sBTC job" />
+            <StatCard title="Average STX budget" value={`${formatStx(average(stx))} STX`} description="Per budgeted STX job" />
+          </div>
+
+          <div className="mt-4 card overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="text-xs uppercase tracking-wider text-mist-500">
+                <tr>
+                  <th className="px-5 py-3 font-medium">Contract set</th>
+                  <th className="px-5 py-3 font-medium">Agents</th>
+                  <th className="px-5 py-3 font-medium">Jobs</th>
+                  <th className="px-5 py-3 font-medium">Completed</th>
+                  <th className="px-5 py-3 font-medium">sBTC escrow</th>
+                  <th className="px-5 py-3 font-medium">STX escrow</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.06] font-mono text-mist-300">
+                {CONTRACT_SETS.map((key) => {
+                  const set = data.sets[key];
+                  const held = (asset: "sbtc" | "stx") => sum(set?.indexed.filter((job) => job.asset === asset) ?? [], (job) => job.escrow);
+                  return (
+                    <tr key={key}>
+                      <td className="px-5 py-3 font-sans text-white">{CONTRACT_SET_LABELS[key]}</td>
+                      <td className="px-5 py-3">{set ? set.agents : "—"}</td>
+                      <td className="px-5 py-3">{set ? `${set.jobs} (${set.sbtcJobs} sBTC · ${set.stxJobs} STX)` : "—"}</td>
+                      <td className="px-5 py-3">{set ? set.indexed.filter((job) => job.completed).length : "—"}</td>
+                      <td className="px-5 py-3">{set ? formatSbtcCompact(held("sbtc")) : "—"}</td>
+                      <td className="px-5 py-3">{set ? `${formatStx(held("stx"))} STX` : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -141,15 +227,27 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <ChartCard title="Jobs by status" labels={STATUS_LABELS} data={data.byStatus} />
-            <ChartCard
-              title="Transactions by contract"
-              labels={data.chain.perContract.map((c) => c.name.replace(/-registry|agentic-/g, "").slice(0, 8))}
-              data={data.chain.perContract.map((c) => c.total)}
-            />
+            {data.sets.nayori && (
+              <ChartCard title="Jobs by status · Nayori contracts" labels={NAYORI_STATUS_LABELS} data={data.sets.nayori.byStatus} />
+            )}
+            <ChartCard title="Jobs by status · earlier contracts" labels={EARLIER_STATUS_LABELS} data={data.sets.earlier!.byStatus} />
+            {CONTRACT_SETS.map((set) => {
+              const contracts = data.chain.perContract.filter((c) => c.set === set);
+              return (
+                <ChartCard
+                  key={set}
+                  title={`Transactions by contract · ${set === "nayori" ? "Nayori" : "earlier"} contracts`}
+                  labels={contracts.map((c) =>
+                    set === "nayori" ? shortContractName(c.name) : c.name.replace(/-registry|agentic-/g, "").slice(0, 8)
+                  )}
+                  data={contracts.map((c) => c.total)}
+                />
+              );
+            })}
           </div>
         </>
-      )}
+        );
+      })()}
     </div>
   );
 }

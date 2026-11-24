@@ -15,8 +15,33 @@ import {
 import { getAgentCount } from "../../services/agent-registry";
 import { getCommerceJobCount } from "../../services/commerce";
 import { getOnchainStats, EXPLORER, CHAIN_PARAM, OnchainStats } from "../../services/onchain-stats";
+import { getNextAgentCount, getNextJobCount } from "../../services/nayori-next/reads";
+import { NAYORI_FUNCTION_LABELS } from "../../services/nayori-next/activity-labels";
+import { CONTRACT_SETS, CONTRACT_SET_LABELS, type ContractSet } from "../../services/nayori-next/contract-sets";
 import { CONTRACT_ADDRESS } from "../../constants/contract";
 import { PRODUCT_NAME } from "../../constants/brand";
+
+interface SetCounts {
+  agents: number;
+  jobs: number;
+}
+
+/** Counts of one contract set, or null when that set could not be read. */
+async function readCounts(set: ContractSet): Promise<SetCounts | null> {
+  try {
+    const [agents, sbtcJobs, stxJobs] =
+      set === "nayori"
+        ? await Promise.all([getNextAgentCount(), getNextJobCount("sbtc"), getNextJobCount("stx")])
+        : await Promise.all([getAgentCount(), getCommerceJobCount("sbtc"), getCommerceJobCount("stx")]);
+    return { agents, jobs: sbtcJobs + stxJobs };
+  } catch (error) {
+    console.error(`Error loading the ${set} contract counts:`, error);
+    return null;
+  }
+}
+
+const fnLabel = (set: ContractSet, fn: string) =>
+  (set === "nayori" ? NAYORI_FUNCTION_LABELS[fn]?.label : undefined) ?? FN_LABEL[fn] ?? fn;
 
 const shorten = (a: string) => (a ? `${a.slice(0, 5)}…${a.slice(-4)}` : "");
 const FN_LABEL: Record<string, string> = {
@@ -45,29 +70,32 @@ const FN_LABEL: Record<string, string> = {
 };
 
 export default function StatsPage() {
-  const [agents, setAgents] = useState(0);
-  const [jobs, setJobs] = useState(0);
+  const [counts, setCounts] = useState<Record<ContractSet, SetCounts | null>>({ nayori: null, earlier: null });
   const [stats, setStats] = useState<OnchainStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const [a, sbtcJobs, stxJobs, s] = await Promise.all([
-        getAgentCount(),
-        getCommerceJobCount("sbtc"),
-        getCommerceJobCount("stx"),
+      const [nayori, earlier, s] = await Promise.all([
+        readCounts("nayori"),
+        readCounts("earlier"),
         getOnchainStats(),
       ]);
-      setAgents(a);
-      setJobs(sbtcJobs + stxJobs);
+      setCounts({ nayori, earlier });
       setStats(s);
       setLoading(false);
     })();
   }, []);
 
+  const total = (key: keyof SetCounts) => (counts.nayori?.[key] ?? 0) + (counts.earlier?.[key] ?? 0);
+  const split = (key: keyof SetCounts) =>
+    `${counts.nayori?.[key] ?? "—"} Nayori · ${counts.earlier?.[key] ?? "—"} earlier`;
+  const setTotals = (set: ContractSet) =>
+    (stats?.perContract ?? []).filter((c) => c.set === set).reduce((sum, c) => sum + c.total, 0);
+
   const metrics = [
-    { icon: Fingerprint, label: "Agents registered", value: agents },
-    { icon: Briefcase, label: "Jobs created", value: jobs },
+    { icon: Fingerprint, label: "Agents registered", value: total("agents"), detail: split("agents") },
+    { icon: Briefcase, label: "Jobs created", value: total("jobs"), detail: split("jobs") },
     { icon: Activity, label: "On-chain transactions", value: stats?.totalTx ?? 0 },
     { icon: Users, label: "Distinct wallets", value: stats?.distinctWallets ?? 0 },
     { icon: Coins, label: "Fees (STX)", value: stats ? stats.feesSTX.toFixed(3) : "0" },
@@ -101,30 +129,47 @@ export default function StatsPage() {
               {loading ? "—" : m.value}
             </p>
             <p className="mt-1 text-xs text-mist-500">{m.label}</p>
+            {"detail" in m && !loading && <p className="mt-0.5 text-[11px] text-mist-500">{m.detail}</p>}
           </div>
         ))}
       </div>
+      {!loading && (counts.nayori === null || counts.earlier === null) && (
+        <p className="mt-3 text-xs text-amber-300">
+          Some counts are still on their way from the chain. Refresh in a moment for the complete totals.
+        </p>
+      )}
 
-      {/* Per-contract */}
-      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-mist-500">Contracts</h2>
-      <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {(stats?.perContract ?? []).map((c) => (
-          <a
-            key={c.name}
-            href={`${EXPLORER}/address/${CONTRACT_ADDRESS}.${c.name}?chain=${CHAIN_PARAM}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="card card-hover group p-5"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-sm text-white">{c.name}</span>
-              <ArrowUpRight className="h-4 w-4 text-mist-500 transition group-hover:text-brand-400" />
-            </div>
-            <p className="mt-3 font-mono text-2xl font-semibold text-white">{c.total}</p>
-            <p className="mt-1 text-xs text-mist-500">transactions</p>
-          </a>
-        ))}
-      </div>
+      {/* Per-contract, one group per contract set */}
+      {CONTRACT_SETS.map((set) => (
+        <section key={set}>
+          <div className="mt-10 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-mist-500">{CONTRACT_SET_LABELS[set]}</h2>
+            {stats && (
+              <span className="text-xs text-mist-500">
+                {setTotals(set).toLocaleString()} transactions · deployer {shorten(set === "nayori" ? stats.nayoriDeployer : stats.deployer)}
+              </span>
+            )}
+          </div>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {(stats?.perContract ?? []).filter((c) => c.set === set).map((c) => (
+              <a
+                key={c.id}
+                href={`${EXPLORER}/address/${c.id}?chain=${CHAIN_PARAM}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="card card-hover group p-5"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-sm text-white">{c.name}</span>
+                  <ArrowUpRight className="h-4 w-4 text-mist-500 transition group-hover:text-brand-400" />
+                </div>
+                <p className="mt-3 font-mono text-2xl font-semibold text-white">{c.total}</p>
+                <p className="mt-1 text-xs text-mist-500">transactions</p>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
 
       {/* Recent activity */}
       <h2 className="mt-10 text-sm font-semibold uppercase tracking-wider text-mist-500">Recent activity</h2>
@@ -148,9 +193,12 @@ export default function StatsPage() {
                 }`}
               />
               <span className="w-44 shrink-0 text-sm font-medium text-white">
-                {FN_LABEL[t.fn] ?? t.fn}
+                {fnLabel(t.set, t.fn)}
               </span>
               <span className="hidden font-mono text-xs text-mist-500 sm:inline">{t.contract}</span>
+              <span className="hidden rounded border border-white/10 px-1.5 text-[10px] text-mist-300 md:inline">
+                {CONTRACT_SET_LABELS[t.set]}
+              </span>
               <span className="ml-auto font-mono text-xs text-mist-300">{shorten(t.sender)}</span>
               <ArrowUpRight className="h-4 w-4 shrink-0 text-mist-500 transition group-hover:text-brand-400" />
             </a>
@@ -159,7 +207,7 @@ export default function StatsPage() {
       </div>
 
       <p className="mt-6 text-xs text-mist-500">
-        Source: Hiro API for {CONTRACT_ADDRESS} on Stacks {CHAIN_PARAM}. Click any row to verify on the explorer.
+        Source: Hiro API for the Nayori contracts ({stats?.nayoriDeployer ?? "…"}) and the earlier contracts ({CONTRACT_ADDRESS}) on Stacks {CHAIN_PARAM}. Click any row to verify on the explorer.
         {stats?.truncated
           ? ` Wallet and fee totals are based on ${stats.indexedTransactions.toLocaleString()} indexed transactions; contract totals remain complete.`
           : " Wallet and fee totals include every indexed transaction."}

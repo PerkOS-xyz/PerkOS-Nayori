@@ -111,10 +111,10 @@ describe("participant registry", () => {
 
     const snapshot = {
       dataStatus: { chain: "live" },
-      agents: [{ id: 1, wallet: participant.wallet.address, creator: participant.wallet.address, name: "A", active: true }],
+      agents: [{ id: 1, contractSet: "earlier", href: "/agents/1", wallet: participant.wallet.address, creator: participant.wallet.address, name: "A", active: true }],
       jobs: [
-        { id: 1, currency: "sbtc", client: "SP000000000000000000002Q6VF78", provider: participant.wallet.address, status: 3, statusLabel: "completed", budget: 1000 },
-        { id: 2, currency: "sbtc", client: "SP000000000000000000002Q6VF78", provider: participant.wallet.address, status: 2, statusLabel: "submitted", budget: 1000 },
+        { id: 1, contractSet: "earlier", href: "/jobs/1?currency=sbtc", currency: "sbtc", client: "SP000000000000000000002Q6VF78", provider: participant.wallet.address, status: 3, statusLabel: "completed", completed: true, budget: 1000 },
+        { id: 2, contractSet: "earlier", href: "/jobs/2?currency=sbtc", currency: "sbtc", client: "SP000000000000000000002Q6VF78", provider: participant.wallet.address, status: 2, statusLabel: "submitted", completed: false, budget: 1000 },
       ],
     } as never;
     expect(activityTotals(snapshot, wallets)).toEqual({ agentsRegistered: 1, completedJobs: 1 });

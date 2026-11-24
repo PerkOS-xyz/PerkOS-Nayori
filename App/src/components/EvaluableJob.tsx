@@ -26,19 +26,22 @@ export function evaluableContext(job: CommerceJob, currency: Currency): Evaluabl
   };
 }
 
-const evidenceKey = (currency: Currency, jobId: number) => `nayori:evidence:${NETWORK_NAME}:${currency}:${jobId}`;
+// Earlier-contract jobs keep their original key (network + currency); Nayori-contract jobs are
+// keyed by their escrow contract so job ids of the two generations never collide.
+const evidenceKey = (scope: string, jobId: number) => `nayori:evidence:${scope}:${jobId}`;
+const earlierScope = (currency: Currency) => `${NETWORK_NAME}:${currency}`;
 
-function rememberEvidence(currency: Currency, jobId: number, uri: string) {
+function rememberEvidence(scope: string, jobId: number, uri: string) {
   try {
-    window.localStorage.setItem(evidenceKey(currency, jobId), uri);
+    window.localStorage.setItem(evidenceKey(scope, jobId), uri);
   } catch {
     /* per-viewer convenience only */
   }
 }
 
-function recallEvidence(currency: Currency, jobId: number): string {
+function recallEvidence(scope: string, jobId: number): string {
   try {
-    return window.localStorage.getItem(evidenceKey(currency, jobId)) ?? "";
+    return window.localStorage.getItem(evidenceKey(scope, jobId)) ?? "";
   } catch {
     return "";
   }
@@ -91,6 +94,8 @@ export function jobTaskText(description: string): string {
   return parseEvaluableDescription(description)?.task ?? description;
 }
 
+type SubmitHandler = (deliverable: Uint8Array, evidence: EvaluationEvidence) => Promise<void> | void;
+
 export function CommittedSubmitForm({
   job,
   currency,
@@ -103,8 +108,43 @@ export function CommittedSubmitForm({
   currency: Currency;
   provider: string;
   busy: boolean;
-  onSubmit: (deliverable: Uint8Array, evidence: EvaluationEvidence) => Promise<void> | void;
+  onSubmit: SubmitHandler;
   onCancel: () => void;
+}) {
+  return (
+    <CommittedEvidenceForm
+      context={evaluableContext(job, currency)}
+      scope={earlierScope(currency)}
+      jobId={job.id}
+      description={job.description}
+      provider={provider}
+      busy={busy}
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+    />
+  );
+}
+
+/** Provider form for an evaluable job: inspect the public evidence, then submit its commitment. */
+export function CommittedEvidenceForm({
+  context,
+  scope,
+  jobId,
+  description,
+  provider,
+  busy,
+  onSubmit,
+  onCancel,
+}: {
+  context: EvaluableJobContext;
+  /** Storage scope that keeps the evidence link per job for this viewer. */
+  scope: string;
+  jobId: number;
+  description: string;
+  provider: string;
+  busy: boolean;
+  onSubmit: SubmitHandler;
+  onCancel?: () => void;
 }) {
   const [uri, setUri] = useState("");
   const [inspected, setInspected] = useState<EvaluationEvidence | null>(null);
@@ -130,13 +170,13 @@ export function CommittedSubmitForm({
     setError(null);
     try {
       const submission = await buildCommittedSubmission({
-        ...evaluableContext(job, currency),
-        jobId: job.id,
+        ...context,
+        jobId,
         provider,
-        description: job.description,
+        description,
         evidence: [inspected],
       });
-      rememberEvidence(currency, job.id, inspected.uri);
+      rememberEvidence(scope, jobId, inspected.uri);
       await onSubmit(submission.deliverable, inspected);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The submission could not be prepared.");
@@ -164,7 +204,7 @@ export function CommittedSubmitForm({
         <button type="button" onClick={() => void submit()} disabled={!inspected || working || busy} className="btn-primary disabled:opacity-40">
           Submit on-chain
         </button>
-        <button type="button" onClick={onCancel} className="btn-ghost">Cancel</button>
+        {onCancel && <button type="button" onClick={onCancel} className="btn-ghost">Cancel</button>}
       </div>
       {inspected && (
         <p className="inline-flex flex-wrap items-center gap-x-3 text-xs text-emerald-300">
@@ -186,38 +226,76 @@ type RelayState =
 
 /** After a committed submission: asks Nayori's evaluator to decide the job. */
 export function RequestEvaluationPanel({ job, currency }: { job: CommerceJob; currency: Currency }) {
+  return (
+    <EvaluationRequestPanel
+      context={evaluableContext(job, currency)}
+      scope={earlierScope(currency)}
+      jobId={job.id}
+      submitted={job.status === 2}
+      description={job.description}
+      provider={job.provider}
+      deliverableHex={job.deliverable}
+      reviewDeadlineBurn={job.reviewDeadline}
+    />
+  );
+}
+
+/**
+ * Asks Nayori's evaluator to decide a submitted evaluable job through /api/evaluations. Shown only
+ * when the job names the managed evaluator and its deliverable is an evidence commitment.
+ */
+export function EvaluationRequestPanel({
+  context,
+  scope,
+  jobId,
+  submitted,
+  description,
+  provider,
+  deliverableHex,
+  reviewDeadlineBurn,
+}: {
+  context: EvaluableJobContext;
+  scope: string;
+  jobId: number;
+  submitted: boolean;
+  description: string;
+  provider?: string;
+  deliverableHex?: string;
+  reviewDeadlineBurn?: number;
+}) {
   const [uri, setUri] = useState("");
   const [state, setState] = useState<RelayState>({ kind: "idle" });
 
   useEffect(() => {
-    setUri(recallEvidence(currency, job.id));
-  }, [currency, job.id]);
+    setUri(recallEvidence(scope, jobId));
+  }, [scope, jobId]);
 
-  const parsed = parseEvaluableDescription(job.description);
-  const onChainEvidenceHash = committedEvidenceHash(job.deliverable);
-  if (job.status !== 2 || !parsed || !onChainEvidenceHash || !job.provider) return null;
-  if (job.evaluator.toUpperCase() !== NAYORI_EVALUATOR_ADDRESS.toUpperCase()) return null;
+  const parsed = parseEvaluableDescription(description);
+  const onChainEvidenceHash = committedEvidenceHash(deliverableHex);
+  if (!submitted || !parsed || !onChainEvidenceHash || !provider) return null;
+  if (context.evaluator.toUpperCase() !== NAYORI_EVALUATOR_ADDRESS.toUpperCase()) return null;
+  const jobProvider = provider;
 
   async function requestEvaluation() {
     setState({ kind: "working" });
     try {
       const evidence = await inspectEvidence(uri.trim());
       const submission = await buildCommittedSubmission({
-        ...evaluableContext(job, currency),
-        jobId: job.id,
-        provider: job.provider!,
-        description: job.description,
+        ...context,
+        jobId,
+        provider: jobProvider,
+        description,
         evidence: [evidence],
       });
       if (submission.evidenceHash !== onChainEvidenceHash) {
         throw new Error("This evidence does not match the commitment submitted on-chain. Use the exact file that was submitted.");
       }
       const body = await buildEvaluationRequest({
-        context: evaluableContext(job, currency),
-        jobId: job.id,
-        provider: job.provider!,
-        description: job.description,
-        reviewDeadlineBurn: job.reviewDeadline ?? 0,
+        context,
+        jobId,
+        provider: jobProvider,
+        description,
+        reviewDeadlineBurn: reviewDeadlineBurn ?? 0,
         evidence: [evidence],
       });
       const response = await fetch("/api/evaluations", {

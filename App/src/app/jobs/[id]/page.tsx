@@ -22,6 +22,7 @@ import WorkflowTiming from "../../../components/WorkflowTiming";
 import Addr from "../../../components/Addr";
 import { JobCriteria, jobTaskText } from "../../../components/EvaluableJob";
 import { committedEvidenceHash } from "../../../services/evaluable-jobs";
+import { SBTC_COMMERCE_CONTRACT_NAME, STX_COMMERCE_CONTRACT_NAME } from "../../../constants/contract";
 
 export default function JobDetailPage() {
   const id = Number(useParams().id);
@@ -59,8 +60,8 @@ export default function JobDetailPage() {
   if (!job) {
     return (
       <div className="container-x py-12">
-        <Link href="/jobs" className="inline-flex items-center gap-1.5 text-sm text-mist-500 transition hover:text-white">
-          <ArrowLeft className="h-4 w-4" /> Back to Jobs
+        <Link href="/jobs/earlier" className="inline-flex items-center gap-1.5 text-sm text-mist-500 transition hover:text-white">
+          <ArrowLeft className="h-4 w-4" /> Back to jobs on the earlier contracts
         </Link>
         <p className="mt-8 text-mist-300">{currency === "sbtc" ? "sBTC" : "STX"} job #{id} not found.</p>
       </div>
@@ -71,8 +72,8 @@ export default function JobDetailPage() {
 
   return (
     <div className="container-x py-12">
-      <Link href="/jobs" className="inline-flex items-center gap-1.5 text-sm text-mist-500 transition hover:text-white">
-        <ArrowLeft className="h-4 w-4" /> Back to Jobs
+      <Link href="/jobs/earlier" className="inline-flex items-center gap-1.5 text-sm text-mist-500 transition hover:text-white">
+        <ArrowLeft className="h-4 w-4" /> Back to jobs on the earlier contracts
       </Link>
 
       <div className="mt-5 flex items-start gap-4">
@@ -86,6 +87,9 @@ export default function JobDetailPage() {
             <span className={`badge ${currency === "sbtc" ? "border-bitcoin/30 text-bitcoin-400" : "border-white/10 text-mist-400"}`}>
               {currency === "sbtc" && <Bitcoin className="h-3 w-3" />}
               {currencyProtocolLabel(currency)}
+            </span>
+            <span className="badge border-white/10 text-mist-400" title={currency === "sbtc" ? SBTC_COMMERCE_CONTRACT_NAME : STX_COMMERCE_CONTRACT_NAME}>
+              Earlier contracts
             </span>
           </div>
           <p className="mt-2 max-w-2xl text-mist-300">{jobTaskText(job.description)}</p>
@@ -110,7 +114,12 @@ export default function JobDetailPage() {
           </span>
           <span className="mt-1 block font-mono text-xs text-mist-500">Block #{job.expiredAt}</span>
         </Field>
-        <Field label="Protocol"><span className="text-mist-200">{currencyProtocolLabel(currency)} escrow</span></Field>
+        <Field label="Protocol">
+          <span className="text-mist-200">{currencyProtocolLabel(currency)} escrow</span>
+          <span className="mt-1 block font-mono text-xs text-mist-500">
+            {currency === "sbtc" ? SBTC_COMMERCE_CONTRACT_NAME : STX_COMMERCE_CONTRACT_NAME}
+          </span>
+        </Field>
         {job.reviewDeadline !== undefined && (
           <Field label="Bitcoin review deadline">
             <span className="text-mist-200">
@@ -147,7 +156,7 @@ export default function JobDetailPage() {
       )}
 
       <div className="mt-6">
-        <Link href="/jobs" className="btn-ghost">Manage on the Jobs page</Link>
+        <Link href="/jobs/earlier" className="btn-ghost">Manage on the earlier contracts page</Link>
       </div>
     </div>
   );

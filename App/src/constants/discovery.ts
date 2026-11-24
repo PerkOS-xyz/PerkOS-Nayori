@@ -15,6 +15,9 @@ import {
   SBTC_COMMERCE_CONTRACT_NAME,
   STX_COMMERCE_CONTRACT_NAME,
 } from "./contract";
+import { NEXT_DEPLOYERS, NEXT_ROLE_HOLDERS, NEXT_SBTC_TOKENS, nextContractIds } from "./nayori-deployment";
+
+const NAYORI_CONTRACTS = nextContractIds(NETWORK_NAME);
 
 export const STACKS_MAINNET_ID = "stacks:1";
 export const STACKS_TESTNET_ID = "stacks:2147483648";
@@ -163,6 +166,14 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
         : "A Stacks wallet must authorize and sign every state-changing transaction.",
       custody: "Nayori does not request or store buyer private keys.",
     },
+    nayoriContracts: {
+      deployer: NEXT_DEPLOYERS[NETWORK_NAME],
+      ...NAYORI_CONTRACTS,
+      sbtcToken: NEXT_SBTC_TOKENS[NETWORK_NAME],
+      treasury: NEXT_ROLE_HOLDERS[NETWORK_NAME].treasury,
+      appealAuthority: NEXT_ROLE_HOLDERS[NETWORK_NAME].appealAuthority,
+      newJobs: true,
+    },
     contracts: {
       deployer: CONTRACT_ADDRESS,
       agentRegistry: `${CONTRACT_ADDRESS}.agent-registry`,
@@ -233,7 +244,8 @@ Nayori is a ${environment} web application and TypeScript SDK for autonomous com
 
 - [Application](${origin}/): ${environment} application and product overview.
 - [Agents](${origin}/agents): On-chain agent directory and registration.
-- [Jobs](${origin}/jobs): ${COMMERCE_CONTRACTS_READ_ONLY ? "Read-only historical STX and sBTC job escrow records." : "STX and sBTC job escrow lifecycle."}
+- [Jobs](${origin}/jobs): STX and sBTC job escrow lifecycle on the Nayori contracts (nayori-escrow-sbtc, nayori-escrow-stx).
+- [Earlier jobs](${origin}/jobs/earlier): ${COMMERCE_CONTRACTS_READ_ONLY ? "Read-only historical STX and sBTC job escrow records." : "Jobs in progress on the earlier escrow contracts, with every step available until they settle."}
 - [Analytics](${origin}/analytics): Currency-separated protocol activity.
 - [Transparency dashboard](${origin}/evidence): Live ${COMMERCE_NETWORK_LABEL} contract totals, explorer-verifiable M1 evidence and explicitly attested M2 adoption.
 - [Evidence JSON](${origin}/api/evidence.json): Versioned machine-readable transparency snapshot.
@@ -263,7 +275,17 @@ Nayori is a ${environment} web application and TypeScript SDK for autonomous com
 
 Supporting browsers can discover three read-only WebMCP tools on the application page: capabilities, Agent Skills and the versioned public evidence manifest. These tools never sign a transaction, access wallet credentials or perform a state-changing action.
 
-## ${NETWORK_NAME === "testnet" ? "QA testnet" : "Mainnet"} contracts
+## ${NETWORK_NAME === "testnet" ? "QA testnet" : "Mainnet"} Nayori contracts (new jobs)
+
+- sBTC escrow: \`${NAYORI_CONTRACTS.escrowSbtc}\`
+- STX escrow: \`${NAYORI_CONTRACTS.escrowStx}\`
+- Applications: \`${NAYORI_CONTRACTS.applications}\`
+- Agents: \`${NAYORI_CONTRACTS.agents}\`
+- Reputation: \`${NAYORI_CONTRACTS.reputation}\`
+- Permissions: \`${NAYORI_CONTRACTS.permissions}\`
+- Roles: \`${NAYORI_CONTRACTS.roles}\` (treasury and appeal authority; each job pins the holders at creation)
+
+## ${NETWORK_NAME === "testnet" ? "QA testnet" : "Mainnet"} earlier contracts (jobs in progress)
 
 - Agent registry: \`${CONTRACT_ADDRESS}.agent-registry\`
 - Reputation: \`${CONTRACT_ADDRESS}.${REPUTATION_CONTRACT_NAME}\`

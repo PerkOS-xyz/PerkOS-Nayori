@@ -24,8 +24,10 @@ import DirectPaymentEvidence from "../../components/DirectPaymentEvidence";
 import ServiceFeeEvidence from "../../components/ServiceFeeEvidence";
 import type {
   ObservedTransparencyMetrics,
+  StatusTone,
   TransparencySnapshot,
 } from "../../services/transparency";
+import { CONTRACT_SETS, CONTRACT_SET_LABELS, type ContractSet } from "../../services/nayori-next/contract-sets";
 
 const shorten = (value?: string) =>
   value ? `${value.slice(0, 7)}…${value.slice(-6)}` : "Not assigned";
@@ -50,12 +52,21 @@ const classificationLabel = (classification: string) => {
   return "Unattested";
 };
 
-const statusClass = (status: number) => {
-  if (status === 3) return "border-emerald-500/30 text-emerald-300";
-  if (status === 4 || status === 5) return "border-red-500/30 text-red-300";
-  if (status === 1 || status === 2 || status === 7 || status === 8) return "border-brand/30 text-brand-300";
-  return "border-white/10 text-mist-300";
+const TONE_CLASS: Record<StatusTone, string> = {
+  good: "border-emerald-500/30 text-emerald-300",
+  bad: "border-red-500/30 text-red-300",
+  active: "border-brand/30 text-brand-300",
+  warn: "border-amber-500/30 text-amber-300",
+  neutral: "border-white/10 text-mist-300",
 };
+
+function SetBadge({ set }: { set: ContractSet }) {
+  return (
+    <span className={`badge ${set === "nayori" ? "border-brand/30 text-brand-300" : "border-white/10 text-mist-300"}`}>
+      {CONTRACT_SET_LABELS[set]}
+    </span>
+  );
+}
 
 export default function EvidencePage() {
   const [snapshot, setSnapshot] = useState<TransparencySnapshot | null>(null);
@@ -147,7 +158,7 @@ export default function EvidencePage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 id="onchain-overview" className="text-xl font-semibold">On-chain overview</h2>
-            <p className="mt-1 text-sm text-mist-500">Current state and successful calls across active Nayori contracts.</p>
+            <p className="mt-1 text-sm text-mist-500">Current state and successful calls across the Nayori contracts and the earlier contracts.</p>
           </div>
           <div className="flex gap-3 text-xs">
             <Link href="/stats" className="text-brand-300 hover:text-brand-200">Detailed stats</Link>
@@ -171,6 +182,24 @@ export default function EvidencePage() {
             <span>Settled STX: {formatStx(observed.settledStxMicrostx)}</span>
             <span>Indexed records: {observed.indexedTransactions.toLocaleString()}</span>
             {observed.truncated && <span className="text-amber-300">Wallet totals are truncated.</span>}
+          </div>
+        )}
+        {observed?.byContractSet && (
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {CONTRACT_SETS.map((set) => {
+              const metrics = observed.byContractSet[set];
+              return (
+                <div key={set} className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <SetBadge set={set} />
+                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-mist-300">
+                    <span><strong className="font-mono text-white">{metrics.agents.toLocaleString()}</strong> agents</span>
+                    <span><strong className="font-mono text-white">{metrics.jobs.toLocaleString()}</strong> jobs ({metrics.sbtcJobs} sBTC · {metrics.stxJobs} STX)</span>
+                    <span><strong className="font-mono text-white">{(metrics.completedSbtcJobs + metrics.completedStxJobs).toLocaleString()}</strong> completed</span>
+                    <span><strong className="font-mono text-white">{metrics.contractTransactions.toLocaleString()}</strong> transactions</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
@@ -230,25 +259,32 @@ export default function EvidencePage() {
         <div className="flex items-end justify-between gap-4">
           <div>
             <h2 id="registered-agents" className="text-xl font-semibold">Registered agents</h2>
-            <p className="mt-1 text-sm text-mist-500">Identity records read directly from agent-registry.</p>
+            <p className="mt-1 text-sm text-mist-500">Identity records read directly from nayori-agents and agent-registry.</p>
           </div>
           <Link href="/agents" className="text-sm text-brand-300 hover:text-brand-200">Open registry</Link>
         </div>
         <div className="mt-4 overflow-x-auto rounded-xl border border-white/[0.08]">
-          <table className="w-full min-w-[760px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="bg-white/[0.03] text-xs uppercase tracking-wider text-mist-500">
-              <tr><th className="px-4 py-3 font-medium">Agent</th><th className="px-4 py-3 font-medium">Wallet</th><th className="px-4 py-3 font-medium">Classification</th><th className="px-4 py-3 font-medium">State</th><th className="px-4 py-3 font-medium">Verify</th></tr>
+              <tr><th className="px-4 py-3 font-medium">Agent</th><th className="px-4 py-3 font-medium">Contracts</th><th className="px-4 py-3 font-medium">Wallet</th><th className="px-4 py-3 font-medium">Classification</th><th className="px-4 py-3 font-medium">State</th><th className="px-4 py-3 font-medium">Verify</th></tr>
             </thead>
             <tbody className="divide-y divide-white/[0.06]">
               {!loading && snapshot?.agents.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-mist-500">No live agent records available.</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-mist-500">No live agent records available.</td></tr>
               ) : snapshot?.agents.map((agent) => (
-                <tr key={agent.id} className="text-mist-300">
-                  <td className="px-4 py-3"><Link href={`/agents/${agent.id}`} className="font-medium text-white hover:text-brand-200">#{agent.id} · {agent.name || "Unnamed agent"}</Link></td>
+                <tr key={`${agent.contractSet}-${agent.id ?? agent.wallet}`} className="text-mist-300">
+                  <td className="px-4 py-3">
+                    {agent.id === null ? (
+                      <span className="font-medium text-white">{agent.name || "Unnamed agent"}</span>
+                    ) : (
+                      <Link href={agent.href} className="font-medium text-white hover:text-brand-200">#{agent.id} · {agent.name || "Unnamed agent"}</Link>
+                    )}
+                  </td>
+                  <td className="px-4 py-3"><SetBadge set={agent.contractSet} /></td>
                   <td className="px-4 py-3 font-mono text-xs" title={agent.wallet}>{shorten(agent.wallet)}</td>
                   <td className="px-4 py-3 text-xs">{classificationLabel(agent.classification)}</td>
                   <td className="px-4 py-3"><span className={`badge ${agent.active ? "border-emerald-500/30 text-emerald-300" : "border-white/10 text-mist-500"}`}>{agent.active ? "Active" : "Inactive"}</span></td>
-                  <td className="px-4 py-3"><a href={`https://explorer.hiro.so/address/${agent.wallet}?chain=mainnet`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-300 hover:text-brand-200">Explorer <ArrowUpRight className="h-3.5 w-3.5" /></a></td>
+                  <td className="px-4 py-3"><a href={`https://explorer.hiro.so/address/${agent.wallet}?chain=${NETWORK_NAME}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-300 hover:text-brand-200">Explorer <ArrowUpRight className="h-3.5 w-3.5" /></a></td>
                 </tr>
               ))}
             </tbody>
@@ -258,20 +294,21 @@ export default function EvidencePage() {
 
       <section className="mt-12" aria-labelledby="jobs-ledger">
         <div className="flex items-end justify-between gap-4">
-          <div><h2 id="jobs-ledger" className="text-xl font-semibold">Job and settlement ledger</h2><p className="mt-1 text-sm text-mist-500">Current STX and sBTC escrow records.</p></div>
+          <div><h2 id="jobs-ledger" className="text-xl font-semibold">Job and settlement ledger</h2><p className="mt-1 text-sm text-mist-500">Current STX and sBTC escrow records on the Nayori contracts and the earlier contracts.</p></div>
           <Link href="/jobs" className="text-sm text-brand-300 hover:text-brand-200">Open jobs</Link>
         </div>
         <div className="mt-4 overflow-x-auto rounded-xl border border-white/[0.08]">
-          <table className="w-full min-w-[980px] text-left text-sm">
-            <thead className="bg-white/[0.03] text-xs uppercase tracking-wider text-mist-500"><tr><th className="px-4 py-3 font-medium">Job</th><th className="px-4 py-3 font-medium">Asset</th><th className="px-4 py-3 font-medium">State</th><th className="px-4 py-3 font-medium">Amount</th><th className="px-4 py-3 font-medium">Client</th><th className="px-4 py-3 font-medium">Provider</th><th className="px-4 py-3 font-medium">Evaluator</th></tr></thead>
+          <table className="w-full min-w-[1100px] text-left text-sm">
+            <thead className="bg-white/[0.03] text-xs uppercase tracking-wider text-mist-500"><tr><th className="px-4 py-3 font-medium">Job</th><th className="px-4 py-3 font-medium">Contracts</th><th className="px-4 py-3 font-medium">Asset</th><th className="px-4 py-3 font-medium">State</th><th className="px-4 py-3 font-medium">Amount</th><th className="px-4 py-3 font-medium">Client</th><th className="px-4 py-3 font-medium">Provider</th><th className="px-4 py-3 font-medium">Evaluator</th></tr></thead>
             <tbody className="divide-y divide-white/[0.06]">
               {!loading && snapshot?.jobs.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-mist-500">No live job records available.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-mist-500">No live job records available.</td></tr>
               ) : snapshot?.jobs.map((job) => (
-                <tr key={`${job.currency}-${job.id}`} className="text-mist-300">
-                  <td className="px-4 py-3"><Link href={`/jobs/${job.id}?currency=${job.currency}`} className="font-medium text-white hover:text-brand-200">#{job.id}</Link></td>
+                <tr key={`${job.contractSet}-${job.currency}-${job.id}`} className="text-mist-300">
+                  <td className="px-4 py-3"><Link href={job.href} className="font-medium text-white hover:text-brand-200">#{job.id}</Link></td>
+                  <td className="px-4 py-3"><SetBadge set={job.contractSet} /></td>
                   <td className="px-4 py-3 font-mono text-xs uppercase">{job.currency}</td>
-                  <td className="px-4 py-3"><span className={`badge ${statusClass(job.status)}`}>{job.statusLabel}</span></td>
+                  <td className="px-4 py-3"><span className={`badge ${TONE_CLASS[job.tone] ?? TONE_CLASS.neutral}`}>{job.statusLabel}</span></td>
                   <td className="px-4 py-3 font-mono text-xs">{formatJobAmount(job.budget, job.currency)}</td>
                   <td className="px-4 py-3 font-mono text-xs" title={job.client}>{shorten(job.client)}</td>
                   <td className="px-4 py-3 font-mono text-xs" title={job.provider}>{shorten(job.provider)}</td>
@@ -297,7 +334,7 @@ export default function EvidencePage() {
               ) : snapshot?.transactions.map((transaction) => (
                 <tr key={transaction.txId} className="text-mist-300">
                   <td className="px-4 py-3 font-medium text-white">{transaction.function}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{transaction.contract}</td>
+                  <td className="px-4 py-3"><p className="font-mono text-xs">{transaction.contract}</p><p className="mt-0.5 text-[11px] text-mist-500">{CONTRACT_SET_LABELS[transaction.contractSet]}</p></td>
                   <td className="px-4 py-3"><p className="font-mono text-xs" title={transaction.sender}>{shorten(transaction.sender)}</p><p className="mt-0.5 text-[11px] text-mist-500">{classificationLabel(transaction.senderClassification)}</p></td>
                   <td className="px-4 py-3 text-xs"><p>{transaction.blockHeight ? `#${transaction.blockHeight}` : "—"}</p><p className="mt-0.5 text-mist-500">{transaction.time ? new Date(transaction.time).toLocaleString() : "—"}</p></td>
                   <td className="px-4 py-3"><span className={`badge ${transaction.status === "success" ? "border-emerald-500/30 text-emerald-300" : "border-red-500/30 text-red-300"}`}>{transaction.status}</span></td>

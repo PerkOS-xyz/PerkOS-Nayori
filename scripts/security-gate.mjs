@@ -915,6 +915,8 @@ for (const path of [
 for (const path of [
   "App/src/services/sbtc-commerce.ts",
   "App/src/app/jobs/page.tsx",
+  "App/src/app/jobs/earlier/page.tsx",
+  "App/src/services/nayori-next/transactions.ts",
 ]) {
   forbidPattern(
     path,
@@ -933,9 +935,14 @@ requirePattern(
   "versioned sBTC settlement must bind the job-pinned token before wallet access",
 );
 requirePattern(
-  "App/src/app/jobs/page.tsx",
+  "App/src/app/jobs/earlier/page.tsx",
   /const amount = exactEscrow\(job, allowZero\)[\s\S]*?Pc\.principal\(AGENTIC_COMMERCE\)\.willSendEq\(amount\)\.ustx\(\)[\s\S]*?postConditionMode:\s*["']deny["']/,
   "STX settlement must constrain the exact escrow outflow",
+);
+requirePattern(
+  "App/src/services/nayori-next/transactions.ts",
+  /return \{ contract, functionName, functionArgs, postConditions, postConditionMode: "deny", network: config\.network \};/,
+  "every call on the Nayori contracts must be built in deny mode",
 );
 requirePattern(
   "ops/vps/nayori-qa-release",

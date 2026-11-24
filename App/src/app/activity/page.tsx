@@ -16,6 +16,8 @@ import {
   Download,
 } from "lucide-react";
 import { getRecentActivity, EXPLORER, CHAIN_PARAM, RecentTx } from "../../services/onchain-stats";
+import { NAYORI_FUNCTION_LABELS, type ActivityCategory } from "../../services/nayori-next/activity-labels";
+import { CONTRACT_SETS, CONTRACT_SET_LABELS, type ContractSet } from "../../services/nayori-next/contract-sets";
 
 const FN: Record<string, { label: string; cat: string; icon: any; cls: string }> = {
   "register-agent": { label: "Agent registered", cat: "agents", icon: Fingerprint, cls: "border-brand/30 text-brand-300" },
@@ -39,6 +41,28 @@ const FN: Record<string, { label: string; cat: string; icon: any; cls: string }>
   "retry-reputation-sync": { label: "Reputation sync retried", cat: "jobs", icon: RefreshCw, cls: "border-brand/30 text-brand-300" },
 };
 
+const CATEGORY_STYLE: Record<ActivityCategory, { icon: any; cls: string }> = {
+  agents: { icon: Fingerprint, cls: "border-brand/30 text-brand-300" },
+  jobs: { icon: Briefcase, cls: "border-white/10 text-mist-300" },
+  funded: { icon: Coins, cls: "border-bitcoin/30 text-bitcoin-400" },
+  completed: { icon: CheckCircle2, cls: "border-emerald-500/30 text-emerald-300" },
+  rejected: { icon: XCircle, cls: "border-red-500/30 text-red-300" },
+  timeout: { icon: Coins, cls: "border-amber-500/30 text-amber-300" },
+};
+
+/** Function names repeat across the two sets, so a Nayori call reads the Nayori names first. */
+function metaFor(t: RecentTx) {
+  const nayori = t.set === "nayori" ? NAYORI_FUNCTION_LABELS[t.fn] : undefined;
+  if (nayori) return { label: nayori.label, cat: nayori.category, ...CATEGORY_STYLE[nayori.category] };
+  return FN[t.fn] ?? { label: t.fn, cat: "other", icon: Briefcase, cls: "border-white/10 text-mist-300" };
+}
+
+const SET_FILTERS: Record<"all" | ContractSet, string> = {
+  all: "All contracts",
+  nayori: CONTRACT_SET_LABELS.nayori,
+  earlier: CONTRACT_SET_LABELS.earlier,
+};
+
 const FILTERS: Record<string, string> = {
   all: "All",
   agents: "Agents",
@@ -56,6 +80,7 @@ export default function ActivityLogPage() {
   const [items, setItems] = useState<RecentTx[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [contractSetFilter, setContractSetFilter] = useState<"all" | ContractSet>("all");
 
   useEffect(() => {
     load();
@@ -68,11 +93,12 @@ export default function ActivityLogPage() {
   }
 
   function downloadReport() {
-    const head = ["time", "type", "contract", "function", "sender", "status", "tx", "explorer"];
+    const head = ["time", "type", "contract set", "contract", "function", "sender", "status", "tx", "explorer"];
     const rows = items.map((t) => [
       t.time ?? "",
-      FN[t.fn]?.label ?? t.fn,
-      t.contract,
+      metaFor(t).label,
+      CONTRACT_SET_LABELS[t.set],
+      t.contractId,
       t.fn,
       t.sender,
       t.status,
@@ -90,8 +116,9 @@ export default function ActivityLogPage() {
     URL.revokeObjectURL(url);
   }
 
-  const filtered =
-    filter === "all" ? items : items.filter((i) => (FN[i.fn]?.cat ?? "other") === filter);
+  const filtered = items.filter(
+    (i) => (filter === "all" || metaFor(i).cat === filter) && (contractSetFilter === "all" || i.set === contractSetFilter)
+  );
 
   return (
     <div className="container-x py-12">
@@ -102,7 +129,9 @@ export default function ActivityLogPage() {
       <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Activity Log</h1>
-          <p className="mt-1.5 text-mist-300">Every contract call on-chain, newest first. Click any row to verify.</p>
+          <p className="mt-1.5 text-mist-300">
+            Every contract call on the Nayori contracts and the earlier contracts, newest first. Click any row to verify.
+          </p>
         </div>
         <div className="flex gap-2">
           <button onClick={downloadReport} disabled={!items.length} className="btn-ghost disabled:opacity-40">
@@ -115,6 +144,20 @@ export default function ActivityLogPage() {
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
+        {(["all", ...CONTRACT_SETS] as const).map((key) => (
+          <button
+            key={key}
+            onClick={() => setContractSetFilter(key)}
+            className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition ${
+              contractSetFilter === key ? "bg-brand/15 text-white" : "border border-white/[0.08] text-mist-300 hover:text-white"
+            }`}
+          >
+            {SET_FILTERS[key]}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
         {Object.entries(FILTERS).map(([key, label]) => (
           <button
             key={key}
@@ -138,7 +181,7 @@ export default function ActivityLogPage() {
       ) : (
         <div className="mt-6 card divide-y divide-white/[0.06]">
           {filtered.map((t) => {
-            const meta = FN[t.fn] ?? { label: t.fn, cat: "other", icon: Briefcase, cls: "border-white/10 text-mist-300" };
+            const meta = metaFor(t);
             const Icon = meta.icon;
             return (
               <a
@@ -154,6 +197,7 @@ export default function ActivityLogPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-white">{meta.label}</span>
+                    <span className="rounded border border-white/10 px-1.5 text-[10px] text-mist-300">{CONTRACT_SET_LABELS[t.set]}</span>
                     {t.status !== "success" && (
                       <span className="rounded border border-red-500/30 px-1.5 text-[10px] text-red-300">{t.status}</span>
                     )}
