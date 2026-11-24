@@ -1,105 +1,88 @@
 ---
 title: Earned service fees
-description: Active v6/v5 2% escrow economics, consent, treasury settlement and evidence-backed fee returns.
+description: The 2% escrow fee on the live Nayori contracts, when it applies, where it goes and how to read it.
 ---
 
-<Callout title="v6/v5 deployed on mainnet; consumer rollout remains gated">
-  STX v6 and sBTC v5 are deployed, initialized and source-verified on Stacks mainnet and selected
-  by current Web/QA source defaults. Existing v5/v4 contracts and jobs retain their
-  original no-service-fee terms. Stable SDK 0.9.1 (npm `latest`) uses v6/v5 by default; stable
-  0.8.0 remains historical evidence with explicit v6/v5 selection.
-  Controlled mainnet STX/sBTC consumer E2E and each runtime deployment require separate receipts.
-  None of these internal gates counts as external adoption, revenue or an independent audit.
+<Callout title="Fixed in the contracts">
+  The live escrows `nayori-escrow-sbtc` and `nayori-escrow-stx` charge 2% of the budget on every
+  settlement, paid to the treasury pinned to the job. The fee is a constant in the contract
+  source: no account can change it, waive it or add another one.
 </Callout>
 
 ## Where the money stays
 
-The client funds the gross job budget. The entire amount remains in escrow during work,
-evaluation and any appeal. A decision records evidence; it does not immediately pay Nayori.
-At final evaluated settlement the contract releases both legs atomically and escrow becomes zero.
-The service fee goes to the treasury pinned to that job, not to another job's escrow.
+The client funds the budget. The entire amount stays in escrow during work, review and any
+appeal. A decision records the outcome; it moves no funds. When the job settles, the contract
+pays both transfers in one transaction and the job's escrow becomes zero.
 
-For gross atomic amount `G`, the fee is `floor(G / 50)` and net is `G - fee`.
-The 2% is **inside the budget**, not an extra debit. Amounts below 50 atomic units round
-down to zero fee. STX uses micro-STX; sBTC uses satoshis. Network gas is separate, in STX.
+For a budget `B` in atomic units, the fee is `floor(B / 50)` and the net payout is `B - fee`.
+The 2% is **inside the budget**, not an extra charge. sBTC uses sats and STX uses micro-STX.
+Network transaction fees are separate and paid in STX by whoever signs.
 
 | Final path | Economic recipient | Treasury |
 | --- | --- | --- |
-| Approved after evaluation | Provider receives net | One 2% earned fee |
-| Rejected after evaluation | Client receives net refund | One 2% earned fee |
-| Expiry before evaluation | Client receives funded gross | Zero |
-| Review timeout without evaluation | Provider receives gross, without completion credit | Zero |
-| Evidence-backed waiver before settlement | Final recipient receives gross | Zero |
+| Approved by the evaluator | Provider receives net | 2% |
+| Approved by default (no decision in the review window) | Provider receives net | 2% |
+| Rejected by the evaluator | Client receives net | 2% |
+| Appeal resolved, or appeal window passed | The side the final decision favours receives net | 2% |
+| No delivery by the deadline | Client receives the full budget | Nothing |
+| Never funded and closed | No funds move | Nothing |
 
-For a 1,000-satoshi budget, evaluated approval pays 980 satoshis to the provider and 20 to
-treasury. Evaluated rejection instead returns 980 to the client and 20 to treasury.
-An appeal reversal alone is not proof of platform fault and does not automatically waive the fee.
+For a 1,000-sat budget, an approval pays 980 sats to the provider and 20 to the treasury; a
+rejection returns 980 to the client and 20 to the treasury. For a 10 STX budget the split is
+9.8 STX and 0.2 STX.
 
-## Before funding or submitting work
+## Before funding or accepting work
 
-The fee-aware Web displays gross, potential fee, net approval/net rejection, treasury and gas
-on the jobs list and detail page. Client and provider explicitly accept the displayed terms
-before funding or submitting. Acceptance is scoped to wallet, job, asset, contract, budget,
-status and waiver. Live reads are repeated before signing; stale or unavailable policy blocks
-those actions instead of silently showing a zero fee.
+The fee is known before anyone signs: the budget is fixed at creation and the read-only function
+`fee-for (budget)` returns the fee. The client sees it before funding. The provider reads the job
+(budget, evaluator, windows, treasury and appeal authority) before calling `accept-job`, and
+accepting is the provider's on-chain agreement to those terms.
 
-The provider should inspect the same breakdown **before starting work**. The UI acknowledgment
-occurs before submission; it is not a separate on-chain work-acceptance signature. Assignment is
-still controlled by the client. No provider marketplace or auto-claim behavior is introduced here.
+There is no separate fee-acceptance object to sign: funding and accepting are enough, because the
+contract itself fixes the terms.
 
-## SDK integration boundary
+## SDK integration
 
-Stable SDK 0.9.x uses v6/v5 as its mainnet defaults. It exposes `getServiceFeePolicy`,
-`getJobServiceFee`, `quoteServiceFee`,
-`initializeServiceFeeProtocol`, `waiveServiceFee` and `refundServiceFee`. Funding and submission
-require a `serviceFeeAcceptance` containing accepted gross amount, `basisPoints: 200`, pinned
-treasury and `rejectionRefund: 'net-after-evaluation'`. It is published under npm `latest`;
-existing generations do not require this acceptance.
+`NayoriNextClient` in `@perkos/agent-sdk` 0.10.0 reads the live job before each call that moves
+funds and builds post-conditions with the exact amount:
 
-Pin the exact published SDK version and verify its release notes before use; do not infer package
-state from a deployed contract or portal page.
-High-level methods validate live state; synchronous transaction builders require the caller
-to supply verified state. Wallet/enterprise custody authorization is always separate from OAuth
-and from an LLM's recommendation. See the [SDK reference](/reference/sdk).
+```ts
+import { NayoriNextClient } from "@perkos/agent-sdk";
 
-## Actual charges and returns
+const reader = new NayoriNextClient({ network: "mainnet" });
+const job = await reader.getJob("sbtc", 12n);
+const fee = job ? job.budget / 50n : 0n;
+console.log({ budget: job?.budget, fee, net: job ? job.budget - fee : 0n, treasury: job?.treasury });
+```
 
-`get-job-service-fee` exposes a potential `fee-amount`, whether service was recorded, an optional
-waiver and an optional settlement ledger. A potential quote is not revenue.
+Settlement transactions carry one deny-mode post-condition on the escrow contract: it sends
+exactly the budget, split between the winner and the treasury. Validate the recipients from the
+`job-settled` event, which lists the winner, the net amount, the treasury and the fee.
 
-- No settlement ledger: no fee collected.
-- `charged-fee - refunded-fee`: fee retained after actual returns.
-- `net + refunded-fee`: total delivered to the economic recipient.
-- Waiver plus an outstanding collected fee: refund obligation, not a completed refund.
+## Reading actual charges
 
-The job-pinned appeal authority can record a nonzero evidence hash to waive a fee. Before
-settlement, this results in a full-budget transfer to the final recipient. After settlement,
-the treasury must separately sign `refund-service-fee` and have enough balance to return
-the charged fee to the party that bore it: provider on approval, client on rejection.
+Each settlement prints a `job-settled` event with `winner`, `net`, `treasury` and `fee`. Job
+records keep the treasury pinned at creation, so a later treasury handover never redirects the fee
+of an existing job. A job in status `refunded` or `expired` paid no fee.
 
-The contract does not claw funds back from an unavailable treasury. Commercial activation
-requires reserves, signing custody and a monitored refund procedure. The SDK supports these
-administrative actions; the Web exposes their accounting but is not an operator refund console.
+## Appeals
 
-## Appeals and optional analysis
+Filing an appeal has no service fee; only the normal network fee applies. Whatever the appeal
+outcome, the job settles once and pays the 2% fee once. There is no second fee, paid retry or
+pay-to-win rule.
 
-Filing an appeal has no additional service fee and is not blocked by the fee-quote UI.
-Only the normal transaction gas applies. Additional AI/human analysis would be a separately
-scoped and accepted quote, preferably paid through x402; that service is **not yet implemented**.
-There is no automatic second 2%, unlimited paid retry or pay-to-win decision rule.
+## Earlier contracts
 
-## Verification before activation
+Jobs on the earlier contracts keep their original terms: `sbtc-commerce-v5` and
+`agentic-commerce-v6` charged their fee only after an evaluator decision and supported waivers,
+while their predecessors charged none. Read those jobs with the SDK's `PerkOSClient`
+(`getJobServiceFee`) and the contract names explicitly. The live contracts above apply to every
+new job.
 
-SDK and Web preserve exact gross aggregate outflow in deny-mode post-conditions. A treasury
-refund constrains the treasury's exact outflow. These constraints do not independently enforce
-recipient identities; validate contract source, ledger and canonical transfer events.
-[Stacks documents aggregate post-conditions for multiple transfers](https://docs.stacks.co/post-conditions/examples).
+## Verification
 
-The direct x402/MPP single-transfer verifier is unchanged. This release does not add USDCx
-escrow. The `/evidence` accounting panel and JSON
-`serviceFees` section summarize validated ledgers by asset and pinned treasury. Charges, refunds,
-retained amounts and waived refunds still owed are distinct, exact atomic strings; quotes are not
-income. Missing required data marks that asset unavailable, never a partial or false zero total.
-The scope is jobs in the selected contract, not historical generations or a treasury balance.
-Controlled mainnet consumer E2E remains a release gate; these figures are not lifetime revenue.
-Internal validation wallets never count as external revenue or adoption.
+Read the source: `FEE_DIVISOR` is `u50` in both escrows, and the `settle` function pays
+`budget - fee` to the winner and `fee` to the job's treasury inside an allowance of exactly the
+budget. See the [contract reference](/reference/contracts#verification) to check the deployed
+source byte for byte. [Stacks documents aggregate post-conditions for multiple transfers](https://docs.stacks.co/post-conditions/examples).

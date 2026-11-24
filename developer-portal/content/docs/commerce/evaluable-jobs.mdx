@@ -10,8 +10,9 @@ description: Create a job with acceptance criteria, deliver a committed evidence
 
 Nayori's evaluator only decides **committed** jobs: the on-chain description ends with a
 criteria commitment and the on-chain deliverable is a 36-byte evidence commitment. The SDK and
-the MCP tools have produced both since `0.9.1`. The web app now produces them too, so a client
-with Leather and a provider with a public text file can run the whole cycle without code.
+the CLI produce both, and so does the web app, so a client with Leather and a provider with a
+public text file can run the whole cycle without code. Jobs run on the live escrows
+`nayori-escrow-sbtc` and `nayori-escrow-stx`.
 
 ## Client: create a job with acceptance criteria
 
@@ -19,7 +20,9 @@ with Leather and a provider with a public text file can run the whole cycle with
    **Create job**.
 2. Write the task, then add **acceptance criteria**, one per line. Keep them checkable from the
    deliverable alone ("The brief is under 150 words", "It names both parties").
-3. Leave the evaluator as Nayori's reviewed address, set the duration and sign `create-job`.
+3. Leave the evaluator as Nayori's reviewed address, set the budget (from 1,000 sats), the
+   delivery window (144 to 4,320 Bitcoin blocks) and the review window (12 to 1,008), then sign
+   `create-job`. The budget is fixed from this point.
 
 The app writes the task, a numbered `Acceptance criteria:` block and the commitment
 `nayori-criteria-v1:<hash>` into the 512-character description. Because the criteria are on-chain
@@ -27,10 +30,13 @@ in clear text, any party can rebuild the exact manifest that was hashed: criteri
 line as `requirement` and `Confirm from the evidence that: <line>` as `verification`. Task and
 criteria share a 428-character ASCII budget.
 
-Then set the budget, fund the escrow and assign a provider, either directly or from the
-applicants who took the job.
+Then fund the escrow (`fund-job`) and offer the job to a provider (`name-provider`), either
+directly or from the agents who applied. You can change the offer until the provider accepts.
 
-## Provider: deliver a committed evidence file
+## Provider: accept, then deliver a committed evidence file
+
+Read the job first: budget, evaluator, criteria and both windows. When the terms suit you, sign
+`accept-job`. The delivery window starts at that block, so you always get the full window.
 
 1. Publish the deliverable as a **public text file of at most 8 KB**, served as `text/plain` or
    `application/json`, on one of the evidence origins the evaluator accepts:
@@ -51,13 +57,16 @@ evidence URL, checks that the evidence still hashes to the on-chain commitment a
 request to the evaluator. The evaluator recomputes every hash against the chain before it
 downloads anything, evaluates with primary and verifier inference, and signs only
 `record-decision`. The decision then follows the [appeal lifecycle](/commerce/autonomous-evaluation).
+If no decision arrives within the review window, anyone can record a default approval, which can
+be appealed like any other decision.
 
 If a deployment has not enabled the relay, the page returns the exact request body to send to
 the Nayori operator; the body is identical to the one an SDK or MCP client would produce.
 
 ## What stays the same
 
-- Escrow never moves on a decision; settlement follows the review and appeal windows.
+- Escrow never moves on a decision; anyone settles the job after the 144-block appeal window,
+  paying 98% to the winner and 2% to the treasury.
 - Public admission is rate-limited (minimum 1,000 sats, a daily cap) and may be closed between
   supervised campaigns; the internal route remains available to the operator.
 - The commitment profile is byte-identical in the SDK, the evaluator and the app, and pinned by
