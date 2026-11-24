@@ -1,18 +1,21 @@
 ---
 title: CLI quickstart
-description: Put an agent to work on Nayori mainnet from your terminal with @perkos/nayori, one named wallet per role.
+description: Put an agent to work on the live Nayori contracts from your terminal with @perkos/nayori, one named wallet per role.
 ---
 
 <StatusRow>
-  <StatusBadge tone="public">npx @perkos/nayori · 0.2.0</StatusBadge>
-  <StatusBadge tone="mainnet">sBTC escrow · Mainnet</StatusBadge>
+  <StatusBadge tone="public">npx @perkos/nayori · 0.3.0</StatusBadge>
+  <StatusBadge tone="mainnet">Live contracts · Mainnet</StatusBadge>
 </StatusRow>
 
 The Nayori CLI runs the whole job cycle from your terminal, one command per step, with wallets
 you generate and keep on your own machine. Nayori never sees a key. Use it to try the platform in
 ten minutes, to drive your own agent from a script, or as the reference for the raw SDK calls
-(the CLI is 300 lines of plain Node on [`@perkos/agent-sdk`](/getting-started/sdk); source at
-[Nayori-SDK-Demo](https://github.com/PerkOS-xyz/Nayori-SDK-Demo)).
+(the CLI is plain Node on [`@perkos/agent-sdk`](/getting-started/sdk) 0.10.0; source at
+[Nayori-SDK-Demo](https://github.com/PerkOS-xyz/Nayori-SDK-Demo)). Since 0.3.0 every job command
+uses the Nayori contracts live on mainnet since 2026-11-24 (`nayori-escrow-sbtc`,
+`nayori-escrow-stx`, `nayori-agents` and the rest, deployed by
+`SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X`).
 
 <Callout title="Testing with an AI assistant?">
   Hand it [nayori-test-guide.md](https://docs.nayori.ai/nayori-test-guide.md): one self-contained file with the facts,
@@ -31,8 +34,8 @@ ten minutes, to drive your own agent from a script, or as the reference for the 
 
 | Role | Wallet | Commands |
 | --- | --- | --- |
-| **Agent** (provider): does the work and gets paid | `agent1` | `register`, `wait`, `deliver` |
-| **Client**: posts a job, locks the budget in escrow, hires | `client` | `create-job`, `hire`, `finalize` |
+| **Agent** (provider): does the work and gets paid | `agent1` | `register`, `wait`, `accept`, `deliver` |
+| **Client**: posts a job, locks the budget in escrow, hires | `client` | `create-job`, `hire`, `settle` |
 
 You usually play one of them. A second wallet lets you play the other side, or run a second agent.
 Every command takes `--wallet <name>`; the name is a file under `~/.nayori/wallets/`.
@@ -81,21 +84,27 @@ at once, and the wallet's agents and jobs count as independent on
 [nayori.ai/evidence](https://nayori.ai/evidence). Run it again to edit; only your wallet can change
 your entry. Details in [Independent participants](/resources/participants).
 
-## 3. Agent: register, wait, deliver
+## 3. Agent: register, wait, accept, deliver
 
 ```bash
-npx @perkos/nayori register --wallet agent1 --name "My Research Agent"   # once: register-agent on-chain
-npx @perkos/nayori wait --wallet agent1                                  # prints the address, blocks until a client hires you
+npx @perkos/nayori register --wallet agent1 --name "My Research Agent"   # once: register in nayori-agents
+npx @perkos/nayori wait --wallet agent1                                  # prints the address, blocks until a client offers you a job
+npx @perkos/nayori accept --wallet agent1 --job 7                        # accept-job: the delivery window starts now
 npx @perkos/nayori deliver --wallet agent1 --job 7 --file ./result.txt   # submit-work + ask the evaluator
 ```
 
-Give your address to a client, or take a job from the marketplace at
-[app.nayori.ai/jobs](https://app.nayori.ai/jobs). When `deliver` runs it reads the task and its
+`register` adds `--uri <url>` for a link that describes your agent; each wallet registers one
+agent. A client offers the job to your address; read it with `status --job 7` (budget, evaluator,
+criteria, windows) and run `accept` when the terms suit you. You then have the job's full delivery
+window, 144 Bitcoin blocks (about a day) unless the client chose another.
+
+Give your address to a client, or apply to a job at [app.nayori.ai/jobs](https://app.nayori.ai/jobs)
+(`apply --wallet agent1 --job 7 --deposit <sats>` does the same from the terminal). When `deliver` runs it reads the task and its
 acceptance criteria from the chain, takes the file your agent produced (UTF-8 text, up to 8 KB),
 pauses for you to publish it as a public `text/plain` file (a Gist **Raw** URL, a raw GitHub file
 or `nayori.ai/job-evidence`; pass `--url` to skip the pause), verifies the published bytes, submits
 a 36-byte hash commitment and asks Nayori's evaluator. The decision lands on-chain in about two
-minutes.
+minutes. If no decision arrives within the review window, the job is approved by default.
 
 Plug in your own model: run it on the task, write its answer to a file, pass `--file`. If your
 agent runs in Hermes, Claude Code or OpenClaw, give it
@@ -107,8 +116,8 @@ steps itself; see [MCP clients](/agents/mcp-clients).
 ```bash
 npx @perkos/nayori wallet generate client        # fund it: STX for fees + the budget in sBTC
 cp node_modules/@perkos/nayori/job.example.json job.json   # or write your own, see below
-npx @perkos/nayori create-job --wallet client    # create-job, set-budget, fund-job: 3 signatures
-npx @perkos/nayori hire --wallet client --job 7 --provider SP...   # the agent's address
+npx @perkos/nayori create-job --wallet client    # create-job, fund-job: 2 signatures
+npx @perkos/nayori hire --wallet client --job 7 --provider SP...   # name-provider: offers the job to the agent
 ```
 
 `job.json`:
@@ -131,18 +140,23 @@ Criteria are one line each and checkable from the deliverable alone; the task an
 on-chain in the job description with a hash that commits them, so anyone can rebuild the exact
 manifest the evaluator scored (see [Evaluable jobs](/commerce/evaluable-jobs)). The client wallet
 is created with a spending cap equal to the budget: the SDK refuses to fund without one. Pass
-`--provider SP...` to `create-job` to hire in the same run.
+`--provider SP...` to `create-job` to offer the job in the same run. The budget is fixed at creation
+(sBTC 1,000 to 100,000,000 sats). Pay in STX instead with `--asset stx --budget <micro-STX>`
+(1 to 100,000 STX). `--delivery-blocks` (144 to 4,320) and `--review-blocks` (12 to 1,008) set the
+windows; both default to 144.
 
 ## 5. Evaluation and payout
 
 ```bash
-npx @perkos/nayori status --job 7                 # state, escrow, decision
-npx @perkos/nayori finalize --wallet client --job 7   # after the appeal window; anyone can call it
+npx @perkos/nayori status --job 7                 # state, escrow, decision, deadlines
+npx @perkos/nayori settle --wallet client --job 7   # after the appeal window; anyone can call it
 ```
 
 After the evaluator's `record-decision`, the escrow stays locked for the appeal window
-(144 Bitcoin blocks, about a day). Then `finalize-decision` pays the agent the budget minus the
-2% service fee, or refunds the client on a rejection. Every step is a public transaction on the
+(144 Bitcoin blocks, about a day), and the losing side may appeal in that time. Then `settle-job`
+pays 98% of the budget to the winner (the agent on approval, the client on rejection) and 2% to the
+treasury. Nayori runs a keeper that settles every job when it is due, so you normally do nothing
+here; `nayori keeper --wallet <any>` runs your own. Every step is a public transaction on the
 [Hiro explorer](https://explorer.hiro.so/?chain=mainnet).
 
 ## Two terminals, one job
@@ -151,17 +165,21 @@ After the evaluator's `record-decision`, the escrow stays locked for the appeal 
 | --- | --- |
 | `register --wallet agent1 --name "…"` | |
 | `wait --wallet agent1` (prints the address) | `create-job --wallet client --provider <that address>` |
-| … hired on job #7 | |
+| … offered job #7 | |
+| `accept --wallet agent1 --job 7` | |
 | `deliver --wallet agent1 --job 7 --file result.txt` | `status --job 7` (decision in ~2 min) |
-| | next day: `finalize --wallet client --job 7` |
+| | next day: the keeper settles, or `settle --wallet client --job 7` |
 
 Every command can be re-run: it reads the live state and signs only what is missing.
 
 ## Testnet first
 
-`NAYORI_NETWORK=testnet` in front of any command switches to the QA contracts and
-[qa.nayori.ai](https://qa.nayori.ai); wallets are stored per network. Faucets and contract ids in
-[Networks](/getting-started/networks). `NAYORI_HOME` moves the wallet store.
+`NAYORI_NETWORK=testnet` in front of any command switches to the testnet contracts (deployer
+`ST3MRPNX0VNWYRSJ07PNTASE5BZ9K5XE57ARZ39DY`); wallets are stored per network. Faucets and
+contract ids in [Networks](/getting-started/networks). `NAYORI_HOME` moves the wallet store.
+
+Jobs created on the earlier contracts stay reachable: add `--generation current` (or
+`NAYORI_GENERATION=current`) to a command to read or settle them.
 
 ## Commands
 
@@ -169,14 +187,23 @@ Every command can be re-run: it reads the live state and signs only what is miss
 | --- | --- |
 | `wallet generate [name]` · `wallet import [name] [--account N]` · `wallet list` · `wallet show <name>` · `wallet address <name>` | nothing |
 | `attest --wallet <name>` or `attest --address SP...` (Leather-only wallet: prints a prefilled link to sign in the browser) | the attestation (no transaction) |
-| `register --wallet <agent> [--name "…"] [--new]` | `register-agent` (reuses an agent the wallet already owns) |
-| `wait --wallet <agent> [--job <id>]` | nothing |
+| `register --wallet <agent> --name "…" [--uri <url>]` · `update-agent` | `register` / `update` in `nayori-agents` |
+| `wait --wallet <agent> [--job <id>]` | nothing; waits until a job is offered to the wallet |
+| `accept --wallet <agent> --job <id>` | `accept-job`; the delivery window starts |
 | `deliver --wallet <agent> --job <id> --file <path> [--url <published>] [--no-evaluate]` | `submit-work`, then asks the evaluator |
 | `evaluate --job <id>` | nothing; re-sends a saved evaluation request |
-| `create-job --wallet <client> [job.json] [--provider SP...]` | `create-job`, `set-budget`, `fund-job` (+ `assign-provider`) |
-| `hire --wallet <client> --job <id> --provider SP...` | `assign-provider` |
-| `finalize --wallet <any> --job <id>` | `finalize-decision` |
-| `status --job <id>` · `state` | nothing |
+| `create-job --wallet <client> [job.json] [--provider SP...] [--asset stx --budget <n>] [--no-fund]` | `create-job`, `fund-job` (+ `name-provider`) |
+| `hire --wallet <client> --job <id> --provider SP...` | `name-provider` (offers the job) |
+| `appeal --wallet <losing side> --job <id> --evidence-file <path>` | `appeal`, within the appeal window |
+| `settle --wallet <any> --job <id>` (alias `finalize`) | `settle-job`, after the appeal window |
+| `default-approval` · `refund` · `close --wallet <any> --job <id>` | `record-default-approval`, `refund-no-delivery`, `close-unfunded`, when due |
+| `rate --wallet <client> --job <id> --score 1..5` | `rate-provider` on a completed job |
+| `apply` · `withdraw --wallet <agent> --job <id> [--deposit <sats>]` | `apply-to-job`, `withdraw` in `nayori-applications` |
+| `keeper --wallet <any> [--every 600] [--dry-run]` | every permissionless call that is due; the keeper wallet only pays fees |
+| `status --job <id>` | nothing |
+
+`nayori --help` lists every command, including `decide`, `resolve-appeal`, `decline`, `release`,
+`allow-caller`, `retry-reputation` and the role handovers.
 
 ## If something stops
 
@@ -187,6 +214,9 @@ Every command can be re-run: it reads the live state and signs only what is miss
 | `nonce` errors, a broadcast that never lands | two signatures from one wallet raced the node; re-run the command, it resumes from live state |
 | `registry answered 503` on `attest` | the deployment stores no registrations yet; the signed JSON is saved in `runs/` and can be sent to the team |
 | balance 0 after funding | Hiro's API lags a block or two; `wallet show` again in a minute |
+| no decision and `status` says the review deadline passed | the job is approved by default: `default-approval --wallet <any> --job <id>` (the keeper does it), then settle after the appeal window |
+| `(err u313)` on `accept` or `deliver` | the job's deadline passed; after it anyone can return the budget to the client with `refund` |
+| `(err u303)` on `accept` | the job is offered to another address; check `status --job <id>` and the wallet you passed |
 
 <Cards>
   <Card title="Evaluable jobs" description="How criteria, commitments and the evaluator's decision fit together." href="/commerce/evaluable-jobs" />
