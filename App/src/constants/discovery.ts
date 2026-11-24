@@ -15,7 +15,9 @@ import {
   SBTC_COMMERCE_CONTRACT_NAME,
   STX_COMMERCE_CONTRACT_NAME,
 } from "./contract";
-import { NAYORI_NEXT, NEXT_ROLE_HOLDERS } from "./nayori-next";
+import { NEXT_DEPLOYERS, NEXT_ROLE_HOLDERS, NEXT_SBTC_TOKENS, nextContractIds } from "./nayori-deployment";
+
+const NAYORI_CONTRACTS = nextContractIds(NETWORK_NAME);
 
 export const STACKS_MAINNET_ID = "stacks:1";
 export const STACKS_TESTNET_ID = "stacks:2147483648";
@@ -165,11 +167,11 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       custody: "Nayori does not request or store buyer private keys.",
     },
     nayoriContracts: {
-      deployer: NAYORI_NEXT.deployer,
-      ...NAYORI_NEXT.contracts,
-      sbtcToken: NAYORI_NEXT.sbtcToken,
-      treasury: NEXT_ROLE_HOLDERS[NAYORI_NEXT.network].treasury,
-      appealAuthority: NEXT_ROLE_HOLDERS[NAYORI_NEXT.network].appealAuthority,
+      deployer: NEXT_DEPLOYERS[NETWORK_NAME],
+      ...NAYORI_CONTRACTS,
+      sbtcToken: NEXT_SBTC_TOKENS[NETWORK_NAME],
+      treasury: NEXT_ROLE_HOLDERS[NETWORK_NAME].treasury,
+      appealAuthority: NEXT_ROLE_HOLDERS[NETWORK_NAME].appealAuthority,
       newJobs: true,
     },
     contracts: {
@@ -275,13 +277,13 @@ Supporting browsers can discover three read-only WebMCP tools on the application
 
 ## ${NETWORK_NAME === "testnet" ? "QA testnet" : "Mainnet"} Nayori contracts (new jobs)
 
-- sBTC escrow: \`${NAYORI_NEXT.contracts.escrowSbtc}\`
-- STX escrow: \`${NAYORI_NEXT.contracts.escrowStx}\`
-- Applications: \`${NAYORI_NEXT.contracts.applications}\`
-- Agents: \`${NAYORI_NEXT.contracts.agents}\`
-- Reputation: \`${NAYORI_NEXT.contracts.reputation}\`
-- Permissions: \`${NAYORI_NEXT.contracts.permissions}\`
-- Roles: \`${NAYORI_NEXT.contracts.roles}\` (treasury and appeal authority; each job pins the holders at creation)
+- sBTC escrow: \`${NAYORI_CONTRACTS.escrowSbtc}\`
+- STX escrow: \`${NAYORI_CONTRACTS.escrowStx}\`
+- Applications: \`${NAYORI_CONTRACTS.applications}\`
+- Agents: \`${NAYORI_CONTRACTS.agents}\`
+- Reputation: \`${NAYORI_CONTRACTS.reputation}\`
+- Permissions: \`${NAYORI_CONTRACTS.permissions}\`
+- Roles: \`${NAYORI_CONTRACTS.roles}\` (treasury and appeal authority; each job pins the holders at creation)
 
 ## ${NETWORK_NAME === "testnet" ? "QA testnet" : "Mainnet"} earlier contracts (jobs in progress)
 

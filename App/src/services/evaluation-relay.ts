@@ -18,7 +18,7 @@ import {
   parseEvaluableDescription,
 } from "./evaluable-jobs";
 import { isContractIdForNetwork, isPrincipalForNetwork } from "./evaluation-commitments";
-import { nextEscrowAsset } from "../constants/nayori-next";
+import { nextEscrowAsset } from "../constants/nayori-deployment";
 
 const NAYORI_ESCROW_NAME = /\.nayori-escrow-/;
 
