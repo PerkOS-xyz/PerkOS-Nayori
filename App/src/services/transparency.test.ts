@@ -163,8 +163,10 @@ describe("transparency snapshot", () => {
       baselineIncludedInSbtcJobs: false,
     });
 
+    // EXTERNAL_B has an agent on both registries and counts once: TEAM, EXTERNAL_A, EXTERNAL_B,
+    // plus one Nayori agent outside the listed history.
     expect(snapshot.observed).toMatchObject({
-      registeredAgentsMainnet: 5,
+      registeredAgentsMainnet: 4,
       totalJobsMainnet: 7,
       sbtcJobsMainnet: 3,
       stxJobsMainnet: 4,

@@ -358,8 +358,13 @@ export function buildTransparencySnapshot({
   );
   const externalParticipants = uniqueExternalParticipants(agentViews, jobViews, classifyWallet);
 
+  // Agents count once per wallet across both registries: a wallet with an agent on each is one
+  // participant. Nayori agents beyond the listed ones (the list reads recent history only) cannot
+  // overlap-check and are added as they are.
+  const uniqueAgentWallets = new Set(agentViews.map((agent) => agent.wallet)).size;
+  const unlistedNayoriAgents = Math.max(0, nayoriAgentCount - nayoriAgents.length);
   const observed: ObservedTransparencyMetrics = {
-    registeredAgentsMainnet: both((m) => m.agents),
+    registeredAgentsMainnet: uniqueAgentWallets + unlistedNayoriAgents,
     totalJobsMainnet: both((m) => m.jobs),
     sbtcJobsMainnet: both((m) => m.sbtcJobs),
     stxJobsMainnet: both((m) => m.stxJobs),
