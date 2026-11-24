@@ -1,0 +1,20 @@
+{
+  "name": "nayori-next-contracts",
+  "private": true,
+  "type": "module",
+  "description": "Next Nayori contract version: no owner, multisig roles. Clarity 6 on epoch 4.0. Isolated Clarinet project.",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "rv:sbtc": "rv tests nayori-escrow-sbtc invariant --config tests/rv/rv.config.json",
+    "rv:stx": "RV_ASSET=stx rv tests nayori-escrow-stx invariant --config tests/rv/rv.config.json",
+    "lifecycle": "node tests/rv/lifecycle.mjs --runs 30",
+    "mutation": "sh tests/rv/mutation.sh",
+    "fuzz": "npm run rv:sbtc && npm run rv:stx && npm run lifecycle && npm run mutation"
+  },
+  "devDependencies": {
+    "@stacks/clarinet-sdk": "4.0.0",
+    "@stacks/rendezvous": "1.1.0",
+    "@stacks/transactions": "7.7.0",
+    "fast-check": "4.10.2"
+  }
+}
