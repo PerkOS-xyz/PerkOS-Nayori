@@ -4,6 +4,7 @@ import { EXPLORER } from "../../services/onchain-stats";
 import { NEXT_STATUS_LABELS, NEXT_STATUS_TONE } from "../../services/nayori-next/status";
 import { statusName } from "../../services/nayori-next/parse";
 import { txExplorer } from "../../services/tx";
+import { LEATHER_MULTISIG_URL } from "../../services/nayori-next/multisig";
 import { shortAddr } from "../../utils/format";
 import type { NextTxProgress } from "./useNextWallet";
 
@@ -59,18 +60,37 @@ export function Field({ label, children }: { label: string; children: React.Reac
   );
 }
 
+const STATE_TEXT: Record<NextTxProgress["state"], string> = {
+  awaiting: "Waiting for the wallet",
+  submitted: "Submitted",
+  pending: "Pending",
+  proposed: "Waiting for the second signature",
+  confirmed: "Confirmed",
+  failed: "",
+};
+
 export function TxProgressBar({ progress }: { progress: NextTxProgress | null }) {
   if (!progress) return null;
   const failed = progress.state === "failed";
+  const proposed = progress.state === "proposed";
   return (
     <div
       role="status"
       className={`mt-4 flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 text-sm ${
-        failed ? "border-red-500/30 bg-red-500/10 text-red-200" : "border-brand/25 bg-brand/[0.06] text-mist-200"
+        failed
+          ? "border-red-500/30 bg-red-500/10 text-red-200"
+          : proposed
+            ? "border-violet-500/30 bg-violet-500/10 text-violet-100"
+            : "border-brand/25 bg-brand/[0.06] text-mist-200"
       }`}
     >
       <span className="font-medium">{progress.label}</span>
-      {!failed && <span className="capitalize text-mist-400">{progress.state}</span>}
+      {!failed && <span className="text-mist-400">{STATE_TEXT[progress.state]}</span>}
+      {proposed && (
+        <a href={LEATHER_MULTISIG_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline">
+          Open Leather multisig <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      )}
       {progress.txid && (
         <a
           href={txExplorer(progress.txid, NAYORI_NEXT.network)}
@@ -81,6 +101,7 @@ export function TxProgressBar({ progress }: { progress: NextTxProgress | null })
           Explorer <ExternalLink className="h-3.5 w-3.5" />
         </a>
       )}
+      {progress.note && <p className="w-full text-xs text-mist-300">{progress.note}</p>}
     </div>
   );
 }

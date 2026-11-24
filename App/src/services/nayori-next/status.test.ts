@@ -100,6 +100,17 @@ describe("next job actions by party", () => {
     expect(nextJobActions({ job: job(6), wallet: STRANGER, burnHeight: 1_301, decision: disputed })).toEqual(["settle"]);
   });
 
+  it("shows the resolve action to a multisig appeal authority pinned on the job", () => {
+    const multisig = "SM3950RVR364J25ZRFFNHB5TCNJ7VKPKKGD4N2RP9";
+    const disputed = decision("approve", { appellant: CLIENT, resolutionDeadline: 1_300 });
+    const pinned = job(6, { appealAuthority: multisig });
+    expect(nextJobActions({ job: pinned, wallet: multisig, burnHeight: 1_250, decision: disputed })).toEqual(["resolve-appeal"]);
+    expect(nextJobActions({ job: pinned, wallet: multisig.toLowerCase(), burnHeight: 1_250, decision: disputed })).toEqual(["resolve-appeal"]);
+    // The authority holding the role today but not pinned on this job cannot resolve it.
+    expect(nextJobActions({ job: pinned, wallet: AUTHORITY, burnHeight: 1_250, decision: disputed })).toEqual([]);
+    expect(nextJobActions({ job: pinned, wallet: multisig, burnHeight: 1_301, decision: disputed })).toEqual(["settle"]);
+  });
+
   it("lets the client rate a completed job once and anyone replay a pending reputation update", () => {
     expect(nextJobActions({ job: job(7), wallet: CLIENT, burnHeight: 2_000, rated: false })).toEqual(["rate"]);
     expect(nextJobActions({ job: job(7), wallet: CLIENT, burnHeight: 2_000, rated: true })).toEqual([]);

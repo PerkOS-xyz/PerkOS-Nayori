@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from "react";
-import { NAYORI_NEXT, NEXT_LIMITS, nextEscrowContract } from "../../constants/nayori-next";
+import { NAYORI_NEXT, NEXT_LIMITS, isMultisigAddress, nextEscrowContract } from "../../constants/nayori-next";
+import { LEATHER_MULTISIG_URL } from "../../services/nayori-next/multisig";
+import type { NextRun, NextRunOptions } from "./useNextWallet";
 import { hasCriteriaCommitment } from "../../services/evaluable-jobs";
 import { CommittedEvidenceForm } from "../EvaluableJob";
 import type { NextJobDetail } from "../../services/nayori-next/reads";
@@ -32,19 +34,13 @@ import {
 } from "../../services/nayori-next/transactions";
 import { shortAddr } from "../../utils/format";
 
-type Run = (
-  key: string,
-  label: string,
-  build: () => NextCallPayload | Promise<NextCallPayload>,
-  after?: () => void
-) => Promise<void>;
 
 interface Props {
   detail: NextJobDetail;
   wallet: string;
   burnHeight: number;
   busy: string | null;
-  run: Run;
+  run: NextRun;
 }
 
 /** The actions the connected wallet can take on this job now, one card each. */
@@ -79,12 +75,21 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run }
     );
   }
 
-  const button = (key: NextActionKey, label: string, build: () => NextCallPayload | Promise<NextCallPayload>, after?: () => void, tone = "btn-primary") => (
+  const multisig = isMultisigAddress(wallet);
+  const resolutionDeadline = detail.decision?.resolutionDeadline;
+  const button = (
+    key: NextActionKey,
+    label: string,
+    build: () => NextCallPayload | Promise<NextCallPayload>,
+    after?: () => void,
+    tone = "btn-primary",
+    options?: NextRunOptions
+  ) => (
     <button
       key={`${key}-${label}`}
       className={tone}
       disabled={Boolean(busy)}
-      onClick={() => void run(key, label, build, after)}
+      onClick={() => void run(key, label, build, after, options)}
     >
       {isBusy(key) ? "Waiting for the wallet" : label}
     </button>
@@ -181,17 +186,24 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run }
         {button("appeal", "Appeal", async () => buildAppeal({ ...ref, evidenceHash: await evidenceHashFrom(note) }), () => setNote(""))}
       </Card>
     ),
-    "resolve-appeal": () => (
-      <Card title="Resolve the appeal" text={`Your decision settles the job in the same transaction. The escrow pays out exactly ${amount(job.budget)}.`}>
-        <EvidenceInput value={note} onChange={setNote} />
-        <div className="flex flex-wrap gap-2">
-          {button("resolve-appeal", "Approve and pay the provider", async () =>
-            buildResolveAppeal({ ...ref, budget: job.budget, decision: "approve", resolutionHash: await evidenceHashFrom(note) }), () => setNote(""))}
-          {button("resolve-appeal", "Reject and return to the client", async () =>
-            buildResolveAppeal({ ...ref, budget: job.budget, decision: "reject", resolutionHash: await evidenceHashFrom(note) }), () => setNote(""), "btn-ghost")}
-        </div>
-      </Card>
-    ),
+    "resolve-appeal": () => {
+      const options: NextRunOptions = { deadline: resolutionDeadline, height: burnHeight };
+      return (
+        <Card
+          title="Resolve the appeal"
+          text={`You are this job's appeal authority. Your decision settles the job in the same transaction. The escrow pays out exactly ${amount(job.budget)}.`}
+        >
+          {multisig && <MultisigNote deadline={resolutionDeadline} />}
+          <EvidenceInput value={note} onChange={setNote} />
+          <div className="flex flex-wrap gap-2">
+            {button("resolve-appeal", "Approve and pay the provider", async () =>
+              buildResolveAppeal({ ...ref, budget: job.budget, decision: "approve", resolutionHash: await evidenceHashFrom(note) }), () => setNote(""), "btn-primary", options)}
+            {button("resolve-appeal", "Reject and return to the client", async () =>
+              buildResolveAppeal({ ...ref, budget: job.budget, decision: "reject", resolutionHash: await evidenceHashFrom(note) }), () => setNote(""), "btn-ghost", options)}
+          </div>
+        </Card>
+      );
+    },
     settle: () => {
       const preview = detail.decision ? settlementPreview(job, detail.decision.decision) : null;
       return (
@@ -237,6 +249,12 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run }
       {actions.map((key) => (
         <div key={key}>{cards[key]()}</div>
       ))}
+      {job.status === 6 && !actions.includes("resolve-appeal") && wallet && (
+        <p className="text-xs text-mist-500 md:col-span-2">
+          The appeal authority pinned on this job, {shortAddr(job.appealAuthority)}
+          {isMultisigAddress(job.appealAuthority) ? " (a Leather multisig account)" : ""}, resolves the appeal.
+        </p>
+      )}
       {detail.decision && job.status === 5 && !actions.includes("appeal") && wallet && (
         <p className="text-xs text-mist-500 md:col-span-2">
           Only {shortAddr(appellantFor(job, detail.decision) ?? "")} can appeal this decision.
@@ -255,6 +273,18 @@ function Card({ title, text, children }: { title: string; text: string; children
       </div>
       <div className="mt-auto flex flex-col gap-2">{children}</div>
     </div>
+  );
+}
+
+/** For a Leather multisig signer: the call becomes a proposal that the second member approves. */
+function MultisigNote({ deadline }: { deadline?: number }) {
+  return (
+    <p className="rounded-lg border border-violet-500/25 bg-violet-500/[0.06] px-3 py-2 text-xs text-violet-200">
+      This account is a Leather multisig. Your request becomes a proposal, and the other member approves it at{" "}
+      <a href={LEATHER_MULTISIG_URL} target="_blank" rel="noreferrer" className="underline">leather.io/multisig</a>.
+      It is broadcast and settles the job once both have signed
+      {deadline ? `, before Bitcoin block ${deadline.toLocaleString("en-US")}` : ""}.
+    </p>
   );
 }
 

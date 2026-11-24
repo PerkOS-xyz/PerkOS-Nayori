@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Bitcoin, Briefcase, Coins, FileCheck2, Gavel, RefreshCw, Star } from "lucide-react";
-import { NAYORI_NEXT, nextEscrowContract, type NextAsset } from "../../constants/nayori-next";
+import { NAYORI_NEXT, isMultisigAddress, nextEscrowContract, type NextAsset } from "../../constants/nayori-next";
 import {
   getNextAgent,
   getNextApplications,
@@ -143,8 +143,16 @@ export default function NextJobDetailView({ id, asset }: { id: number; asset: Ne
             On a decision: {amount(fee.net)} to the winner, {amount(fee.fee)} (2%) to the treasury
           </span>
         </Field>
-        <Field label="Treasury"><NextAddr value={job.treasury} className="text-mist-200" /></Field>
-        <Field label="Appeal authority"><NextAddr value={job.appealAuthority} className="text-mist-200" /></Field>
+        <Field label="Treasury">
+          <NextAddr value={job.treasury} className="text-mist-200" />
+          {isMultisigAddress(job.treasury) && <span className="mt-1 block text-xs text-mist-500">Multisig account</span>}
+        </Field>
+        <Field label="Appeal authority">
+          <NextAddr value={job.appealAuthority} className="text-mist-200" />
+          <span className="mt-1 block text-xs text-mist-500">
+            {isMultisigAddress(job.appealAuthority) ? "Multisig account, pinned on this job" : "Pinned on this job"}
+          </span>
+        </Field>
         {job.status <= 3 && (
           <Field label={deadlineLabel(job)}>
             <span className="text-mist-200">{deadlineText(job.deliveryDeadline, height)}</span>
