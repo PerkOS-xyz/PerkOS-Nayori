@@ -30,10 +30,11 @@ import NextAgentPanel from "./NextAgentPanel";
 import NextPermissionsPanel from "./NextPermissionsPanel";
 import { NextAddr, NextBanner, NextStatusBadge, TxProgressBar } from "./ui";
 import { useNextWallet } from "./useNextWallet";
+import { nextJobHref } from "../../services/nayori-next/contract-sets";
 
 const PAGE_SIZE = 20;
 
-export const nextJobHref = (id: number, asset: NextAsset) => `/jobs/next/${id}?asset=${asset}`;
+export { nextJobHref };
 
 export default function NextJobsBoard() {
   const [asset, setAsset] = useState<NextAsset>("sbtc");

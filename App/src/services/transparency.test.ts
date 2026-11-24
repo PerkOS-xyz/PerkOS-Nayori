@@ -36,6 +36,7 @@ const jobs: CommerceJob[] = [
 const stats: OnchainStats = {
   network: "mainnet",
   deployer: TEAM,
+  nayoriDeployer: "SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X",
   totalTx: 30,
   contractCalls: 25,
   successfulContractCalls: 24,
@@ -43,11 +44,14 @@ const stats: OnchainStats = {
   feesSTX: 0.25,
   indexedTransactions: 30,
   truncated: false,
-  perContract: [{ name: "sbtc-commerce", total: 10 }],
+  perContract: [{ name: "sbtc-commerce", id: `${TEAM}.sbtc-commerce`, set: "earlier", total: 10 }],
+  nayoriAgentCandidates: [],
   recent: [
     {
       txId: `0x${"a".repeat(64)}`,
       contract: "sbtc-commerce",
+      contractId: `${TEAM}.sbtc-commerce`,
+      set: "earlier",
       fn: "complete-job",
       sender: EXTERNAL_A,
       status: "success",
