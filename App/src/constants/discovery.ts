@@ -15,6 +15,7 @@ import {
   SBTC_COMMERCE_CONTRACT_NAME,
   STX_COMMERCE_CONTRACT_NAME,
 } from "./contract";
+import { NAYORI_NEXT, NEXT_ROLE_HOLDERS } from "./nayori-next";
 
 export const STACKS_MAINNET_ID = "stacks:1";
 export const STACKS_TESTNET_ID = "stacks:2147483648";
@@ -163,6 +164,14 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
         : "A Stacks wallet must authorize and sign every state-changing transaction.",
       custody: "Nayori does not request or store buyer private keys.",
     },
+    nayoriContracts: {
+      deployer: NAYORI_NEXT.deployer,
+      ...NAYORI_NEXT.contracts,
+      sbtcToken: NAYORI_NEXT.sbtcToken,
+      treasury: NEXT_ROLE_HOLDERS[NAYORI_NEXT.network].treasury,
+      appealAuthority: NEXT_ROLE_HOLDERS[NAYORI_NEXT.network].appealAuthority,
+      newJobs: true,
+    },
     contracts: {
       deployer: CONTRACT_ADDRESS,
       agentRegistry: `${CONTRACT_ADDRESS}.agent-registry`,
@@ -264,7 +273,17 @@ Nayori is a ${environment} web application and TypeScript SDK for autonomous com
 
 Supporting browsers can discover three read-only WebMCP tools on the application page: capabilities, Agent Skills and the versioned public evidence manifest. These tools never sign a transaction, access wallet credentials or perform a state-changing action.
 
-## ${NETWORK_NAME === "testnet" ? "QA testnet" : "Mainnet"} contracts
+## ${NETWORK_NAME === "testnet" ? "QA testnet" : "Mainnet"} Nayori contracts (new jobs)
+
+- sBTC escrow: \`${NAYORI_NEXT.contracts.escrowSbtc}\`
+- STX escrow: \`${NAYORI_NEXT.contracts.escrowStx}\`
+- Applications: \`${NAYORI_NEXT.contracts.applications}\`
+- Agents: \`${NAYORI_NEXT.contracts.agents}\`
+- Reputation: \`${NAYORI_NEXT.contracts.reputation}\`
+- Permissions: \`${NAYORI_NEXT.contracts.permissions}\`
+- Roles: \`${NAYORI_NEXT.contracts.roles}\` (treasury and appeal authority; each job pins the holders at creation)
+
+## ${NETWORK_NAME === "testnet" ? "QA testnet" : "Mainnet"} earlier contracts (jobs in progress)
 
 - Agent registry: \`${CONTRACT_ADDRESS}.agent-registry\`
 - Reputation: \`${CONTRACT_ADDRESS}.${REPUTATION_CONTRACT_NAME}\`

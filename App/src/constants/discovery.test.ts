@@ -64,6 +64,18 @@ describe("agent discovery", () => {
     expect(manifest.contracts.sbtcEscrow).toBe(
       `${CONTRACT_ADDRESS}.${SBTC_COMMERCE_CONTRACT_NAME}`
     );
+    const nayoriDeployer =
+      NETWORK_NAME === "testnet"
+        ? "ST3MRPNX0VNWYRSJ07PNTASE5BZ9K5XE57ARZ39DY"
+        : "SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X";
+    expect(manifest.nayoriContracts).toMatchObject({
+      deployer: nayoriDeployer,
+      escrowSbtc: `${nayoriDeployer}.nayori-escrow-sbtc`,
+      escrowStx: `${nayoriDeployer}.nayori-escrow-stx`,
+      agents: `${nayoriDeployer}.nayori-agents`,
+      newJobs: true,
+    });
+    expect(buildLlmsText(origin)).toContain(`${nayoriDeployer}.nayori-escrow-sbtc`);
     expect(manifest.discovery.quoteApi.origin).toBe(NAYORI_API_ORIGIN);
     expect(manifest.discovery.quoteApi.openapi).toBe(
       `${NAYORI_API_ORIGIN}/openapi.json`
