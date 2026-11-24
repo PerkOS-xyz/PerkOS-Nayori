@@ -65,8 +65,10 @@ lives only in Leather, the CLI prints a link to the web form with your answers p
    message; then SHA-256).
 2. Recover the public key from the 65-byte RSV signature; it must equal the published `publicKey`.
 3. Derive the Stacks address from that key; it must equal the listed wallet.
-4. Read the wallet's agents from `agent-registry` and its jobs from `agentic-commerce-v6` and
-   `sbtc-commerce-v5` on the Hiro explorer.
+4. Read the wallet's agent from `nayori-agents` and its jobs from `nayori-escrow-sbtc` and
+   `nayori-escrow-stx` (deployer `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X`) on the Hiro
+   explorer. Activity from before 2026-11-24 lives in the earlier contracts (`agent-registry`,
+   `sbtc-commerce-v5`, `agentic-commerce-v6`).
 
 Self-registered entries pass these checks when they are submitted, before they are stored;
 entries pinned in the repository pass them in the test suite and on every request. Team-operated

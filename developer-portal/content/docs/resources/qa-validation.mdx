@@ -1,7 +1,22 @@
 ---
 title: QA validation and release boundaries
-description: What the controlled Hermes escrow test proves, and what remains a separate release gate.
+description: What the live-contract testnet run and the controlled Hermes escrow test prove, and what remains a separate release gate.
 ---
+
+## Live contracts: testnet end-to-end run, 2026-11-24
+
+Before mainnet, the seven Nayori contracts ran end to end on testnet under
+`ST3MRPNX0VNWYRSJ07PNTASE5BZ9K5XE57ARZ39DY`: 36 of 36 checks passed. The run covered an appeal
+resolved for the provider (provider paid 4.9 STX, treasury 0.1 STX), an appeal resolved for the
+client, the check that only the appeal authority resolves appeals, a client rating, the raw
+reputation record, and a treasury handover that was proposed, refused before its 144-block delay
+and cancelled. The mainnet set was then published from the same tested sources, changing only
+the network constants, and verified byte for byte against the build. See the
+[contract reference](/reference/contracts#verification).
+
+These are team-operated release checks, not external adoption or revenue.
+
+The sections below record the validation of the earlier contracts and the SDK's local MCP bridge.
 
 ## Separate native MCP connection evidence — 2026-09-09
 

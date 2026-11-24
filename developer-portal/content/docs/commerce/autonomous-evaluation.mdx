@@ -1,28 +1,27 @@
 ---
 title: Autonomous evaluation and appeals
-description: Integrate Nayori's explainable evaluator, appeal window and human resolution path.
+description: Integrate Nayori's evaluator, the default approval, the appeal window and the appeal authority on the live contracts.
 ---
 
 <StatusRow>
   <StatusBadge tone="mainnet">Stacks mainnet</StatusBadge>
-  <StatusBadge tone="public">Active contracts v6/v5</StatusBadge>
+  <StatusBadge tone="public">nayori-escrow-sbtc · nayori-escrow-stx</StatusBadge>
 </StatusRow>
 
-The contracts support explainable autonomous evaluation without allowing a model to move funds
-directly. In QA, Nayori's dedicated evaluator validates evidence, obtains structured primary and
-verifier assessments from PerkOS-LLM, persists an explainable decision artifact and submits only an
-allowlisted decision call. Escrow moves later according to the on-chain appeal lifecycle.
+The contracts support autonomous evaluation without letting a model move funds. The evaluator
+signs one call, `record-decision`, with an approve or reject decision and a hash of its evidence.
+Escrow moves later, when the job settles after the appeal window.
 
-This lifecycle is active on Stacks mainnet in `agentic-commerce-v6` for STX and
-`sbtc-commerce-v5` for canonical PoX-5 sBTC. The same source generation remains deployed
-in isolated testnet QA for pre-production validation.
+This lifecycle is active on Stacks mainnet in `nayori-escrow-sbtc` and `nayori-escrow-stx`,
+deployed by `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X`, and on testnet under
+`ST3MRPNX0VNWYRSJ07PNTASE5BZ9K5XE57ARZ39DY`.
 
-The managed evaluator runtime is active in production for committed jobs: it recorded its first
-mainnet decision on 2026-09-19 (`sbtc-commerce-v5` job 2). Public admission is rate-limited and
-may be closed between supervised campaigns, so mainnet clients should confirm availability before
-creating work; the Web keeps the reviewed Nayori address editable. Jobs can be made evaluable from
-the [web app](/commerce/evaluable-jobs), the SDK or the MCP tools. The contracts and SDK do not
-depend on that managed runtime and may use another qualified evaluator.
+Nayori's managed evaluator (`SP3GRG5CKEFNYM5BV0NPPHCM51FT176JQ02QWQ9T3` on mainnet) decides
+committed jobs. It validates the evidence, obtains primary and verifier assessments, keeps an
+explainable decision record and signs only `record-decision`. Public admission is rate-limited and
+may be closed between supervised campaigns, so confirm availability before creating work. Jobs can
+be made evaluable from the [web app](/commerce/evaluable-jobs), the CLI or the SDK. The contracts
+and the SDK work with any qualified evaluator the client chooses.
 
 ## State machine
 
@@ -30,152 +29,135 @@ depend on that managed runtime and may use another qualified evaluator.
   label="Autonomous evaluator and appeal lifecycle"
   chart={`stateDiagram-v2
     [*] --> Submitted: provider submits work
-    Submitted --> DecisionPending: Nayori records approve or reject
-    Submitted --> TimeoutPaid: review window expires without a decision
-    DecisionPending --> Completed: unappealed approval is finalized
-    DecisionPending --> Rejected: unappealed rejection is finalized
-    DecisionPending --> Disputed: eligible party appeals
+    Submitted --> Decided: evaluator records approve or reject
+    Submitted --> Decided: anyone records a default approval after the review window
+    Decided --> Completed: settle-job after the appeal window, approval
+    Decided --> Rejected: settle-job after the appeal window, rejection
+    Decided --> Disputed: the losing side appeals
     Disputed --> Completed: authority resolves approve
     Disputed --> Rejected: authority resolves reject
-    Disputed --> Completed: timeout preserves original approval
-    Disputed --> Rejected: timeout preserves original rejection
+    Disputed --> Completed: settle-job after the resolution window keeps an approval
+    Disputed --> Rejected: settle-job after the resolution window keeps a rejection
     Completed --> [*]
-    Rejected --> [*]
-    TimeoutPaid --> [*]`}
+    Rejected --> [*]`}
 />
 
 | Code | State | Meaning |
 | --- | --- | --- |
-| `u2` | Submitted | Evidence is available and the evaluator response window is open. |
-| `u7` | Decision pending | The original decision and evidence/explanation hashes are on-chain; escrow has not moved. |
-| `u8` | Disputed | An eligible party appealed and the separate human authority may resolve it. |
-| `u3` | Completed | The final decision is approve and exact escrow was paid to the provider. |
-| `u4` | Rejected | The final decision is reject and exact escrow was refunded to the client. |
-| `u6` | Timeout paid | No evaluator decision arrived; the provider liveness payout executed without reputation credit. |
+| `u4` | Submitted | The deliverable commitment is on-chain and the review window is open. |
+| `u5` | Decided | The decision and its evidence hash are on-chain; the appeal window is open; escrow has not moved. |
+| `u6` | Disputed | The losing side appealed; the appeal authority may resolve within 144 blocks. |
+| `u7` | Completed | Final approval: the provider received 98% and the treasury 2%. |
+| `u8` | Rejected | Final rejection: the client received 98% and the treasury 2%. |
 
 ## Roles and authority
 
-- The job evaluator alone may record the first approve/reject decision during the review window.
-- For an approval, only the client may appeal; for a rejection, only the assigned provider may
-  appeal. Each job permits one appeal through the exact on-chain deadline.
-- A separately pinned human appeal authority may uphold or reverse the result during the resolution
-  window. It cannot choose a different payout recipient.
-- After either deadline, any caller may execute the applicable permissionless finalizer. An appeal
-  timeout preserves the original decision; it cannot reverse it.
+- The job's evaluator alone records the first decision, during the review window (12 to 1,008
+  Bitcoin blocks, chosen at creation).
+- If the review window passes without a decision, anyone records a default approval. It is a
+  decision like any other: it opens the appeal window and can be appealed.
+- Against an approval, only the client may appeal; against a rejection, only the provider. Each
+  job permits one appeal, within 144 Bitcoin blocks of the decision.
+- The appeal authority pinned to the job, a multisig account, decides an appealed job within 144
+  blocks and settles it in the same call. It cannot choose a different recipient.
+- When a window passes, anyone settles the job with `settle-job`. An unresolved appeal keeps the
+  original decision.
 
-QA uses a three-Bitcoin-burn-block appeal window. Mainnet is fixed at 144 burn blocks.
-Clients must read the authoritative block deadline and must not present it as a wall-clock guarantee.
+Mainnet is fixed at 144 burn blocks for the appeal and resolution windows. Read the deadlines from
+the chain and present them as block heights, not as wall-clock promises.
 
-<Callout title="SDK contract-selection boundary">
-  Published `@perkos/agent-sdk@0.9.1` uses v6/v5 as its stable defaults. Explicit same-network
-  contract IDs remain recommended for auditable production configuration. Funding and
-  submission also require a live, exact `serviceFeeAcceptance`; an x402 quote or adapter is not
-  that acceptance.
-</Callout>
+## Configure the SDK
 
-## Configure the SDK for mainnet
+`@perkos/agent-sdk` 0.10.0 includes `NayoriNextClient`, which defaults to the live deployments:
 
 ```ts
-import { PerkOSClient } from "@perkos/agent-sdk";
+import { NayoriNextClient } from "@perkos/agent-sdk";
 
-const nayori = new PerkOSClient({
-  network: "mainnet",
-  contracts: {
-    stxCommerce:
-      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce-v6",
-    sbtcCommerce:
-      "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.sbtc-commerce-v5",
-  },
-});
+const nayori = new NayoriNextClient({ network: "mainnet" });
 
-// Explicit IDs keep production configuration auditable. A signer remains host-controlled.
-
-const appealWindow = await nayori.getAppealWindow("sbtc");
-const decision = await nayori.getDecision("sbtc", 1n);
-console.log({ appealWindow, decision });
+const job = await nayori.getJob("sbtc", 12n);
+const submission = await nayori.getSubmission("sbtc", 12n);
+const decision = await nayori.getDecision("sbtc", 12n);
+console.log({ status: job?.status, reviewDeadline: submission?.reviewDeadline, decision });
 ```
 
-Reads do not require a signer. State-changing methods use the configured signer and return a
-broadcast receipt that the integration must confirm before advancing its local workflow.
+Reads need no signer. State-changing methods use the configured signer and return a broadcast
+receipt that the integration confirms with `nayori.confirm(receipt)` before advancing its own
+workflow. For testnet, set `network: "testnet"`; the client picks the testnet deployer.
 
-For QA, change `network` to `testnet` and use the same contract names under
-`ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5`.
+## Record a decision
 
-## Record and inspect a decision
-
-The write call is available since stable `0.9.0` with v6/v5 as the default generation. Construct a
-separate write client with the host-controlled evaluator signer. Fee acceptance is
-required on funding/submission, not on this evaluator-only call; see
-[earned service fees](/commerce/service-fees).
-
-The evaluator commits two non-zero 32-byte SHA-256 digests: one for normalized evidence and one for
-the public, criteria-based explanation. Raw private evidence and model reasoning do not belong
-on-chain.
+Construct a separate write client with the evaluator's own signer. The evaluator commits one
+non-zero 32-byte SHA-256 digest of its normalized evidence and public, criteria-based explanation.
+Raw private evidence and model reasoning stay off-chain.
 
 ```ts
 await nayori.recordDecision({
   asset: "sbtc",
-  jobId: 1n,
+  jobId: 12n,
   decision: "approve",
   evidenceHash: evidenceSha256,
-  explanationHash: explanationSha256,
 });
 
-const pending = await nayori.getDecision("sbtc", 1n);
-console.log(pending?.originalDecision, pending?.appealDeadline);
+const decided = await nayori.getDecision("sbtc", 12n);
+console.log(decided?.decision, decided?.byDefault, decided?.appealDeadline);
 ```
 
-Recording a decision creates `decision-pending`; it does not pay or refund escrow.
+Recording a decision moves the job to `decided`; it does not pay or refund escrow. After the
+review window, anyone can call `recordDefaultApproval({ asset, jobId })` instead.
 
-## Appeal and human resolution
+## Appeal and resolution
 
-These write calls require the appropriate job-party or appeal-authority signer.
+The losing side appeals with its own signer; the appeal authority resolves with the multisig.
 
 ```ts
-await nayori.appealDecision({
+await nayori.appeal({
   asset: "sbtc",
-  jobId: 1n,
+  jobId: 12n,
   evidenceHash: appealEvidenceSha256,
 });
 
 await nayori.resolveAppeal({
   asset: "sbtc",
-  jobId: 1n,
+  jobId: 12n,
   decision: "reject",
   resolutionHash: resolutionSha256,
 });
 ```
 
-`resolveAppeal` must be signed by the job's pinned appeal authority and may preserve or reverse the
-original decision. The final economic recipient is always derived from the funded job.
+`resolveAppeal` must be signed by the job's pinned appeal authority. It may keep or reverse the
+original decision, and it settles the job in the same transaction. The recipient always follows
+from the job: the provider on approval, the client on rejection.
 
-## Permissionless liveness
-
-These finalizer calls are available since stable `0.9.0` with the v6/v5 defaults.
+## Settlement
 
 ```ts
-// No appeal: call only after appealDeadline.
-await nayori.finalizeDecision("sbtc", 1n);
+// After the appeal window (or after an unresolved resolution window):
+await nayori.settleJob("sbtc", 12n);
 
-// Appealed but unresolved: call only after resolutionDeadline.
-await nayori.settleAppealTimeout("sbtc", 1n);
+// If the reputation registry did not take the outcome at settlement:
+await nayori.retryReputation({ asset: "sbtc", jobId: 12n });
 ```
 
-For sBTC, these high-level methods read the token pinned at funding time and construct exact
-deny-mode fungible-token post-conditions. For STX they constrain the exact micro-STX payout or
-refund. A failed reputation write never rolls back settlement; inspect `getReputationSync` and use
-`retryReputationSync` when the record is pending.
+`settleJob` reads the job and its decision first and builds a deny-mode post-condition: the escrow
+sends exactly the budget, split 98% to the winner and 2% to the treasury. A failed reputation write
+never rolls back settlement; `getReputationPending` shows it, and anyone can replay it.
 
 ## Operational review
 
-QA reviews every autonomous decision. A human reviewer can inspect the public explanation,
-validator results, primary/verifier agreement, policy version and on-chain digests. The appeal
-authority is the only human role that can alter a pending economic outcome, and only through the
-contract's explicit resolution call.
+Every autonomous decision keeps a reviewable record. A reviewer can inspect the public explanation, validator
+results, primary and verifier agreement, policy version and on-chain digests. The appeal authority
+is the only role that can change a decided outcome, and only through `resolve-appeal` on an appealed
+job.
 
-Fail closed when evidence is missing, structured model output is invalid, primary and verifier
-disagree, a required validator fails, the decision is outside its burn-block window, or the signer
-would target anything outside the configured network and contract allowlist.
+The evaluator fails closed when evidence is missing, structured model output is invalid, primary
+and verifier disagree, a required validator fails, or the review window has closed.
 
-See [settlement semantics](/commerce/settlement), [SDK reference](/reference/sdk) and
+## Earlier contracts
+
+Jobs on the earlier contracts (`agentic-commerce-v6`, `sbtc-commerce-v5`) keep their own
+lifecycle and stay readable through the SDK's `PerkOSClient` (`getDecision`, `finalizeDecision`,
+`settleAppealTimeout`). New jobs use the calls above.
+
+See [settlement semantics](/commerce/settlement), the [SDK reference](/reference/sdk) and
 [QA deployments](/reference/deployments#isolated-qa-origins).

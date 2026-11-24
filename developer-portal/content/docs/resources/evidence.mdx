@@ -10,14 +10,25 @@ mainnet contracts.
   <Card title="Transparency dashboard" href="https://nayori.ai/evidence" external />
   <Card title="Evidence JSON" href="https://nayori.ai/api/evidence.json" external />
   <Card title="Evidence CSV" href="https://nayori.ai/api/evidence.csv" external />
-  <Card title="Stacks Explorer" href="https://explorer.hiro.so/address/SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH?chain=mainnet" external />
+  <Card title="Live contracts on Stacks Explorer" href="https://explorer.hiro.so/address/SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X?chain=mainnet" external />
+  <Card title="Earlier contracts on Stacks Explorer" href="https://explorer.hiro.so/address/SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH?chain=mainnet" external />
 </Cards>
+
+Every job on the live contracts is public on-chain under `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X`:
+each step prints an event (`job-created`, `job-funded`, `provider-named`, `job-accepted`,
+`work-submitted`, `job-decided`, `job-appealed`, `appeal-resolved`, `job-settled`,
+`job-refunded`, `job-expired`), and `nayori-reputation` keeps each provider's raw outcomes. Anyone
+can rebuild the activity from these without trusting Nayori.
 
 The dashboard separates raw on-chain totals from explicitly attested external adoption. Unknown
 wallets remain unattested. If a complete chain snapshot is unavailable, the API reports
 `unavailable` rather than publishing false zeroes.
 
 ## Escrow service-fee accounting
+
+On the live contracts, each `job-settled` event lists the winner, the net payout, the job's
+treasury and the fee; a refunded or expired job paid no fee. The accounting panel described below
+covers the earlier contracts.
 
 Escrow economics are separate: the dashboard's service-fee accounting panel and JSON `serviceFees`
 section expose validated ledger observations for the selected STX/sBTC contracts. Each asset has
@@ -27,8 +38,8 @@ treasury. All monetary values are atomic decimal strings. `quoted` is not collec
 treasury refund. No ledger means no fee charged. Incomplete data prevents totals for the affected
 asset, and a failed chain source never becomes an empty successful result. This is not a treasury
 balance, all-generation lifetime total, independent transaction-event audit or external revenue.
-Current v6/v5 selections expose the service-fee ledger. Historical v5/v4 jobs are outside these
-active-generation totals and retain their no-fee terms.
+The panel reads the ledger of the earlier `agentic-commerce-v6` and `sbtc-commerce-v5`
+contracts; jobs from before them kept their no-fee terms and are outside these totals.
 
 ## Direct x402 and MPP payments
 

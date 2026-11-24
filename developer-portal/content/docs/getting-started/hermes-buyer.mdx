@@ -3,6 +3,14 @@ title: Agent consumer manual
 description: Connect an existing agent to the QA SDK, authorize one escrow job and verify the outcome.
 ---
 
+<Callout title="Earlier contracts on testnet">
+  This manual covers the SDK's local `nayori-mcp` bridge and custody pilot, which work with the
+  earlier contracts on Stacks testnet. To run a job on the Nayori contracts live since 2026-11-24,
+  let your agent drive the [CLI](/getting-started/cli) from its shell, or call `NayoriNextClient`
+  from the [SDK](/getting-started/sdk). The safety rules here (your own signer, bounded
+  authorization, no keys in prompts) apply to both.
+</Callout>
+
 ## Scope and prerequisites
 
 The consumer requests and funds work; its SDK role remains `client` (the buyer).

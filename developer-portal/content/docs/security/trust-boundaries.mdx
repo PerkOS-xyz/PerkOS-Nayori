@@ -38,6 +38,25 @@ Leather or an enterprise signer approves every economic transaction. OAuth token
 service access only. The Web application, API, MCP tools and documentation never receive a seed
 phrase or wallet private key.
 
+## Contract roles
+
+The Nayori contracts have no owner and no admin function. Each role can do only what its job
+needs:
+
+| Role | Can | Cannot |
+| --- | --- | --- |
+| Client | Create, fund and offer its job; appeal an approval; rate a completed job | Move escrow outside settlement or refund |
+| Provider | Accept an offer, submit work, appeal a rejection | Change the budget or the evaluator |
+| Evaluator | Record one decision within the review window | Move funds or redirect a payout |
+| Appeal authority (multisig) | Resolve an appealed job pinned to it | Start a dispute or touch a job nobody appealed |
+| Treasury (multisig) | Receive the 2% fee of jobs pinned to it | Change the fee or any job |
+| Anyone | Default approval, settlement, refund and closing, once each is due | Choose a recipient |
+
+The treasury and the appeal authority are read when a job is created and stay with that job. A
+call that reaches a Nayori contract through another contract counts for a party only after the
+party allowed that contract in `nayori-permissions`, per target contract and optionally with an
+expiry.
+
 ## Systems of record
 
 | Concern | System of record |

@@ -58,11 +58,11 @@ describe('existing-agent onboarding', () => {
     for (const text of ['live in production', 'e4b0e24422631c11c77c1a7945e8b7ece7e1e5af',
       'SDK 0.9.x', 'Version 1 remains unchanged',
       'not wallet enforcement', 'terminal jobs have no active countdown',
-      'No new funded E2E or external adoption']) {
+      'No new funded E2E or external adoption', 'Delivery | 144 to 4,320 blocks, per job',
+      'Review | 12 to 1,008 blocks, per job']) {
       expect(guide).toContain(text);
     }
-    expect(guide).toContain('stable **SDK 0.9.x** (`0.9.1` under `latest`)');
-    expect(guide).toContain('npm install --save-exact @perkos/agent-sdk@0.9.1');
+    expect(guide).toContain('npm install --save-exact @perkos/agent-sdk@0.10.0');
     expect(guide).not.toContain('source candidate, not yet deployed');
     expect(guide).not.toContain('After the Web candidate is deployed');
     expect(guide).not.toContain('Production promotion is separate');
@@ -114,7 +114,7 @@ describe('existing-agent onboarding', () => {
 
   it('requires a verified registry record and keeps wallet, OAuth and payments separate', () => {
     const guide = read('getting-started/existing-agent.mdx');
-    for (const text of ['creator', '(ok uN)', 'getAgent(agentId)', 'zero escrow',
+    for (const text of ['nayori-agents', '(ok true)', 'getAgent(wallet)', 'accept-job', 'zero escrow',
       'saved txid', 'separate paid-resource workflows', 'does not require partner OAuth',
       'Testnet registration does not create a mainnet identity']) {
       expect(guide).toContain(text);

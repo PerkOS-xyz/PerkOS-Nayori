@@ -339,18 +339,17 @@ describe("public production language", () => {
     );
   });
 
-  it("does not send new SDK users to historical commerce defaults", () => {
+  it("sends new SDK users to the live Nayori contracts", () => {
     const quickstart = read("developer-portal/content/docs/getting-started/sdk.mdx");
     const rootQuickstart = read("README.md");
-    expect(quickstart).toContain("@perkos/agent-sdk@0.9.1");
-    expect(quickstart).toContain("agentic-commerce-v6");
-    expect(quickstart).toContain("sbtc-commerce-v5");
-    expect(quickstart).toContain("serviceFeeAcceptance");
-    expect(quickstart).toContain("stable defaults");
-    expect(rootQuickstart).toContain("agentic-commerce-v6");
-    expect(rootQuickstart).toContain("sbtc-commerce-v5");
-    expect(rootQuickstart).toContain("serviceFeeAcceptance");
-    expect(rootQuickstart).toContain("Stable SDK `0.9.1`");
+    expect(quickstart).toContain("@perkos/agent-sdk@0.10.0");
+    expect(quickstart).toContain("NayoriNextClient");
+    expect(quickstart).toContain("SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X");
+    expect(quickstart).toContain("acceptJob");
+    expect(rootQuickstart).toContain("@perkos/agent-sdk@0.10.0");
+    expect(rootQuickstart).toContain("NayoriNextClient");
+    expect(rootQuickstart).toContain("nayori-escrow-sbtc");
+    expect(rootQuickstart).toContain("SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X");
     for (const content of [
       quickstart,
       read("developer-portal/content/docs/reference/sdk.mdx"),
@@ -424,7 +423,7 @@ describe("public production language", () => {
     const autonomous = read(
       "developer-portal/content/docs/commerce/autonomous-evaluation.mdx",
     );
-    expect(autonomous).toContain("SDK contract-selection boundary");
-    expect(autonomous).toContain("v6/v5 as its stable defaults");
+    expect(autonomous).toContain("NayoriNextClient");
+    expect(autonomous).toContain("defaults to the live deployments");
   });
 });

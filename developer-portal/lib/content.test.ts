@@ -32,33 +32,49 @@ describe('versioned public references', () => {
       'utf8',
     );
     expect(overview).not.toMatch(/\b(?:M1|M2|Milestone\s*[12])\b/i);
-    expect(overview).toContain('SDK 0.9.1 · Stable npm');
-    expect(overview).toContain('CLI @perkos/nayori 0.2.0 · npm');
+    expect(overview).toContain('SDK 0.10.0 · Stable npm');
+    expect(overview).toContain('CLI @perkos/nayori 0.3.0 · npm');
   });
 
-  it('documents the autonomous appeal lifecycle as the active mainnet generation', () => {
+  it('documents the appeal lifecycle on the live mainnet contracts', () => {
     const guide = readFileSync(
       new URL('../content/docs/commerce/autonomous-evaluation.mdx', import.meta.url),
       'utf8',
     );
-    expect(guide).toContain('agentic-commerce-v6');
-    expect(guide).toContain('sbtc-commerce-v5');
+    expect(guide).toContain('nayori-escrow-sbtc');
+    expect(guide).toContain('nayori-escrow-stx');
+    expect(guide).toContain('SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X');
     expect(guide).toContain('This lifecycle is active on Stacks mainnet');
-    expect(guide).toContain('Mainnet is fixed at 144 burn blocks.');
-    expect(guide).toContain('await nayori.appealDecision');
+    expect(guide).toContain('Mainnet is fixed at 144 burn blocks');
+    expect(guide).toContain('await nayori.appeal(');
     expect(guide).toContain('await nayori.resolveAppeal');
-    expect(guide).toContain('await nayori.settleAppealTimeout');
+    expect(guide).toContain('await nayori.settleJob');
+    expect(guide).toContain('recordDefaultApproval');
   });
 
-  it('distinguishes deployed contracts from consumer and SDK release receipts', () => {
+  it('states the fixed 2% fee of the live contracts and keeps earlier jobs on their terms', () => {
     const guide = readFileSync(
       new URL('../content/docs/commerce/service-fees.mdx', import.meta.url),
       'utf8',
     );
-    expect(guide).toContain('deployed, initialized and source-verified on Stacks mainnet');
-    expect(guide).toContain('Existing v5/v4 contracts and jobs retain their');
-    expect(guide).toContain('Stable SDK 0.9.1 (npm `latest`) uses v6/v5 by default');
-    expect(guide).toContain('require separate receipts');
-    expect(guide).not.toContain('Production remains v5/v4');
+    expect(guide).toContain('2% of the budget on every');
+    expect(guide).toContain('`floor(B / 50)`');
+    expect(guide).toContain('Jobs on the earlier contracts keep their original terms');
+    expect(guide).not.toContain('serviceFeeAcceptance');
+  });
+
+  it('documents the live contracts, roles and testnet deployer in the contract reference', () => {
+    const reference = readFileSync(
+      new URL('../content/docs/reference/contracts.mdx', import.meta.url),
+      'utf8',
+    );
+    for (const text of [
+      'SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X',
+      'ST3MRPNX0VNWYRSJ07PNTASE5BZ9K5XE57ARZ39DY',
+      'SMFE58EKCK5ZPD7YCYM1CQY7K3H8SEXQH7C3YT8S',
+      'SM3950RVR364J25ZRFFNHB5TCNJ7VKPKKGD4N2RP9',
+      'nayori-escrow-sbtc', 'nayori-escrow-stx', 'nayori-agents', 'nayori-applications',
+      'nayori-reputation', 'nayori-roles', 'nayori-permissions', 'accept-job',
+    ]) expect(reference).toContain(text);
   });
 });
