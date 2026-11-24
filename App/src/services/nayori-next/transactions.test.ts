@@ -95,6 +95,8 @@ describe("next escrow payloads", () => {
     expect(() => buildCreateJob({ ...base, description: "  " }, config)).toThrow(/description/);
     expect(() => buildCreateJob({ ...base, description: "x".repeat(513) }, config)).toThrow(/512/);
     expect(() => buildCreateJob({ ...base, description: "café" }, config)).toThrow(/ASCII/);
+    const evaluable = buildCreateJob({ ...base, description: "Task\nAcceptance criteria:\n1. Done" }, config);
+    expect(evaluable.functionArgs[4]).toEqual(Cl.stringAscii("Task\nAcceptance criteria:\n1. Done"));
     expect(() => buildCreateJob({ ...base, client: EVALUATOR }, config)).toThrow(/different wallet/);
     expect(() =>
       buildCreateJob({ ...base, evaluator: "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH" }, config)

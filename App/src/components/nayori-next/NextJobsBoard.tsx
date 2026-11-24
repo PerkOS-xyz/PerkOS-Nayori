@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Bitcoin, Briefcase, History, Plus, RefreshCw, Wallet } from "lucide-react";
-import { NAYORI_NEXT, NEXT_LIMITS, type NextAsset } from "../../constants/nayori-next";
+import { NAYORI_NEXT, NEXT_LIMITS, nextEscrowContract, type NextAsset } from "../../constants/nayori-next";
 import { getNextBurnHeight, getNextJobs } from "../../services/nayori-next/reads";
 import { NEXT_STATUS, NEXT_STATUS_NAMES, type NextJob, type NextStatusName } from "../../services/nayori-next/parse";
 import {
@@ -17,7 +17,15 @@ import {
 } from "../../services/nayori-next/status";
 import { buildCreateJob } from "../../services/nayori-next/transactions";
 import { sbtcToSats, stxToMicro } from "../../utils/format";
-import { SBTC_COMMERCE_CONTRACT_NAME, STX_COMMERCE_CONTRACT_NAME } from "../../constants/contract";
+import {
+  NAYORI_EVALUATOR_ADDRESS,
+  NAYORI_MANAGED_EVALUATOR_ENABLED,
+  SBTC_COMMERCE_CONTRACT_NAME,
+  STX_COMMERCE_CONTRACT_NAME,
+} from "../../constants/contract";
+import { MAX_PLAIN_DESCRIPTION, buildEvaluableDescription } from "../../services/evaluable-jobs";
+import { JobCriteria, jobTaskText } from "../EvaluableJob";
+import { useToast } from "../Toast";
 import NextAgentPanel from "./NextAgentPanel";
 import NextPermissionsPanel from "./NextPermissionsPanel";
 import { NextAddr, NextBanner, NextStatusBadge, TxProgressBar } from "./ui";
@@ -39,9 +47,11 @@ export default function NextJobsBoard() {
   const [filter, setFilter] = useState<"all" | NextStatusName>("all");
   const [mineOnly, setMineOnly] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const toast = useToast();
   const [form, setForm] = useState({
     description: "",
-    evaluator: "",
+    criteria: "",
+    evaluator: NAYORI_EVALUATOR_ADDRESS,
     budget: "",
     deliveryBlocks: "144",
     reviewBlocks: "144",
@@ -104,19 +114,47 @@ export default function NextJobsBoard() {
   const fee = budgetUnits > 0 ? quoteNextFee(budgetUnits) : null;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  function createJob(event: React.FormEvent) {
+  const managedEvaluator = form.evaluator.trim().toUpperCase() === NAYORI_EVALUATOR_ADDRESS.toUpperCase();
+
+  async function createJob(event: React.FormEvent) {
     event.preventDefault();
+    const evaluator = form.evaluator.trim();
+    let description = form.description;
+    if (form.criteria.trim()) {
+      try {
+        // The criteria and their commitment go on-chain with the description, bound to this escrow.
+        description = (
+          await buildEvaluableDescription(
+            {
+              network: NAYORI_NEXT.network,
+              asset,
+              contract: nextEscrowContract(asset),
+              client: wallet.address,
+              evaluator,
+            },
+            form.description,
+            form.criteria
+          )
+        ).description;
+      } catch (reason) {
+        toast.error(reason instanceof Error ? reason.message : "Check the acceptance criteria.");
+        return;
+      }
+    }
     void wallet.run("create", `Create ${unit} job`, () =>
       buildCreateJob({
         asset,
-        evaluator: form.evaluator.trim(),
+        evaluator,
         budget: budgetUnits,
         deliveryBlocks: Number(form.deliveryBlocks),
         reviewBlocks: Number(form.reviewBlocks),
-        description: form.description,
+        description,
         client: wallet.address,
       }),
-      () => setShowForm(false)
+      () => {
+        setShowForm(false);
+        setForm((value) => ({ ...value, description: "", criteria: "" }));
+      }
     );
   }
 
@@ -214,6 +252,23 @@ export default function NextJobsBoard() {
               />
               <p className="mt-1 text-xs text-mist-500">Plain ASCII, up to {NEXT_LIMITS.descriptionLength} characters.</p>
             </div>
+            <div className="md:col-span-2">
+              <label className="label" htmlFor="next-criteria">Acceptance criteria (optional, one per line)</label>
+              <textarea
+                id="next-criteria"
+                className="field"
+                rows={3}
+                maxLength={MAX_PLAIN_DESCRIPTION}
+                value={form.criteria}
+                onChange={(e) => setForm({ ...form, criteria: e.target.value })}
+                placeholder={"The brief is under 150 words\nIt explains how escrow protects both parties"}
+              />
+              <p className="mt-1 text-xs text-mist-500">
+                With criteria, the job is evaluable: the criteria and their commitment are written on-chain with
+                the description, the provider submits an evidence commitment and Nayori&apos;s evaluator records the
+                decision. Task and criteria share a {MAX_PLAIN_DESCRIPTION}-character ASCII budget.
+              </p>
+            </div>
             <div>
               <label className="label" htmlFor="next-evaluator">Evaluator</label>
               <input
@@ -222,9 +277,15 @@ export default function NextJobsBoard() {
                 value={form.evaluator}
                 onChange={(e) => setForm({ ...form, evaluator: e.target.value })}
                 placeholder={NAYORI_NEXT.network === "mainnet" ? "SP..." : "ST..."}
+                readOnly={NAYORI_MANAGED_EVALUATOR_ENABLED}
                 required
               />
-              <p className="mt-1 text-xs text-mist-500">The wallet that approves or rejects the work. It must differ from yours.</p>
+              <p className="mt-1 text-xs text-mist-500">
+                {managedEvaluator
+                  ? "Nayori's evaluator approves or rejects the work against the acceptance criteria."
+                  : "The wallet that approves or rejects the work. It must differ from yours."}
+                {!NAYORI_MANAGED_EVALUATOR_ENABLED && " You may enter another evaluator whose availability you have confirmed."}
+              </p>
             </div>
             <div>
               <label className="label" htmlFor="next-budget">Budget ({unit})</label>
@@ -324,7 +385,8 @@ export default function NextJobsBoard() {
                     </Link>
                     <NextStatusBadge status={job.status} />
                   </div>
-                  <p className="mt-1 line-clamp-2 text-sm text-mist-300">{job.description}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-mist-300">{jobTaskText(job.description)}</p>
+                  <JobCriteria description={job.description} compact />
                   <p className="mt-1 text-xs text-mist-500">{NEXT_STATUS_HINTS[job.statusName]}</p>
                 </div>
                 <Link href={nextJobHref(job.id, asset)} className="btn-ghost shrink-0">Open</Link>

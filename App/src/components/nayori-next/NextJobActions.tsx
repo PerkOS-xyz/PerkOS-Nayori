@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from "react";
-import { NEXT_LIMITS } from "../../constants/nayori-next";
+import { NAYORI_NEXT, NEXT_LIMITS, nextEscrowContract } from "../../constants/nayori-next";
+import { hasCriteriaCommitment } from "../../services/evaluable-jobs";
+import { CommittedEvidenceForm } from "../EvaluableJob";
 import type { NextJobDetail } from "../../services/nayori-next/reads";
 import {
   appellantFor,
@@ -114,7 +116,25 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run }
         {button("accept", "Accept job", () => buildAcceptJob(ref))}
       </Card>
     ),
-    submit: () => (
+    submit: () => hasCriteriaCommitment(job.description) ? (
+      <Card title="Submit the work" text="This job has acceptance criteria, so Nayori's evaluator checks your evidence against them.">
+        <CommittedEvidenceForm
+          context={{
+            network: NAYORI_NEXT.network,
+            asset: job.asset,
+            contract: nextEscrowContract(job.asset),
+            client: job.client,
+            evaluator: job.evaluator,
+          }}
+          scope={nextEscrowContract(job.asset)}
+          jobId={job.id}
+          description={job.description}
+          provider={wallet}
+          busy={Boolean(busy)}
+          onSubmit={(bytes) => run("submit", "Submit work", () => buildSubmitWork({ ...ref, deliverable: bytes }))}
+        />
+      </Card>
+    ) : (
       <Card title="Submit the work" text="Enter a link, CID or short description. Its SHA-256 hash is stored on-chain as your delivery commitment.">
         <input
           className="field"

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Bitcoin, Briefcase, Coins, FileCheck2, Gavel, RefreshCw, Star } from "lucide-react";
-import type { NextAsset } from "../../constants/nayori-next";
+import { NAYORI_NEXT, nextEscrowContract, type NextAsset } from "../../constants/nayori-next";
 import {
   getNextAgent,
   getNextApplications,
@@ -23,6 +23,7 @@ import {
 } from "../../services/nayori-next/status";
 import { committedEvidenceHash } from "../../services/evaluable-jobs";
 import { formatSbtcCompact, formatStx } from "../../utils/format";
+import { EvaluationRequestPanel, JobCriteria, jobTaskText } from "../EvaluableJob";
 import NextJobActions from "./NextJobActions";
 import NextApplications from "./NextApplications";
 import { Field, NextAddr, NextBanner, NextStatusBadge, TxProgressBar } from "./ui";
@@ -122,7 +123,8 @@ export default function NextJobDetailView({ id, asset }: { id: number; asset: Ne
               <RefreshCw className="h-4 w-4" /> Refresh
             </button>
           </div>
-          <p className="mt-2 max-w-2xl whitespace-pre-line break-words text-mist-300">{job.description}</p>
+          <p className="mt-2 max-w-2xl whitespace-pre-line break-words text-mist-300">{jobTaskText(job.description)}</p>
+          <JobCriteria description={job.description} />
           <p className="mt-2 text-sm text-mist-500">{NEXT_STATUS_HINTS[job.statusName]}</p>
         </div>
       </div>
@@ -179,6 +181,22 @@ export default function NextJobDetailView({ id, asset }: { id: number; asset: Ne
           <p className="mt-2 text-sm text-mist-300">
             Review deadline: {deadlineText(submission.reviewDeadline, height, true)}
           </p>
+          <EvaluationRequestPanel
+            context={{
+              network: NAYORI_NEXT.network,
+              asset,
+              contract: nextEscrowContract(asset),
+              client: job.client,
+              evaluator: job.evaluator,
+            }}
+            scope={nextEscrowContract(asset)}
+            jobId={job.id}
+            submitted={job.status === 4}
+            description={job.description}
+            provider={job.provider}
+            deliverableHex={submission.deliverable}
+            reviewDeadlineBurn={submission.reviewDeadline}
+          />
         </div>
       )}
 

@@ -100,6 +100,11 @@ export function isPrintableAscii(value: string) {
   return /^[\x20-\x7e]*$/.test(value);
 }
 
+/** Job descriptions may also hold line breaks and tabs (acceptance criteria are one per line). */
+export function isDescriptionAscii(value: string) {
+  return /^[\x20-\x7e\n\r\t]*$/.test(value);
+}
+
 function transfer(
   asset: NextAsset,
   from: string,
@@ -167,7 +172,7 @@ export function buildCreateJob(
   const review = integer(input.reviewBlocks, "Review window", NEXT_LIMITS.reviewBlocks.min, NEXT_LIMITS.reviewBlocks.max);
   const description = input.description.trim();
   if (!description) throw new Error("Enter a job description.");
-  if (!isPrintableAscii(description)) {
+  if (!isDescriptionAscii(description)) {
     throw new Error("The description must use plain ASCII characters.");
   }
   if (description.length > NEXT_LIMITS.descriptionLength) {
