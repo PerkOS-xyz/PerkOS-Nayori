@@ -204,11 +204,12 @@ export default function TreasuryAttestationClient() {
             <span className="kicker">No transaction</span>
           </div>
           <h1 className="mt-5 text-4xl font-bold tracking-tight text-white md:text-5xl">
-            Treasury custody attestation
+            Earlier-contracts treasury attestation
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-mist-300">
-            Prove that the Leather account controls Nayori&apos;s mainnet treasury for the exact
-            service-fee release. Leather remains the signing boundary; this workflow receives only a
+            Prove that the Leather account controls the treasury of the earlier contracts for the exact
+            service-fee release. The Nayori contracts pay their fee to a Leather multisig vault, which this
+            single-signature check does not cover. Leather remains the signing boundary; this workflow receives only a
             public key and signature and never broadcasts a transaction.
           </p>
         </header>

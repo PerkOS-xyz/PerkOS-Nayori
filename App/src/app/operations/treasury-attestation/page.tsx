@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import TreasuryAttestationClient from "./TreasuryAttestationClient";
 
 export const metadata: Metadata = {
-  title: "Treasury custody attestation | Nayori",
+  title: "Earlier-contracts treasury attestation | Nayori",
   description: "Local operator workflow for Nayori treasury custody attestation.",
   referrer: "no-referrer",
   robots: {
