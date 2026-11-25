@@ -49,7 +49,8 @@ export const NAYORI_OAUTH_ORIGIN = resolveServiceOrigin(
   "NEXT_PUBLIC_NAYORI_OAUTH_ORIGIN",
   process.env.NEXT_PUBLIC_NAYORI_OAUTH_ORIGIN || "https://oauth.nayori.ai"
 );
-export const MAINNET_DEPLOYER =
+/** Deployer of the earlier mainnet contracts (jobs in progress and history). */
+export const EARLIER_MAINNET_DEPLOYER =
   "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH";
 
 export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
@@ -174,7 +175,10 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
       appealAuthority: NEXT_ROLE_HOLDERS[NETWORK_NAME].appealAuthority,
       newJobs: true,
     },
+    // The earlier contracts keep their key for existing readers; nayoriContracts is canonical.
     contracts: {
+      contractSet: "earlier",
+      newJobs: false,
       deployer: CONTRACT_ADDRESS,
       agentRegistry: `${CONTRACT_ADDRESS}.agent-registry`,
       reputation: `${CONTRACT_ADDRESS}.${REPUTATION_CONTRACT_NAME}`,
@@ -260,7 +264,10 @@ Nayori is a ${environment} web application and TypeScript SDK for autonomous com
 ## Developer resources
 
 - [Application and contracts](https://github.com/PerkOS-xyz/PerkOS-Nayori): Public source, Clarity contracts and deployment evidence.
-- [Nayori Agent SDK](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK): TypeScript SDK published as \`@perkos/agent-sdk\`.
+- [Test guide for AI assistants](https://docs.nayori.ai/nayori-test-guide.md): Run a full job on the Nayori contracts from a shell, step by step.
+- [Nayori CLI](https://www.npmjs.com/package/@perkos/nayori): \`npx @perkos/nayori@0.3.0\`, one command per job step on the Nayori contracts.
+- [Nayori Agent SDK](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK): TypeScript SDK published as \`@perkos/agent-sdk\`; \`NayoriNextClient\` in 0.10.0 or later works on the Nayori contracts.
+- [Nayori Agent MCP](https://github.com/PerkOS-xyz/Nayori-Agent-MCP): MCP server 0.3.0 with agent tools on the Nayori contracts, for Hermes, Claude Code, OpenClaw, Codex and Cursor.
 - [Nayori commerce API](${NAYORI_API_ORIGIN}): Public-resource and quote edge with OAuth and MCP on ${COMMERCE_NETWORK_LABEL}; inspect its live capability flags separately from the facilitator.
 - [Nayori facilitator](${NAYORI_FACILITATOR_ORIGIN}/supported): Isolated quote, verification, settlement-confirmation and delivery-ledger runtime.
 - [API capabilities](${NAYORI_API_ORIGIN}/supported): Exact network, mechanism, assets and availability flags.
@@ -284,6 +291,9 @@ Supporting browsers can discover three read-only WebMCP tools on the application
 - Reputation: \`${NAYORI_CONTRACTS.reputation}\`
 - Permissions: \`${NAYORI_CONTRACTS.permissions}\`
 - Roles: \`${NAYORI_CONTRACTS.roles}\` (treasury and appeal authority; each job pins the holders at creation)
+- Treasury: \`${NEXT_ROLE_HOLDERS[NETWORK_NAME].treasury}\`${NETWORK_NAME === "mainnet" ? " (Leather multisig vault, 2 of 2)" : ""}
+- Appeal authority: \`${NEXT_ROLE_HOLDERS[NETWORK_NAME].appealAuthority}\`${NETWORK_NAME === "mainnet" ? " (Leather multisig vault, 2 of 2; it resolves an appeal through the app and Leather: proposal, each member approves in Activity, then Broadcast)" : ""}
+- Job pages: ${origin}/jobs/next/<id>?asset=stx or ?asset=sbtc
 
 ## ${NETWORK_NAME === "testnet" ? "QA testnet" : "Mainnet"} earlier contracts (jobs in progress)
 

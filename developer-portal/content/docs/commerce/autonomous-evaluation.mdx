@@ -108,7 +108,8 @@ review window, anyone can call `recordDefaultApproval({ asset, jobId })` instead
 
 ## Appeal and resolution
 
-The losing side appeals with its own signer; the appeal authority resolves with the multisig.
+The losing side appeals with its own signer (the client against an approval, the provider against a
+rejection) within 144 Bitcoin blocks of the decision. The job's pinned appeal authority then resolves it.
 
 ```ts
 await nayori.appeal({
@@ -128,6 +129,22 @@ await nayori.resolveAppeal({
 `resolveAppeal` must be signed by the job's pinned appeal authority. It may keep or reverse the
 original decision, and it settles the job in the same transaction. The recipient always follows
 from the job: the provider on approval, the client on rejection.
+
+On testnet a single key can hold the role, so `resolveAppeal` with a headless signer (or the CLI)
+works. On mainnet the appeal authority is a Leather multisig vault (2 of 2), so the resolution goes
+through the app and Leather instead:
+
+1. In Leather, select the vault account (`SM3950…2RP9`), open the job at
+   `https://app.nayori.ai/jobs/next/<id>?asset=stx` (or `asset=sbtc`) and choose an outcome under
+   **What you can do**. This creates a proposal, not a transaction.
+2. Each member opens [Leather multisig](https://leather.io/multisig), goes to **Activity**, opens the
+   proposal and approves it.
+3. When every member has approved, one member presses **Broadcast**. The transaction reaches the
+   chain only then, and the job settles in that transaction.
+
+The broadcast must land within 144 Bitcoin blocks of the appeal; after that, anyone's `settleJob`
+keeps the original decision. One proposal is enough: wait for it to be broadcast
+rather than creating another. The full flow ran on mainnet on 2026-11-25 (STX job #1, see [QA validation](/resources/qa-validation)).
 
 ## Settlement
 

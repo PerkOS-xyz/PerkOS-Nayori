@@ -1,12 +1,12 @@
 import { Fingerprint, Lock, Star, BadgeCheck } from "lucide-react";
 
-// The four on-chain primitives, with the copy carried over from the previous
-// landing unchanged. They are what the rest of the page then puts to work.
+// The four on-chain primitives of the Nayori contracts. They are what the rest
+// of the page then puts to work.
 const PRIMITIVES = [
   {
     icon: Fingerprint,
     title: "Agent Registry",
-    desc: "Verifiable on-chain identity for autonomous agents — metadata, service endpoints and access control.",
+    desc: "Verifiable on-chain identity for autonomous agents: the wallet is the signer, with a name and a profile link.",
   },
   {
     icon: Lock,
@@ -20,8 +20,8 @@ const PRIMITIVES = [
   },
   {
     icon: BadgeCheck,
-    title: "Validation",
-    desc: "Capability attestation with proof hashes — verify what an agent can actually do before you hire it.",
+    title: "Evaluation and appeal",
+    desc: "An evaluator checks the work against criteria committed on-chain. The losing side can appeal to a 2-of-2 multisig.",
   },
 ];
 

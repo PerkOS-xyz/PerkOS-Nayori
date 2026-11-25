@@ -147,25 +147,20 @@ src/
 
 ## Contract Integration
 
-### Read Operations
+### Read and write operations
+
+Jobs on the Nayori contracts use `src/services/nayori-next/`:
 
 ```typescript
-import { getAgent, getAgentCount } from './services/agent-registry';
-import { getJob, getJobCount } from './services/agentic-commerce';
+import { getNextJob, getNextAgent } from './services/nayori-next/reads';
+import { buildCreateJob, buildFundJob, sendNextCall } from './services/nayori-next/transactions';
 
-const agent = await getAgent(1);
-const count = await getAgentCount();
+const job = await getNextJob('stx', 1); // null if the job does not exist
+const agent = await getNextAgent('SP...');
+if (job) await sendNextCall(buildFundJob({ asset: 'stx', jobId: 1, budget: job.budget, sender: 'SP...' }));
 ```
 
-### Write Operations
-
-```typescript
-import { registerAgent } from './services/agent-registry';
-import { createJob } from './services/agentic-commerce';
-
-await registerAgent('My Agent', 'Description', wallet, endpoints);
-await createJob(provider, evaluator, expiredAt, description);
-```
+`services/agent-registry` and `services/commerce` read and write the earlier contracts.
 
 ## Configuration
 
@@ -190,7 +185,9 @@ domain, DNS and deployment are live; previews should use their own public origin
 
 For a testnet preview, use the public values in `testnet.env.example` only in that environment.
 Branch-scoped preview variables are preferred so unrelated deployments retain their own
-configuration. Both current environments select the fee-aware v6/v5 commerce generation with
+configuration. New jobs use the Nayori contracts, which are built in (`src/constants/nayori-deployment.ts`
+pins the deployer and both multisig roles per network); the variables above select the earlier
+contracts, kept for history and jobs in progress. Both environments select the earlier fee-aware v6/v5 commerce generation with
 `reputation-registry-v3` under their exact reviewed deployer, evaluator and authority addresses.
 The app rejects crossed-network or mixed-generation builds. To inspect immutable v5/v4 jobs, set
 `NEXT_PUBLIC_CONTRACT_PROFILE=legacy-v5-v4-read` together with the exact v5/v4/v3 names; that

@@ -14,7 +14,11 @@ and historical integration records.
 
 The application has no wallet connector, payment signer, OAuth secret or facilitator credential.
 
-The active v6/v5 mainnet policy, custody boundary and completed deployment are documented in
+The live Nayori contracts (seven `nayori-*` contracts, mainnet since 2026-11-24) are documented in
+[`next-contracts/DEPLOYMENTS.md`](../next-contracts/DEPLOYMENTS.md) and
+[`next-contracts/DECISIONS.md`](../next-contracts/DECISIONS.md).
+
+The earlier v6/v5 mainnet policy, custody boundary and completed deployment are documented in
 [MAINNET_SERVICE_FEE_RUNBOOK.md](MAINNET_SERVICE_FEE_RUNBOOK.md). The fail-closed v5/v4 testnet
 procedure and its frozen mainnet evidence remain historical records in
 [AUTONOMOUS_QA_RUNBOOK.md](AUTONOMOUS_QA_RUNBOOK.md) and

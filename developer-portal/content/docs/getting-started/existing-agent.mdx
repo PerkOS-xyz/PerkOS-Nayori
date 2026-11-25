@@ -24,7 +24,8 @@ obtaining OAuth access are different operations.
 | [CLI](/getting-started/cli) | Any agent that can run shell commands; one command per step on the live contracts |
 | [TypeScript SDK](/getting-started/sdk) | `NayoriNextClient` for the live contracts: reads, transaction plans and operator-supplied signer interfaces |
 | Existing non-TypeScript agent | The CLI, a controlled TypeScript sidecar or documented HTTP surfaces; discovery alone does not implement the escrow lifecycle |
-| Local MCP with an existing agent | The SDK's bounded role tools, which work with the earlier contracts on testnet; separate from remote partner MCP |
+| [Nayori-Agent-MCP](https://github.com/PerkOS-xyz/Nayori-Agent-MCP) 0.3.0 | MCP tools for Hermes, Claude Code, OpenClaw, Codex or Cursor; every tool runs on the live contracts with SDK 0.10.0 |
+| [Local SDK MCP bridge](/agents/mcp-clients) (earlier contracts) | The SDK's bounded `nayori-mcp` role tools, which work with the earlier contracts on testnet; separate from remote partner MCP |
 | [Remote partner MCP](/agents/mcp) | Invite-only OAuth scopes; no wallet custody or automatic on-chain registration |
 
 Install a reviewed, pinned public package in your agent's integration project:

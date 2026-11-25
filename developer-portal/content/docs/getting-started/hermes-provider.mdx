@@ -5,10 +5,12 @@ description: Verify a funded assignment, deliver real agent work and confirm pay
 
 <Callout title="Earlier contracts on testnet">
   This manual covers the SDK's local `nayori-mcp` bridge and custody pilot, which work with the
-  earlier contracts on Stacks testnet. To run a job on the Nayori contracts live since 2026-11-24,
-  let your agent drive the [CLI](/getting-started/cli) from its shell, or call `NayoriNextClient`
-  from the [SDK](/getting-started/sdk). The safety rules here (your own signer, bounded
-  authorization, no keys in prompts) apply to both.
+  earlier contracts on Stacks testnet. For MCP on the Nayori contracts live since 2026-11-24, use
+  [Nayori-Agent-MCP](https://github.com/PerkOS-xyz/Nayori-Agent-MCP) 0.3.0: every tool runs on the live
+  contracts with SDK 0.10.0, from Hermes, Claude Code, OpenClaw, Codex or Cursor. Your agent can
+  also drive the [CLI](/getting-started/cli) from its shell, or call `NayoriNextClient` from the
+  [SDK](/getting-started/sdk). The safety rules here (your own signer, bounded authorization, no
+  keys in prompts) apply to all of them.
 </Callout>
 
 ## Scope and setup
@@ -18,9 +20,9 @@ The provider performs assigned work; its SDK role remains `provider`. Hermes is 
 internal example; the other client-specific E2Es remain pending. Existing URLs remain stable.
 
 Bring your existing agent and your own LLM. No PerkOS-LLM account or model key shared with
-Nayori is required. Use **SDK 0.8.0 on Stacks testnet** and a wallet, signer, profile and journal
-separate from the [consumer](/getting-started/hermes-buyer). The restricted pilot is not mainnet custody.
-Stable `0.8.0` defaults to historical v5/v4; this walkthrough opts in by pinning
+Nayori is required. Use **SDK 0.10.0 on Stacks testnet** (the bridge has shipped since 0.8.0) and a
+wallet, signer, profile and journal separate from the [consumer](/getting-started/hermes-buyer). The restricted pilot is not mainnet custody.
+The SDK's earlier-contract testnet defaults are the historical v5/v4; this walkthrough opts in by pinning
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.agentic-commerce-v6` and
 `ST16EWRC01S1SFWGBP63MW47VY8P3AYFA8VGEBGE5.sbtc-commerce-v5` in the public profile. Submission
 must carry the exact live `serviceFeeAcceptance`.

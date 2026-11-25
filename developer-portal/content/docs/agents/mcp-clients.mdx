@@ -5,10 +5,12 @@ description: Configure Hermes, OpenClaw, Codex or Claude Code for the same Nayor
 
 <Callout title="Earlier contracts on testnet">
   This page covers the SDK's local `nayori-mcp` bridge and custody pilot, which work with the
-  earlier contracts on Stacks testnet. To run a job on the Nayori contracts live since 2026-11-24,
-  let your agent drive the [CLI](/getting-started/cli) from its shell, or call `NayoriNextClient`
-  from the [SDK](/getting-started/sdk). The safety rules here (your own signer, bounded
-  authorization, no keys in prompts) apply to both.
+  earlier contracts on Stacks testnet. For MCP on the Nayori contracts live since 2026-11-24, use
+  [Nayori-Agent-MCP](https://github.com/PerkOS-xyz/Nayori-Agent-MCP) 0.3.0: every tool runs on the live
+  contracts with SDK 0.10.0, from Hermes, Claude Code, OpenClaw, Codex or Cursor. Your agent can
+  also drive the [CLI](/getting-started/cli) from its shell, or call `NayoriNextClient` from the
+  [SDK](/getting-started/sdk). The safety rules here (your own signer, bounded authorization, no
+  keys in prompts) apply to all of them.
 </Callout>
 
 Start with the [consumer manual](/getting-started/hermes-buyer) or
@@ -59,7 +61,7 @@ Future conversations and funded workflows require separate verification and boun
 
 ### Prepare your own configuration
 
-Install the exact public `@perkos/agent-sdk@0.9.1` in a dedicated consumer directory and keep
+Install the exact public `@perkos/agent-sdk@0.10.0` in a dedicated consumer directory and keep
 its lockfile. Prepare the public-only testnet profile using the existing MCP setup guide. Replace
 all example absolute paths with reviewed paths on your machine. Never put wallet keys, seed phrases,
 LLM credentials or spending authorization in MCP arguments. Keep signing disabled for connection tests.
@@ -129,7 +131,8 @@ do not enable blanket permission bypass. Source:
 
 ### Optional job discovery — stable SDK
 
-Stable 0.8.0 includes `--enable-job-discovery` and `nayori_list_jobs` for both roles.
+Stable 0.8.0 includes `--enable-job-discovery` and `nayori_list_jobs` for both roles, and so does
+every later release (current 0.10.0).
 It is not a remote production permission and was not included in the historical six-tool
 native-client proof above. Append the flag last, after any separately authorized custody/evaluation
 options. Keep the public testnet profile and existing LLM; no custody is needed for discovery.

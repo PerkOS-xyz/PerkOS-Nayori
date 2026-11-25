@@ -24,4 +24,10 @@ export const NAYORI_FUNCTION_LABELS: Record<string, { label: string; category: A
   withdraw: { label: "Application withdrawn", category: "jobs" },
   decline: { label: "Application declined", category: "jobs" },
   release: { label: "Application deposit released", category: "jobs" },
+  "allow-contract-caller": { label: "Contract allowed to act for a party", category: "agents" },
+  "disallow-contract-caller": { label: "Contract allowance removed", category: "agents" },
+  // Role handovers change the treasury or appeal authority pinned on new jobs.
+  "propose-handover": { label: "Role handover proposed", category: "jobs" },
+  "cancel-handover": { label: "Role handover cancelled", category: "jobs" },
+  "accept-handover": { label: "Role handover accepted", category: "jobs" },
 };

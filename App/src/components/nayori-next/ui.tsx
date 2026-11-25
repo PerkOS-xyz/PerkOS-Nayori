@@ -64,7 +64,7 @@ const STATE_TEXT: Record<NextTxProgress["state"], string> = {
   awaiting: "Waiting for the wallet",
   submitted: "Submitted",
   pending: "Pending",
-  proposed: "Waiting for the second signature",
+  proposed: "Proposal created: approve it in Leather multisig, then Broadcast",
   confirmed: "Confirmed",
   failed: "",
 };

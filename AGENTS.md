@@ -37,20 +37,37 @@ Help Nayori — PerkOS Stacks Agentic Commerce:
 Before writing technical content, read/use:
 - `README.md`
 - `STATUS.md`
-- `DEPLOYMENT.md`
-- `contracts/agent-registry-README.md`
-- `contracts/agentic-commerce-README.md`
+- `next-contracts/README.md`
+- `next-contracts/DEPLOYMENTS.md`
+- `next-contracts/DECISIONS.md`
+- `docs/DEPLOYMENT.md`
+- `developer-portal/content/docs/` (the docs.nayori.ai pages)
 
 ## Contracts
 
-- **Agent Registry** (`agent-registry.clar`): Identity registry for AI agents with upgradability
-- **Agentic Commerce** (`agentic-commerce.clar`): Job escrow with 6 states, x402 compatible
-- **Agent Registry Implementation** (`agent-registry-impl.clar`): Logic implementation
-- **Agentic Commerce Implementation** (`agentic-commerce-impl.clar`): Logic implementation
+The live contracts are the seven Clarity 6 contracts in `next-contracts/contracts/`, deployed on
+Stacks mainnet on 2026-11-24 by `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X`. None has an owner or
+admin function; the fee is 2% of the budget on every evaluated settlement, and refunds carry no fee.
+
+- **`nayori-escrow-sbtc`**: sBTC job escrow: create, fund, offer, accept, submit, decide, appeal,
+  settle, refund
+- **`nayori-escrow-stx`**: the same lifecycle for STX
+- **`nayori-roles`**: treasury and appeal authority, each a 2-of-2 Leather multisig vault, with a
+  two-step handover after 144 Bitcoin blocks
+- **`nayori-permissions`**: opt-in permission for a contract to act for a party, per target
+  contract, with an optional expiry
+- **`nayori-reputation`**: raw outcomes per provider, written only by the two escrows
+- **`nayori-agents`**: agent registry; the wallet is the agent's identity
+- **`nayori-applications`**: capped application list per sBTC job, sorted by deposit
+
+The contracts in `contracts/` (`agent-registry`, `agentic-commerce-v3` to `v6`,
+`sbtc-commerce-v2` to `v5`, `reputation-registry-v3`, `job-applications-v1` and the rest, under
+`SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` on mainnet) are the earlier contracts. They hold no
+funds now and are kept as history; their notes are in `contracts/*-README.md`.
 
 ## Tech Stack
 
-- **Smart Contracts**: Clarity (Stx) with upgradability pattern
+- **Smart Contracts**: Clarity 6, no owner or admin functions
 - **Frontend**: Next.js (App Router)
-- **Wallet**: Hiro Wallet, Leather
-- **Payments**: STX via x402
+- **Wallet**: Leather (browser), named CLI wallets and policy signers (agents)
+- **Payments**: STX and sBTC job escrow; x402 and MPP direct payments

@@ -1,8 +1,60 @@
 # Nayori — PerkOS Stacks Agentic Commerce: Project Status
 
-Last verified: 2026-09-23 UTC
+Last verified: 2026-11-25 UTC
 
-## Current status
+## Live Nayori contracts (2026-11-24)
+
+New jobs run on seven Clarity 6 contracts deployed on Stacks mainnet on 2026-11-24 by
+`SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X`. The deployer has no powers over them, and no
+contract has an owner or admin function: the token, fee, limits and reputation writers are fixed
+in code.
+
+| Component | Contract |
+| --- | --- |
+| STX escrow | `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X.nayori-escrow-stx` |
+| sBTC escrow | `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X.nayori-escrow-sbtc` |
+| Roles (treasury, appeal authority) | `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X.nayori-roles` |
+| Permissions | `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X.nayori-permissions` |
+| Reputation | `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X.nayori-reputation` |
+| Agent identity | `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X.nayori-agents` |
+| Job applications | `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X.nayori-applications` |
+
+- Treasury: `SMFE58EKCK5ZPD7YCYM1CQY7K3H8SEXQH7C3YT8S`, a Leather multisig vault, 2 of 2.
+- Appeal authority: `SM3950RVR364J25ZRFFNHB5TCNJ7VKPKKGD4N2RP9`, a Leather multisig vault, 2 of 2.
+- Both roles are pinned to each job at creation. A handover takes two steps, waits 144 Bitcoin
+  blocks and applies to new jobs only.
+- Fee: budget/50 (2%) to the treasury on every settlement; the other 98% goes to the provider on
+  approval or to the client on rejection.
+- Windows: review window 12 to 1,008 Bitcoin blocks, chosen at creation; appeal and resolution
+  windows 144 Bitcoin blocks each.
+- Job sizes in the app: STX 1 to 100,000 STX; sBTC 1,000 to 100,000,000 sats.
+- Testnet deployer: `ST3MRPNX0VNWYRSJ07PNTASE5BZ9K5XE57ARZ39DY` (36/36 end-to-end checks).
+- Tools: CLI `@perkos/nayori@0.3.0` on `@perkos/agent-sdk@0.10.0` (npm `latest`), and
+  [Nayori-Agent-MCP](https://github.com/PerkOS-xyz/Nayori-Agent-MCP) 0.3.0, which pins SDK 0.10.0
+  and runs every tool on the live contracts.
+- App job URLs: `https://app.nayori.ai/jobs/next/<id>?asset=stx|sbtc`.
+
+Deploy transactions, blocks and the source check are in
+[`next-contracts/DEPLOYMENTS.md`](next-contracts/DEPLOYMENTS.md); the design choices are in
+[`next-contracts/DECISIONS.md`](next-contracts/DECISIONS.md).
+
+### Mainnet run on the live contracts: 2026-11-25 UTC
+
+A team-operated STX job #1 with a 1 STX budget ran the full path on mainnet, including an appeal
+resolved by the 2-of-2 appeal authority vault from the app and Leather. The resolution paid
+0.98 STX to the provider and 0.02 STX to the treasury vault in the same transaction. Every
+transaction is listed in
+[QA validation](developer-portal/content/docs/resources/qa-validation.mdx#mainnet-run-on-the-live-contracts-2026-11-25).
+The actors are team wallets, so this is operability evidence rather than external adoption.
+
+## Status history: earlier contracts (hold no funds)
+
+The entries below describes the earlier contracts by `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH`
+(`agentic-commerce-v6`, `sbtc-commerce-v5`, `reputation-registry-v3`, `agent-registry` and their
+predecessors), the earlier treasury `SP1NT1V4X6GQR6T32Z8MSMNECZ6GSWX9HZ81SM1Y8` and the earlier
+appeal authority `SP2R584GC8W2A921080TY8CQ8P1GZ6JNXYXS65DA6`. They hold no funds now and are kept
+as history. Words such as "current", "active" or "production" in these entries refer to their
+verification dates.
 
 ### Production private evidence and managed Evaluator — 2026-09-23 UTC
 
@@ -14,7 +66,7 @@ and Evaluator are healthy with zero restarts; the worker is running with
 zero restarts. The API is the only S3-enabled role, and the facilitator
 keeps private-evidence storage disabled.
 
-`/readyz` reports `production` / Stacks mainnet /
+At that date, `/readyz` (earlier contracts) reported `production` / Stacks mainnet /
 `agentic-commerce-v6` / `sbtc-commerce-v5`, earned-fee 200 bps,
 evaluator principal `SP3GRG5CKEFNYM5BV0NPPHCM51FT176JQ02QWQ9T3`,
 `mainnetBroadcastEnabled=true`, `privateEvidenceEnabled=true` and
@@ -220,10 +272,10 @@ partner access remains invite-only. QA retains testnet identities and challenges
 The new direct-payment panel and `/api/payments.json` require the opt-in facilitator feed to be
 enabled after QA merge/validation. The existing live escrow counters do not index these transfers.
 
-### Active service-fee escrow release
+### Earlier service-fee escrow release (hold no funds)
 
-`reputation-registry-v3`, `agentic-commerce-v6` and `sbtc-commerce-v5` are the active mainnet
-generation. The escrow contracts use a fixed 12 Bitcoin burn-block review window, evidence-backed
+`reputation-registry-v3`, `agentic-commerce-v6` and `sbtc-commerce-v5` were the active mainnet
+generation until the live Nayori contracts of 2026-11-24. The escrow contracts use a fixed 12 Bitcoin burn-block review window, evidence-backed
 pending decisions, a 144-burn-block appeal window, human resolution, permissionless timeout
 liveness and durable reputation retry. Evaluated settlements split the gross budget into 98% for
 the economic recipient and 2% for the job-pinned treasury; sBTC funding pins the exact canonical
@@ -263,7 +315,9 @@ token pinning, reputation retry and authority fallback. Mainnet deployment/confi
 with seven successful transactions. Controlled STX and sBTC appeal reversals passed 47/47 and
 50/50 checks, followed by a 75/75 signer-free public postcheck.
 
-## Mainnet contracts
+## Earlier mainnet contracts (hold no funds)
+
+The live contracts are listed at the top of this file.
 
 | Component | Contract |
 | --- | --- |
@@ -277,7 +331,7 @@ with seven successful transactions. Controlled STX and sBTC appeal reversals pas
 The prior v5/v4 and v2/v2 generations remain immutable historical evidence but are not defaults
 for new jobs.
 
-## Verified wiring
+## Verified wiring (earlier contracts, hold no funds)
 
 - `sbtc-commerce-v5` accepts only canonical mainnet sBTC:
   `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token`.
@@ -332,9 +386,10 @@ npm run verify:mainnet
 ## Milestone status
 
 - Milestone 1 is approved and complete. Its contracts and transaction evidence remain unchanged;
-  the active generation is documented as a later security and liveness improvement.
+  the earlier v6/v5 generation and the live Nayori contracts of 2026-11-24 are later security and
+  liveness improvements.
 - Milestone 2 is in progress in the independent `PerkOS-Nayori-Agent-SDK` repository. The public
-  `@perkos/agent-sdk@0.8.0` package, signer adapters, testnet lifecycle, x402 v2 foundation and MPP
+  `@perkos/agent-sdk` package (0.10.0 today), signer adapters, testnet lifecycle, x402 v2 foundation and MPP
   PaymentAuth USDCx profile are available.
 - The invite-only API adds wallet-linked OAuth and authenticated MCP to the mainnet confirmation
   and delivery-ledger path. OAuth authorizes API access but cannot sign a payment.

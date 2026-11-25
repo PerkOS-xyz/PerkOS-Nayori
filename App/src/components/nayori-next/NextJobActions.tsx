@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from "react";
-import { NAYORI_NEXT, NEXT_LIMITS, isMultisigAddress, nextEscrowContract } from "../../constants/nayori-next";
-import { LEATHER_MULTISIG_URL } from "../../services/nayori-next/multisig";
-import type { NextRun, NextRunOptions } from "./useNextWallet";
+import { useEffect, useState } from "react";
+import { NAYORI_NEXT, NEXT_HIRO_API, NEXT_LIMITS, isMultisigAddress, nextEscrowContract } from "../../constants/nayori-next";
+import { LEATHER_MULTISIG_URL, MULTISIG_STEPS } from "../../services/nayori-next/multisig";
+import { forgetPendingProposal, readPendingProposal, rememberPendingProposal } from "../../services/nayori-next/pending-proposal";
+import type { NextRun, NextRunOptions, NextTxProgress } from "./useNextWallet";
 import { hasCriteriaCommitment } from "../../services/evaluable-jobs";
 import { CommittedEvidenceForm } from "../EvaluableJob";
 import type { NextJobDetail } from "../../services/nayori-next/reads";
@@ -41,10 +42,12 @@ interface Props {
   burnHeight: number;
   busy: string | null;
   run: NextRun;
+  /** The wallet's latest transaction, so a multisig proposal replaces the form it came from. */
+  progress?: NextTxProgress | null;
 }
 
 /** The actions the connected wallet can take on this job now, one card each. */
-export default function NextJobActions({ detail, wallet, burnHeight, busy, run }: Props) {
+export default function NextJobActions({ detail, wallet, burnHeight, busy, run, progress }: Props) {
   const { job } = detail;
   const actions = nextJobActions({
     job,
@@ -60,23 +63,89 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run }
   const [deliverable, setDeliverable] = useState("");
   const [note, setNote] = useState("");
   const [score, setScore] = useState(5);
+  // A proposal created earlier in this browser for this job (read after mount: storage is client-only).
+  const [storedProposal, setStoredProposal] = useState<string | null>(null);
+  useEffect(() => {
+    if (job.status !== 6) {
+      forgetPendingProposal(job.asset, job.id);
+      setStoredProposal(null);
+      return;
+    }
+    const stored = readPendingProposal(job.asset, job.id);
+    setStoredProposal(stored?.action ?? null);
+    // A broadcast proposal that failed on chain leaves the job disputed: show the buttons again.
+    if (stored?.txid) {
+      let live = true;
+      fetch(`${NEXT_HIRO_API}/extended/v1/tx/${stored.txid}`)
+        .then((response) => (response.ok ? response.json() : null))
+        .then((tx) => {
+          if (live && typeof tx?.tx_status === "string" && tx.tx_status.startsWith("abort")) {
+            forgetPendingProposal(job.asset, job.id);
+            setStoredProposal(null);
+          }
+        })
+        .catch(() => {});
+      return () => {
+        live = false;
+      };
+    }
+  }, [job.asset, job.id, job.status]);
+  // Keep the remembered proposal in step with this visit: record its id, drop it if it failed.
+  useEffect(() => {
+    if (progress?.key !== "resolve-appeal") return;
+    if (progress.state === "proposed" && progress.txid) {
+      rememberPendingProposal(job.asset, job.id, "resolve-appeal", progress.txid);
+    } else if (progress.state === "failed") {
+      forgetPendingProposal(job.asset, job.id);
+      setStoredProposal(null);
+    }
+  }, [progress, job.asset, job.id]);
   const ref = { asset: job.asset, jobId: job.id };
   const amount = (value: number) => formatNextAmount(value, job.asset);
   const parties = [job.client, job.evaluator, job.treasury, job.appealAuthority];
   const isBusy = (key: NextActionKey) => busy === key;
 
+  const resolutionDeadline = detail.decision?.resolutionDeadline;
+  // An appealed job waits for its appeal authority. When that is a Leather multisig, its members
+  // may be connected with their own accounts, which have nothing to sign here: say where they act.
+  // Past the resolution deadline the vault can no longer resolve; anyone settles with the original decision.
+  const resolutionOpen = resolutionDeadline !== undefined && burnHeight > 0 && burnHeight <= resolutionDeadline;
+  const awaitingAuthority = job.status === 6 && resolutionOpen && !actions.includes("resolve-appeal");
+  const resolutionClosedNote =
+    job.status === 6 && resolutionDeadline !== undefined && burnHeight > resolutionDeadline ? (
+      <p className="text-xs text-mist-500 md:col-span-2">
+        The resolution window ended at Bitcoin block {resolutionDeadline.toLocaleString("en-US")}. The original decision
+        stands, and anyone can settle the job.
+      </p>
+    ) : null;
+  const authorityGuide = awaitingAuthority && isMultisigAddress(job.appealAuthority) ? (
+    <AppealAuthorityGuide authority={job.appealAuthority} deadline={resolutionDeadline} height={burnHeight} />
+  ) : null;
+
   if (actions.length === 0) {
     return (
-      <p className="text-sm text-mist-500">
-        {wallet
-          ? "Nothing for this wallet to do on this job right now."
-          : "Connect a wallet to see the steps you can take."}
-      </p>
+      <div className="grid gap-4">
+        {authorityGuide}
+        {resolutionClosedNote}
+        <p className="text-sm text-mist-500">
+          {wallet
+            ? "This wallet is up to date on this job."
+            : "Connect a wallet to see the steps you can take."}
+        </p>
+      </div>
     );
   }
 
   const multisig = isMultisigAddress(wallet);
-  const resolutionDeadline = detail.decision?.resolutionDeadline;
+  // The action whose proposal is waiting in Leather multisig, if any: from this visit, or remembered.
+  const proposed = (progress?.state === "proposed" ? progress.key : undefined) ?? (multisig ? storedProposal ?? undefined : undefined);
+  const afterResolve = () => {
+    setNote("");
+    if (multisig) {
+      rememberPendingProposal(job.asset, job.id, "resolve-appeal");
+      setStoredProposal("resolve-appeal");
+    }
+  };
   const button = (
     key: NextActionKey,
     label: string,
@@ -188,6 +257,26 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run }
     ),
     "resolve-appeal": () => {
       const options: NextRunOptions = { deadline: resolutionDeadline, height: burnHeight };
+      if (proposed === "resolve-appeal") {
+        return (
+          <Card
+            title="Proposal created"
+            text="Your resolution is waiting in Leather multisig. One proposal is enough: wait for this one to be broadcast. Other browsers do not see it here, so members check Activity in Leather first."
+          >
+            <MultisigSteps deadline={resolutionDeadline} height={burnHeight} />
+            <button
+              type="button"
+              className="self-start text-xs text-mist-500 underline"
+              onClick={() => {
+                forgetPendingProposal(job.asset, job.id);
+                setStoredProposal(null);
+              }}
+            >
+              Proposal cancelled or failed? Create a new one
+            </button>
+          </Card>
+        );
+      }
       return (
         <Card
           title="Resolve the appeal"
@@ -197,9 +286,9 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run }
           <EvidenceInput value={note} onChange={setNote} />
           <div className="flex flex-wrap gap-2">
             {button("resolve-appeal", "Approve and pay the provider", async () =>
-              buildResolveAppeal({ ...ref, budget: job.budget, decision: "approve", resolutionHash: await evidenceHashFrom(note) }), () => setNote(""), "btn-primary", options)}
+              buildResolveAppeal({ ...ref, budget: job.budget, decision: "approve", resolutionHash: await evidenceHashFrom(note) }), afterResolve, "btn-primary", options)}
             {button("resolve-appeal", "Reject and return to the client", async () =>
-              buildResolveAppeal({ ...ref, budget: job.budget, decision: "reject", resolutionHash: await evidenceHashFrom(note) }), () => setNote(""), "btn-ghost", options)}
+              buildResolveAppeal({ ...ref, budget: job.budget, decision: "reject", resolutionHash: await evidenceHashFrom(note) }), afterResolve, "btn-ghost", options)}
           </div>
         </Card>
       );
@@ -249,10 +338,11 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run }
       {actions.map((key) => (
         <div key={key}>{cards[key]()}</div>
       ))}
-      {job.status === 6 && !actions.includes("resolve-appeal") && wallet && (
+      {authorityGuide && <div className="md:col-span-2">{authorityGuide}</div>}
+      {resolutionClosedNote}
+      {awaitingAuthority && !authorityGuide && wallet && (
         <p className="text-xs text-mist-500 md:col-span-2">
-          The appeal authority pinned on this job, {shortAddr(job.appealAuthority)}
-          {isMultisigAddress(job.appealAuthority) ? " (a Leather multisig account)" : ""}, resolves the appeal.
+          The appeal authority pinned on this job, {shortAddr(job.appealAuthority)}, resolves the appeal.
         </p>
       )}
       {detail.decision && job.status === 5 && !actions.includes("appeal") && wallet && (
@@ -276,15 +366,52 @@ function Card({ title, text, children }: { title: string; text: string; children
   );
 }
 
-/** For a Leather multisig signer: the call becomes a proposal that the second member approves. */
+/** For a Leather multisig signer: the call becomes a proposal that every member approves, then one member broadcasts. */
 function MultisigNote({ deadline }: { deadline?: number }) {
   return (
     <p className="rounded-lg border border-violet-500/25 bg-violet-500/[0.06] px-3 py-2 text-xs text-violet-200">
-      This account is a Leather multisig. Your request becomes a proposal, and the other member approves it at{" "}
-      <a href={LEATHER_MULTISIG_URL} target="_blank" rel="noreferrer" className="underline">leather.io/multisig</a>.
-      It is broadcast and settles the job once both have signed
-      {deadline ? `, before Bitcoin block ${deadline.toLocaleString("en-US")}` : ""}.
+      This account is a Leather multisig. Your choice becomes a proposal. Each member then approves it at{" "}
+      <a href={LEATHER_MULTISIG_URL} target="_blank" rel="noreferrer" className="underline">leather.io/multisig</a>{" "}
+      (Activity), and one member presses Broadcast
+      {deadline ? ` before Bitcoin block ${deadline.toLocaleString("en-US")}` : ""}. The job settles when it lands on chain.
     </p>
+  );
+}
+
+/** The steps in Leather multisig, numbered, with the deadline while it is ahead. */
+function MultisigSteps({ deadline, height }: { deadline?: number; height: number }) {
+  const ahead = deadline !== undefined && deadline >= height;
+  return (
+    <div className="flex flex-col gap-2 text-sm text-mist-300">
+      <ol className="list-decimal space-y-1 pl-5">
+        {MULTISIG_STEPS.map((step) => <li key={step}>{step}</li>)}
+      </ol>
+      {ahead && (
+        <p className="text-xs text-mist-400">
+          Deadline: Bitcoin block {deadline.toLocaleString("en-US")} ({(deadline - height).toLocaleString("en-US")} blocks left, about{" "}
+          {Math.max(1, Math.round(((deadline - height) * 10) / 60))} hours). If it passes, the original decision stands.
+        </p>
+      )}
+      <a href={LEATHER_MULTISIG_URL} target="_blank" rel="noreferrer" className="btn-ghost self-start">
+        Open Leather multisig
+      </a>
+    </div>
+  );
+}
+
+/** Shown on an appealed job whose appeal authority is a Leather multisig, to any visitor. */
+function AppealAuthorityGuide({ authority, deadline, height }: { authority: string; deadline?: number; height: number }) {
+  return (
+    <div className="card flex flex-col gap-3 border-violet-500/25 p-5">
+      <div>
+        <p className="font-semibold text-white">Waiting for the appeal authority</p>
+        <p className="mt-1 text-sm text-mist-400">
+          The appeal authority on this job, {shortAddr(authority)}, is a Leather multisig. A member selects that account in
+          Leather and chooses an outcome under &ldquo;What you can do&rdquo; on this page, which creates a proposal. Then:
+        </p>
+      </div>
+      <MultisigSteps deadline={deadline} height={height} />
+    </div>
   );
 }
 
