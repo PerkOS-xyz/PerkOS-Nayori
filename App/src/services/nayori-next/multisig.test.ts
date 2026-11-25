@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LEATHER_MULTISIG_URL, proposalNotice, walletOutcome } from "./multisig";
+import { LEATHER_MULTISIG_URL, MULTISIG_STEPS, proposalNotice, walletOutcome } from "./multisig";
 
 const AUTHORITY = "SM3950RVR364J25ZRFFNHB5TCNJ7VKPKKGD4N2RP9";
 const TEST_MULTISIG = "SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1";
@@ -22,13 +22,16 @@ describe("multisig wallet answers", () => {
     expect(walletOutcome(SINGLE, {})).toEqual({ kind: "missing" });
   });
 
-  it("says plainly that the second member approves in Leather multisig", () => {
+  it("says plainly that every member approves in Activity and one member broadcasts", () => {
     expect(LEATHER_MULTISIG_URL).toBe("https://leather.io/multisig");
     const text = proposalNotice("Resolve the appeal", { block: 970_288, height: 970_200 });
-    expect(text).toMatch(/needs the second signature in Leather multisig/);
-    expect(text).toMatch(/leather\.io\/multisig/);
-    expect(text).toMatch(/appears on chain/);
+    expect(text).toMatch(/is now a proposal in Leather multisig/);
+    expect(text).toMatch(/Activity/);
+    expect(text).toMatch(/approves it/);
+    expect(text).toMatch(/presses Broadcast/);
+    expect(text).toMatch(/reaches the chain only then/);
     expect(text).toMatch(/before Bitcoin block 970,288/);
     expect(proposalNotice("Resolve the appeal")).not.toMatch(/before Bitcoin block/);
+    expect(MULTISIG_STEPS).toHaveLength(2);
   });
 });

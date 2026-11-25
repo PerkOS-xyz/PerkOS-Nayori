@@ -21,9 +21,19 @@ export function walletOutcome(signer: string, response: unknown): WalletOutcome 
   return txid ? { kind: "broadcast", txid } : { kind: "missing" };
 }
 
-/** Plain text for a proposal waiting for the second signature. */
+/**
+ * The steps a Leather multisig account follows after it creates a proposal, as observed on mainnet:
+ * every member approves it in Leather multisig, then one member broadcasts it. Nothing reaches the
+ * chain before the broadcast.
+ */
+export const MULTISIG_STEPS = [
+  "Each member opens Leather multisig, goes to Activity, opens the proposal and approves it.",
+  "When every member has approved, one member presses Broadcast. The transaction reaches the chain only then.",
+] as const;
+
+/** Plain text for a proposal that still needs the members' approvals and the broadcast. */
 export function proposalNotice(label: string, deadline?: { block: number; height: number }): string {
-  const base = `${label} needs the second signature in Leather multisig. Once the other member approves it at leather.io/multisig, it is broadcast and appears on chain.`;
+  const base = `${label} is now a proposal in Leather multisig. ${MULTISIG_STEPS.join(" ")}`;
   if (!deadline || !deadline.block) return base;
-  return `${base} Approve it before Bitcoin block ${deadline.block.toLocaleString("en-US")}.`;
+  return `${base} Broadcast it before Bitcoin block ${deadline.block.toLocaleString("en-US")}.`;
 }

@@ -16,8 +16,10 @@ import { useToast } from "../Toast";
 export type NextTxProgress = {
   state: "awaiting" | "submitted" | "pending" | "proposed" | "confirmed" | "failed";
   label: string;
+  /** The action that started this transaction, so the page can show its proposal state. */
+  key?: string;
   txid?: string;
-  /** Extra plain text, used for multisig proposals waiting for the second signature. */
+  /** Extra plain text, used for multisig proposals waiting for the members and the broadcast. */
   note?: string;
 };
 
@@ -42,8 +44,9 @@ const PROPOSAL_MAX_POLLS = 90;
 /**
  * The connected wallet on the Nayori contracts' network, and a runner that opens the wallet
  * with a deny-mode payload, then follows the transaction until it confirms. A Leather multisig
- * account (SM or SN) gets a proposal instead: the runner says that the second member approves it
- * at leather.io/multisig and keeps following it until it appears on chain.
+ * account (SM or SN) gets a proposal instead: the runner says that every member approves it at
+ * leather.io/multisig (Activity), that one member then presses Broadcast, and keeps following it
+ * until it appears on chain.
  */
 export function useNextWallet(onConfirmed: () => void) {
   const toast = useToast();
@@ -75,7 +78,7 @@ export function useNextWallet(onConfirmed: () => void) {
         return;
       }
       setBusy(key);
-      setProgress({ state: "awaiting", label });
+      setProgress({ state: "awaiting", label, key });
       try {
         const payload = await build();
         if (getNextConnectedAddress() !== address) {
@@ -89,8 +92,8 @@ export function useNextWallet(onConfirmed: () => void) {
         if (outcome.kind === "proposal") {
           const ahead = options?.deadline && (!options.height || options.deadline >= options.height);
           const note = proposalNotice(label, ahead ? { block: options!.deadline!, height: options?.height ?? 0 } : undefined);
-          setProgress({ state: "proposed", label, txid: outcome.txid, note });
-          toast.info("Sent to Leather multisig for the second signature", LEATHER_MULTISIG_URL);
+          setProgress({ state: "proposed", label, key, txid: outcome.txid, note });
+          toast.info("Proposal created. Approve it in Leather multisig, then Broadcast", LEATHER_MULTISIG_URL);
           if (outcome.txid) {
             const txid = outcome.txid;
             // Quiet follow-up: only the final result is announced.
@@ -102,10 +105,10 @@ export function useNextWallet(onConfirmed: () => void) {
               (state) =>
                 setProgress(
                   state === "success"
-                    ? { state: "confirmed", label, txid }
+                    ? { state: "confirmed", label, key, txid }
                     : state === "failed"
-                      ? { state: "failed", label, txid }
-                      : { state: "proposed", label, txid, note }
+                      ? { state: "failed", label, key, txid }
+                      : { state: "proposed", label, key, txid, note }
                 ),
               { network: NAYORI_NEXT.network, maxPolls: PROPOSAL_MAX_POLLS }
             );

@@ -242,7 +242,7 @@ export default function NextJobDetailView({ id, asset }: { id: number; asset: Ne
 
       <section className="mt-6">
         <h2 className="mb-3 text-lg font-semibold">What you can do</h2>
-        <NextJobActions detail={detail} wallet={wallet.address} burnHeight={height} busy={wallet.busy} run={wallet.run} />
+        <NextJobActions detail={detail} wallet={wallet.address} burnHeight={height} busy={wallet.busy} run={wallet.run} progress={wallet.progress} />
       </section>
 
       {stats && job.provider && <ProviderRecord stats={stats} />}
