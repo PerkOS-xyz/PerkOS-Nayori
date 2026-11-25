@@ -1,7 +1,32 @@
 ---
 title: QA validation and release boundaries
-description: What the live-contract testnet run and the controlled Hermes escrow test prove, and what remains a separate release gate.
+description: What the live-contract mainnet and testnet runs and the controlled Hermes escrow test prove, and what remains a separate release gate.
 ---
+
+## Mainnet run on the live contracts (2026-11-25)
+
+STX job #1 on `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X.nayori-escrow-stx`, budget 1 STX, ran
+the full path on mainnet, appeal included. The team operated every wallet in it.
+
+| Step | Signer | Call and result | Transaction |
+| --- | --- | --- | --- |
+| 1 | Client | `create-job` (STX, budget 1 STX) | [`0x44546ae2…257e5e`](https://explorer.hiro.so/txid/0x44546ae22acc6c3ca3c690d77c8592abe744cd9f46ab16a7990f93123f257e5e?chain=mainnet) |
+| 2 | Client | `fund-job` | [`0xd4f42bbe…5d741a`](https://explorer.hiro.so/txid/0xd4f42bbe604bf5b52dcab985506092c3363422807ab7ea6f36496980d15d741a?chain=mainnet) |
+| 3 | Client | `name-provider` | [`0x88c482de…77b713`](https://explorer.hiro.so/txid/0x88c482de37370e7fae16d6303197e4e32de0dba25d2e3f095b4c88f35d77b713?chain=mainnet) |
+| 4 | Provider | `accept-job` | [`0x5058c75d…cf56e0`](https://explorer.hiro.so/txid/0x5058c75dd9a1c5aa1a186ed49c4c0791419cf38a704cfe8a88e65ccf8fcf56e0?chain=mainnet) |
+| 5 | Provider | `submit-work` | [`0xdc380167…3a2d45`](https://explorer.hiro.so/txid/0xdc38016738f3a5379da4db130abc79bcf388745871fcc7e3e5c755ea5a3a2d45?chain=mainnet) |
+| 6 | Evaluator | `record-decision`: APPROVE | [`0x76fbce44…a28ac1`](https://explorer.hiro.so/txid/0x76fbce44f91f99d3ba6fb956a1f271cafddad4277ff1d4988380dafda0a28ac1?chain=mainnet) |
+| 7 | Client | `appeal` against the approval | [`0x7ab1c1e2…eb95f9`](https://explorer.hiro.so/txid/0x7ab1c1e287cd85f2ad2307f7bc5415659b8404c629ffaaeffd37b22ff9eb95f9?chain=mainnet) |
+| 8 | Appeal authority `SM3950RVR364J25ZRFFNHB5TCNJ7VKPKKGD4N2RP9` (2-of-2 vault, app + Leather) | `resolve-appeal`: approve; 0.98 STX to the provider and 0.02 STX to the treasury vault in the same transaction | [`0x67ec3d57…dbefdb`](https://explorer.hiro.so/txid/0x67ec3d57d5e8a82ae4a71c5475f6a64db7cf8ca6672ea194c66492ca54dbefdb?chain=mainnet) |
+| 9 | Client | `rate-provider`: 5 | [`0x5f3c0ef9…fc83ff`](https://explorer.hiro.so/txid/0x5f3c0ef912c47cd3fc04022e0fbc2a41c78d5ef32929fe90e398e160f4fc83ff?chain=mainnet) |
+
+The appeal was resolved by the 2-of-2 appeal authority vault from the web app and Leather, as
+described in [Appeal and resolution](/commerce/autonomous-evaluation#appeal-and-resolution).
+Resolution settled the job in the same call: the provider received 98% and the treasury vault
+`SMFE58EKCK5ZPD7YCYM1CQY7K3H8SEXQH7C3YT8S` the 2% fee. Every step is public on the
+[Stacks Explorer](https://explorer.hiro.so/address/SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X?chain=mainnet).
+
+This is a team-operated release check on mainnet, not external adoption or revenue.
 
 ## Live contracts: testnet end-to-end run, 2026-11-24
 
@@ -28,7 +53,7 @@ This does not extend the funded Hermes lifecycle proof below to other clients.
 
 ## Stable 0.8.0 distribution gate — 2026-09-11
 
-`@perkos/agent-sdk@0.8.0` is public under `latest`, built from merged commit
+`@perkos/agent-sdk@0.8.0` was published under `latest` (0.10.0 holds `latest` today), built from merged commit
 `8dc7cc9871858230c401f258cddf005a5c0be637`. Typecheck, build, 415 tests and npm audit with
 zero vulnerabilities passed. A separate empty consumer installed the package from the public
 registry and passed both binaries plus 12/12 key-free SDK/MCP consumer/provider checks. Registry
@@ -84,14 +109,15 @@ not independent adoption or production revenue. This validates one scenario, not
 
 ## Which artifact to install
 
-For a new integration, install stable `latest` by its exact version:
+For a new integration, install stable `latest` by its exact version (see the
+[SDK guide](/getting-started/sdk)):
 
 ```sh
-npm install --save-exact @perkos/agent-sdk@0.8.0
+npm install --save-exact @perkos/agent-sdk@0.10.0
 ```
 
-See [workflow timing and release boundaries](/commerce/workflow-timing). Installing 0.8.0 does
-not migrate existing permits, deploy custody or authorize spending. The rc.1/rc.2 reproduction
+See [workflow timing and release boundaries](/commerce/workflow-timing). Installing a new version
+does not migrate existing permits, deploy custody or authorize spending. The rc.1/rc.2 reproduction
 records below remain version-pinned historical evidence.
 
 ### Historical rc.1 installation and verification
@@ -110,10 +136,10 @@ Registry integrity, clean installation, import, unsigned registration plan and a
 MCP stdio checks passed on 2026-09-08 UTC. Those checks used no private keys, signatures, broadcasts
 or evaluator/LLM requests. Publication was operator-authorized without provenance attestation.
 The [release notes](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/RELEASE_0.8.0_RC1.md)
-record exact integrity and source. Stable `0.8.0` now includes that opt-in v6/v5 support, while
-its implicit defaults remain v5/v4: current QA use requires exact v6/v5 contract IDs plus live
-`serviceFeeAcceptance` for funding/submission. Candidate `0.9.0` promotes those contract defaults
-only after a separate verified npm publication.
+record exact integrity and source. Stable `0.8.0` then included that opt-in v6/v5 support, while
+its implicit defaults stayed v5/v4: QA use at that time required exact v6/v5 contract IDs plus live
+`serviceFeeAcceptance` for funding/submission. `0.9.0` later promoted those contract defaults after
+its own verified npm publication.
 
 Use the [SDK exact-artifact guide](https://github.com/PerkOS-xyz/PerkOS-Nayori-Agent-SDK/blob/main/docs/HERMES_MCP.md).
 Published-package offline reproduction is verified separately from the earlier funded lifecycle.
@@ -141,7 +167,8 @@ or copy an expected hash from the response being tested.
 Fresh registration, the recorded developer demo, self-service uploads and operation without staged operator
 gates are not certified here. Nor does this test validate x402/MPP purchases: the local QA MCP
 does not buy paid resources. Follow the separate [x402 workflow](/commerce/x402) with its own
-authorization and budget. Production fee activation and external security review remain separate.
+authorization and budget. The live contracts charge the 2% fee on every settlement; the external
+security review remains a separate gate.
 
 Start with [your existing agent](/getting-started/existing-agent), its own LLM and an
 operator-owned wallet/signer. Follow the

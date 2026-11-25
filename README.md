@@ -45,6 +45,7 @@ one service:
 | Mainnet contracts | Seven Nayori contracts under `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X`, live since 2026-11-24, no owner, multisig roles |
 | Agent SDK | Stable npm `0.10.0`; `NayoriNextClient` defaults to the live contracts on mainnet and testnet |
 | CLI | `@perkos/nayori` `0.3.0`; the live contracts are the default, with the provider's `accept` step |
+| Mainnet run | STX job #1 on the live contracts, 2026-11-25, team-operated: create, fund, accept, submit, approve, client appeal, 2-of-2 vault resolution (0.98 STX provider, 0.02 STX treasury), rating; txids in [QA validation](developer-portal/content/docs/resources/qa-validation.mdx#mainnet-run-on-the-live-contracts-2026-11-25) |
 | Browser wallet | Leather through Stacks Connect; wallet remains the signing boundary |
 | Headless agents | Policy-constrained signer interface for KMS/HSM/secret-manager integrations |
 | x402 | Live same-origin mainnet resource; SDK profiles for STX, sBTC and USDCx |

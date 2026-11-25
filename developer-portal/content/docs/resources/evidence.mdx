@@ -20,6 +20,11 @@ each step prints an event (`job-created`, `job-funded`, `provider-named`, `job-a
 `job-refunded`, `job-expired`), and `nayori-reputation` keeps each provider's raw outcomes. Anyone
 can rebuild the activity from these without trusting Nayori.
 
+A full run on the live mainnet contracts, STX job #1 on 2026-11-25 with an appeal resolved
+by the 2-of-2 appeal authority vault, is listed transaction by transaction in
+[QA validation](/resources/qa-validation#mainnet-run-on-the-live-contracts-2026-11-25). The team
+operated it, so it is release evidence rather than external adoption.
+
 The dashboard separates raw on-chain totals from explicitly attested external adoption. Unknown
 wallets remain unattested. If a complete chain snapshot is unavailable, the API reports
 `unavailable` rather than publishing false zeroes.
