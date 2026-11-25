@@ -34,6 +34,8 @@ export const INDEXED_CONTRACTS: readonly IndexedContract[] = [
   nayori(NEXT_IDS.agents),
   nayori(NEXT_IDS.applications),
   nayori(NEXT_IDS.reputation),
+  nayori(NEXT_IDS.permissions),
+  nayori(NEXT_IDS.roles),
   earlier("agent-registry"),
   earlier(STX_COMMERCE_CONTRACT_NAME),
   earlier("validation-registry"),

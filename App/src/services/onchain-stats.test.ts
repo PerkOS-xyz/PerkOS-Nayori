@@ -36,10 +36,10 @@ afterEach(() => vi.unstubAllGlobals());
 describe("onchain stats across both contract sets", () => {
   it("indexes the Nayori contracts first, then the earlier ones", () => {
     const sets = INDEXED_CONTRACTS.map((c) => c.set);
-    expect(sets.slice(0, 5)).toEqual(["nayori", "nayori", "nayori", "nayori", "nayori"]);
-    expect(sets.slice(5).every((set) => set === "earlier")).toBe(true);
+    expect(sets.slice(0, 7)).toEqual(["nayori", "nayori", "nayori", "nayori", "nayori", "nayori", "nayori"]);
+    expect(sets.slice(7).every((set) => set === "earlier")).toBe(true);
     expect(INDEXED_CONTRACTS.map((c) => c.name)).toEqual(
-      expect.arrayContaining(["nayori-escrow-sbtc", "nayori-escrow-stx", "nayori-agents", "nayori-applications", "nayori-reputation", "agent-registry"])
+      expect.arrayContaining(["nayori-escrow-sbtc", "nayori-escrow-stx", "nayori-agents", "nayori-applications", "nayori-reputation", "nayori-permissions", "nayori-roles", "agent-registry"])
     );
   });
 
