@@ -7,11 +7,12 @@ import {
   PRODUCT_NAME,
 } from "../constants/brand";
 import { CONTRACT_ADDRESS } from "../constants/contract";
+import { NAYORI_NEXT } from "../constants/nayori-next";
 import { NETWORK_NAME } from "../constants/network";
 import { DOCS_ORIGIN } from "../constants/docs";
 
-const EXPLORER_ADDRESS_URL =
-  `https://explorer.hiro.so/address/${CONTRACT_ADDRESS}?chain=${NETWORK_NAME}`;
+const explorerAddress = (address: string) =>
+  `https://explorer.hiro.so/address/${address}?chain=${NETWORK_NAME}`;
 
 const COLUMNS: { title: string; links: { label: string; href: string; external?: boolean }[] }[] = [
   {
@@ -37,7 +38,12 @@ const COLUMNS: { title: string; links: { label: string; href: string; external?:
     links: [
       {
         label: "Contracts on the explorer",
-        href: EXPLORER_ADDRESS_URL,
+        href: explorerAddress(NAYORI_NEXT.deployer),
+        external: true,
+      },
+      {
+        label: "Earlier contracts",
+        href: explorerAddress(CONTRACT_ADDRESS),
         external: true,
       },
       { label: "Public snapshot (JSON)", href: "/api/evidence.json" },

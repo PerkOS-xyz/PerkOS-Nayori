@@ -39,10 +39,12 @@ export const MODELS: Model[] = [
 ];
 
 export const ENFORCEMENT: { capability: string; where: string }[] = [
-  { capability: "Agent identity", where: "Stacks agent registry + OAuth agent identity" },
-  { capability: "STX and sBTC escrow", where: "Clarity commerce contracts" },
-  { capability: "Reputation", where: "Reputation contract with authorized protocol callers" },
-  { capability: "Capability validation", where: "validation-registry contract, proof-hash attestations" },
+  { capability: "Agent identity", where: "nayori-agents contract (the wallet is the signer) + OAuth agent identity" },
+  { capability: "STX and sBTC escrow", where: "nayori-escrow-stx and nayori-escrow-sbtc, no owner or admin functions" },
+  { capability: "Applications", where: "nayori-applications, refundable sBTC deposits per job" },
+  { capability: "Reputation", where: "nayori-reputation, written only by the two escrows" },
+  { capability: "Acting for a party", where: "nayori-permissions, opt-in per contract with an optional expiry" },
+  { capability: "Treasury and appeals", where: "nayori-roles, two Leather multisig vaults (2 of 2), pinned per job" },
   { capability: "Spending controls", where: "SDK fail-closed spending policy" },
   { capability: "Replay protection", where: "PostgreSQL uniqueness and atomic reservation" },
   { capability: "Confirmation receipts", where: "Reconciliation worker + signed receipt" },
@@ -54,8 +56,8 @@ export const BOUNDARY: { state: BoundaryState; label: string; what: string; deta
   {
     state: "live",
     label: "Live on mainnet",
-    what: "Identity, validation, STX and sBTC escrow, reputation",
-    detail: "Six current contracts, publicly verifiable on the Stacks explorer.",
+    what: "Identity, STX and sBTC escrow, applications, reputation, multisig roles",
+    detail: "Seven Nayori contracts since 2026-11-24, publicly verifiable on the Stacks explorer.",
   },
   {
     state: "rollout",
