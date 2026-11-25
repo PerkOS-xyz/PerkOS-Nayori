@@ -8,6 +8,8 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
 ARG NEXT_PUBLIC_STACKS_NETWORK=mainnet
+# The Nayori contracts are built in (constants/nayori-deployment.ts). These arguments select the
+# earlier contracts, read for history and jobs in progress there.
 ARG NEXT_PUBLIC_CONTRACT_ADDRESS=SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH
 ARG NEXT_PUBLIC_CONTRACT_PROFILE=current-v6-v5
 ARG NEXT_PUBLIC_STX_COMMERCE_CONTRACT=agentic-commerce-v6
