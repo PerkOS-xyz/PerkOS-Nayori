@@ -8,6 +8,8 @@ import { getAgent, Agent } from "../../../services/agent-registry";
 import { getReputationV2, ReputationV2 } from "../../../services/reputation-v2";
 import { getVerification, isVerified, Verification } from "../../../services/validation";
 import Addr from "../../../components/Addr";
+import { getNextProviderStats } from "../../../services/nayori-next/reads";
+import { averageRating, type NextProviderStats } from "../../../services/nayori-next/parse";
 
 export default function AgentDetailPage() {
   const id = Number(useParams().id);
@@ -15,6 +17,7 @@ export default function AgentDetailPage() {
   const [rep, setRep] = useState<ReputationV2 | null>(null);
   const [ver, setVer] = useState<Verification | null>(null);
   const [verified, setVerified] = useState(false);
+  const [nextStats, setNextStats] = useState<NextProviderStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,7 +30,13 @@ export default function AgentDetailPage() {
     const a = await getAgent(id);
     setAgent(a);
     if (a) {
-      const [r, v, isv] = await Promise.all([getReputationV2(a.wallet), getVerification(a.wallet), isVerified(a.wallet)]);
+      const [r, v, isv, next] = await Promise.all([
+        getReputationV2(a.wallet),
+        getVerification(a.wallet),
+        isVerified(a.wallet),
+        getNextProviderStats(a.wallet).catch(() => null),
+      ]);
+      setNextStats(next);
       setRep(r);
       setVer(v);
       setVerified(isv);
@@ -105,10 +114,34 @@ export default function AgentDetailPage() {
       )}
 
       <div className="mt-8 grid gap-4 md:grid-cols-2">
+        {/* Record on the Nayori contracts */}
+        <div className="card p-6 md:col-span-2">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-mist-500">
+            <Star className="h-4 w-4" /> Provider record on the Nayori contracts
+          </h2>
+          {nextStats && (nextStats.completed > 0 || nextStats.rejected > 0 || nextStats.notDelivered > 0) ? (
+            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+              <Metric label="Completed jobs" value={String(nextStats.completed)} />
+              <Metric label="Distinct clients" value={String(nextStats.distinctClients)} />
+              <Metric label="Rejected" value={String(nextStats.rejected)} />
+              <Metric
+                label={`Average rating (${nextStats.ratingCount})`}
+                value={averageRating(nextStats) === null ? "None" : `${averageRating(nextStats)!.toFixed(2)}/5`}
+              />
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-mist-500">No jobs on the Nayori contracts for this wallet yet.</p>
+          )}
+          <div className="mt-5 border-t border-white/[0.06] pt-4 text-sm text-mist-500">
+            Written by the two Nayori escrows when a job settles. The client rates a completed job.
+            <Link href="/jobs" className="ml-1 text-brand-300 hover:text-brand-200">View jobs</Link>
+          </div>
+        </div>
+
         {/* Reputation */}
         <div className="card p-6">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-mist-500">
-            <Star className="h-4 w-4" /> Reputation
+            <Star className="h-4 w-4" /> Reputation on the earlier contracts
           </h2>
           {rep && rep.ratingCount > 0 ? (
             <div className="mt-4 grid grid-cols-2 gap-4">
@@ -122,15 +155,15 @@ export default function AgentDetailPage() {
           )}
 
           <div className="mt-5 border-t border-white/[0.06] pt-4 text-sm text-mist-500">
-            Ratings can only be submitted by the client or evaluator of a completed sBTC job.
-            <Link href="/jobs" className="ml-1 text-brand-300 hover:text-brand-200">View jobs</Link>
+            From reputation-registry-v3: ratings by the client or evaluator of a completed job on the earlier contracts.
+            <Link href="/jobs/earlier" className="ml-1 text-brand-300 hover:text-brand-200">Earlier jobs</Link>
           </div>
         </div>
 
         {/* Validation */}
         <div className="card p-6">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-mist-500">
-            <BadgeCheck className="h-4 w-4" /> Validation
+            <BadgeCheck className="h-4 w-4" /> Validation on the earlier contracts
           </h2>
           {verified && ver ? (
             <div className="mt-4 space-y-3">

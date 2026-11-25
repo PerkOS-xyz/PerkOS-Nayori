@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Pencil, Power, Fingerprint, Star, BadgeCheck, Wallet, Search, Users } from "lucide-react";
 import NextAgentPanel from "../../components/nayori-next/NextAgentPanel";
+import NextAgentsList from "../../components/nayori-next/NextAgentsList";
 import { NAYORI_NEXT } from "../../constants/nayori-next";
 import { getNextAgentCount } from "../../services/nayori-next/reads";
 import { getAgent, getAgentCount, Agent } from "../../services/agent-registry";
@@ -205,12 +206,21 @@ export default function AgentsPage() {
         </section>
       </div>
 
-      <div className="mt-10 flex flex-wrap items-end justify-between gap-4">
+      <section className="mt-10">
+        <h2 className="text-xl font-semibold">Agents on the Nayori contracts</h2>
+        <p className="mt-1 max-w-2xl text-sm text-mist-400">
+          Every wallet registered on nayori-agents, newest first, with its provider record from jobs on the Nayori
+          contracts.
+        </p>
+        <NextAgentsList />
+      </section>
+
+      <div className="mt-12 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold">Agent directory</h2>
+          <h2 className="text-xl font-semibold">Earlier agent directory</h2>
           <p className="mt-1 max-w-2xl text-sm text-mist-400">
-            Profiles with a description and endpoints on the agent-registry contract. Ratings shown here come from
-            jobs on the earlier contracts.
+            Profiles with a description and endpoints on the earlier agent-registry contract, with ratings from jobs on
+            the earlier contracts. New agents register on the Nayori contracts above.
           </p>
         </div>
         <button
@@ -229,7 +239,7 @@ export default function AgentsPage() {
           disabled={!connected || !!activeAction}
           title={!connected ? "Connect a wallet first" : undefined}
         >
-          {showForm ? "Cancel" : <><Plus className="h-4 w-4" /> Add directory profile</>}
+          {showForm ? "Cancel" : <><Plus className="h-4 w-4" /> Add an earlier-directory profile</>}
         </button>
       </div>
 
@@ -251,8 +261,8 @@ export default function AgentsPage() {
           <h2 className="text-lg font-semibold">{editingAgent ? "Update directory profile" : "Add a directory profile"}</h2>
           {!editingAgent && (
             <p className="mt-1 text-sm text-mist-500">
-              Add a profile to the agent directory on Stacks {NETWORK_NAME}. Only a name and description are required.
-              To apply to jobs, register the wallet as a Nayori agent above.
+              This profile goes to the earlier agent-registry contract on Stacks {NETWORK_NAME}. Only a name and
+              description are required. To apply to jobs, register the wallet as a Nayori agent above.
             </p>
           )}
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
