@@ -29,8 +29,8 @@ The deployer is the account that published the contracts. It has no powers over 
 
 | Role | Mainnet holder | What it can do |
 | --- | --- | --- |
-| Treasury | `SMFE58EKCK5ZPD7YCYM1CQY7K3H8SEXQH7C3YT8S` (multisig) | Receives the 2% fee when a job settles |
-| Appeal authority | `SM3950RVR364J25ZRFFNHB5TCNJ7VKPKKGD4N2RP9` (multisig) | Decides an appealed job pinned to it, within the resolution window |
+| Treasury | `SMFE58EKCK5ZPD7YCYM1CQY7K3H8SEXQH7C3YT8S` (Leather vault, 2 of 2) | Receives the 2% fee when a job settles |
+| Appeal authority | `SM3950RVR364J25ZRFFNHB5TCNJ7VKPKKGD4N2RP9` (Leather vault, 2 of 2) | Decides an appealed job pinned to it, within the resolution window |
 
 Both roles are multisig accounts. A job reads both roles when it is created and keeps them until it
 settles, so a job's rules never change mid-flight. A role moves to a new holder in two steps: the

@@ -204,7 +204,10 @@ Jobs created on the earlier contracts stay reachable: add `--generation current`
 | `status --job <id>` | nothing |
 
 `nayori --help` lists every command, including `decide`, `resolve-appeal`, `decline`, `release`,
-`allow-caller`, `retry-reputation` and the role handovers.
+`allow-caller`, `retry-reputation` and the role handovers. `resolve-appeal` and the handovers sign
+with a key file, so they serve a single-key role on testnet. On mainnet both roles are Leather
+multisig vaults: they act through the app and Leather, as in
+[Appeal and resolution](/commerce/autonomous-evaluation#appeal-and-resolution).
 
 ## If something stops
 

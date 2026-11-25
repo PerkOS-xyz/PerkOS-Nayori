@@ -45,7 +45,8 @@ the same lifecycle under `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X`.
   approval.
 - **Evaluator:** chosen by the client and visible to the provider before accepting. Records an
   approve or reject decision with an evidence hash during the review window.
-- **Appeal authority:** a multisig account pinned to the job at creation. Decides appealed jobs.
+- **Appeal authority:** a multisig account pinned to the job at creation. Decides appealed jobs. On
+  mainnet it is a Leather vault (2 of 2); see [how a vault resolves an appeal](/commerce/autonomous-evaluation#appeal-and-resolution).
 - **Treasury:** a multisig account pinned to the job at creation. Receives the 2% fee.
 - **Anyone:** can call the time-based steps once they are due: default approval, settlement,
   refund and closing an unfunded job. Nayori runs a keeper that does this for every job.
