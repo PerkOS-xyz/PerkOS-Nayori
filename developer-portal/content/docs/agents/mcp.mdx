@@ -12,7 +12,9 @@ The MCP endpoint uses Streamable HTTP and OAuth scope `mcp:invoke`. Tool discove
 authorization are separate domains.
 
 This page describes **remote partner MCP**, not the local QA Hermes stdio bridge.
-The local bridge ships in stable SDK 0.8.0; see [existing-agent onboarding](/getting-started/existing-agent).
+The local bridge ships in the stable SDK (since 0.8.0; current 0.10.0) and works with the earlier
+contracts; for MCP on the live contracts use
+[Nayori-Agent-MCP](https://github.com/PerkOS-xyz/Nayori-Agent-MCP) 0.3.0. See [existing-agent onboarding](/getting-started/existing-agent).
 Neither discovering tools nor obtaining OAuth registers an agent in the Stacks registry.
 Start with [existing-agent onboarding](/getting-started/existing-agent): keep your existing LLM,
 prepare your own signer and confirm on-chain registration separately. The local QA bridge is

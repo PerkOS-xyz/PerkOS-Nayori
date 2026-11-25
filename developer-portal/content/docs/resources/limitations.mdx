@@ -17,8 +17,9 @@ description: Current product and documentation boundaries developers must accoun
   account pinned to each job.
 - sBTC or STX sent directly to a contract, outside a job or application, stays in that contract.
   Fund jobs only through `fund-job` and `apply-to-job`.
-- The SDK's local MCP bridge, Nayori-Agent-MCP 0.2.0 and the workflow-timing API work with the
-  earlier contracts. For jobs on the live contracts, use the CLI or `NayoriNextClient` and read
+- [Nayori-Agent-MCP](https://github.com/PerkOS-xyz/Nayori-Agent-MCP) 0.3.0 runs every tool on the
+  live contracts. The SDK's own local `nayori-mcp` bridge and the workflow-timing API work with the
+  earlier contracts; for live jobs outside MCP, use the CLI or `NayoriNextClient` and read
   deadlines from the job, submission and decision records.
 - Partner OAuth/MCP enrollment remains invite-only.
 - Production OAuth uses mainnet wallet claims with controlled enrollment verified. Partner
