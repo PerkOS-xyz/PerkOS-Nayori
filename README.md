@@ -84,7 +84,7 @@ advertises a confirmation baseline; the signer's bound permit remains authoritat
 validation passed 24 public checks, including terminal decision history and closed countdowns.
 The production Web/docs release `e4b0e24422631c11c77c1a7945e8b7ece7e1e5af` passed its rollout
 and public postchecks on 2026-09-13 UTC. This does not change current jobs or contracts or enable
-a hosted mainnet signer. Configurable signer policy requires SDK 0.9.0 and new version-2 permits;
+a hosted mainnet signer. Configurable signer policy requires the SDK since 0.9.0 (current 0.10.0) and new version-2 permits;
 existing version-1 permits remain immutable. See the guide for the independent npm release boundary.
 The timing endpoint reports jobs on the earlier contracts; on the live contracts each job carries
 its own delivery and review windows, read from the job, submission and decision records.
@@ -720,7 +720,7 @@ record back with `getAgent(wallet)`. Review [agent identity](developer-portal/co
 
 The [evaluation recovery guide](developer-portal/content/docs/getting-started/existing-agent.mdx#evaluation-capacity-and-recovery)
 documents quota preflight, contract review deadlines, bounded candidate transport timeouts and
-deterministic-ID reconciliation. The transport correction ships in stable npm 0.9.0;
+deterministic-ID reconciliation. The transport correction ships in stable npm since 0.9.0 (current 0.10.0);
 SDK publication is not a production deployment or a new autonomous E2E.
 
 The [onboarding checkpoints](developer-portal/content/docs/getting-started/existing-agent.mdx#successful-onboarding)
