@@ -47,7 +47,7 @@ Before writing technical content, read/use:
 
 The live contracts are the seven Clarity 6 contracts in `next-contracts/contracts/`, deployed on
 Stacks mainnet on 2026-11-24 by `SP2BM4WCNQM286PFHPGA1BG2YXER0PCG1PKQ5MF1X`. None has an owner or
-admin function; the fee is 2% of the budget on every settlement.
+admin function; the fee is 2% of the budget on every evaluated settlement, and refunds carry no fee.
 
 - **`nayori-escrow-sbtc`**: sBTC job escrow: create, fund, offer, accept, submit, decide, appeal,
   settle, refund
