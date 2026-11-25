@@ -1,10 +1,11 @@
-import { MAINNET_DEPLOYER } from "./discovery";
+import { EARLIER_MAINNET_DEPLOYER } from "./discovery";
 import {
   CONTRACT_ADDRESS,
   NAYORI_APPEAL_AUTHORITY_ADDRESS,
   NAYORI_EVALUATOR_ADDRESS,
 } from "./contract";
 import { NETWORK_NAME } from "./network";
+import { NEXT_DEPLOYERS, NEXT_ROLE_HOLDERS } from "./nayori-deployment";
 import { participants } from "./participants";
 
 export const EVIDENCE_VERSION = 2;
@@ -21,9 +22,9 @@ export const milestone2Targets = {
 
 const m1EvidenceWallets = [
   {
-    address: MAINNET_DEPLOYER,
+    address: EARLIER_MAINNET_DEPLOYER,
     classification: "team" as const,
-    roles: ["client", "deployer", "rater"],
+    roles: ["client", "earlier-deployer", "rater"],
   },
   {
     address: "SP1VY24ADP27HERH4XMQTK44XB9QX4ZASPMPJKPVF",
@@ -84,7 +85,34 @@ const mainnetEvidenceWallets = [
   {
     address: NAYORI_APPEAL_AUTHORITY_ADDRESS,
     classification: "team" as const,
-    roles: ["appeal-authority"],
+    roles: ["earlier-appeal-authority"],
+  },
+  // The Nayori contracts (2026-11-24): deployer, the two Leather multisig roles, and the two
+  // wallets of the team's own end-to-end run on mainnet (STX job #1, 2026-11-25).
+  {
+    address: NEXT_DEPLOYERS.mainnet,
+    classification: "team" as const,
+    roles: ["deployer"],
+  },
+  {
+    address: NEXT_ROLE_HOLDERS.mainnet.treasury,
+    classification: "team" as const,
+    roles: ["treasury-multisig"],
+  },
+  {
+    address: NEXT_ROLE_HOLDERS.mainnet.appealAuthority,
+    classification: "team" as const,
+    roles: ["appeal-authority-multisig"],
+  },
+  {
+    address: "SP1BNFCRAAE8AJF6Q2VGWVM0W59B8RVQ4YXCW7GW3",
+    classification: "team" as const,
+    roles: ["mainnet-test-client"],
+  },
+  {
+    address: "SP1B1RQGJ181PDME5TJFXCGBPZHE78HXRCYS4B6DC",
+    classification: "team" as const,
+    roles: ["mainnet-test-provider"],
   },
 ] as const;
 
@@ -143,7 +171,7 @@ export const m1SbtcLifecycle = [
     function: "create-job",
     label: "Job created",
     txId: "0x1319fcf70575baa1f4beb273cd0ec7194df2668a6e5681ee61c2183b83d3a675",
-    sender: MAINNET_DEPLOYER,
+    sender: EARLIER_MAINNET_DEPLOYER,
     blockHeight: 8650816,
     confirmedAt: "2026-07-28T07:34:00.000Z",
   },
@@ -152,7 +180,7 @@ export const m1SbtcLifecycle = [
     function: "set-budget",
     label: "10,000 sat budget set",
     txId: "0x8be6bb3915d72bb2d74132a36b1b7b608fdac9326bb07da1fef91637db1661d0",
-    sender: MAINNET_DEPLOYER,
+    sender: EARLIER_MAINNET_DEPLOYER,
     blockHeight: 8650819,
     confirmedAt: "2026-07-28T07:34:40.000Z",
   },
@@ -161,7 +189,7 @@ export const m1SbtcLifecycle = [
     function: "fund-job",
     label: "10,000 sats escrowed",
     txId: "0xaf4129fe46fc913fda7b9fa87543f05fc5f4430b9b5f26a46f9c3032ea0fcbd4",
-    sender: MAINNET_DEPLOYER,
+    sender: EARLIER_MAINNET_DEPLOYER,
     blockHeight: 8650821,
     confirmedAt: "2026-07-28T07:35:07.000Z",
   },
@@ -170,7 +198,7 @@ export const m1SbtcLifecycle = [
     function: "assign-provider",
     label: "Provider assigned",
     txId: "0x0993f5bd4bb1524db673d42960560cf558ec9bef18ccdf78ff562aa7a2598ee2",
-    sender: MAINNET_DEPLOYER,
+    sender: EARLIER_MAINNET_DEPLOYER,
     blockHeight: 8650823,
     confirmedAt: "2026-07-28T07:35:40.000Z",
   },
@@ -197,7 +225,7 @@ export const m1SbtcLifecycle = [
     function: "rate-provider",
     label: "Provider rated",
     txId: "0x05aadbdb1dccf98c353bd7974a562b1ecf477e99639449f8f43b3d62d0259000",
-    sender: MAINNET_DEPLOYER,
+    sender: EARLIER_MAINNET_DEPLOYER,
     blockHeight: 8650832,
     confirmedAt: "2026-07-28T07:38:19.000Z",
   },
@@ -221,7 +249,7 @@ export const evidenceManifest = {
   },
   milestone1: {
     status: "approved",
-    contract: `${MAINNET_DEPLOYER}.sbtc-commerce`,
+    contract: `${EARLIER_MAINNET_DEPLOYER}.sbtc-commerce`,
     jobId: "1",
     asset: "sBTC",
     amountSats: 10_000,
