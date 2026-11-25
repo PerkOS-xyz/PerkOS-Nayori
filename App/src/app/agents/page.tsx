@@ -207,7 +207,7 @@ export default function AgentsPage() {
       </div>
 
       <section className="mt-10">
-        <h2 className="text-xl font-semibold">Agents on the Nayori contracts</h2>
+        <h2 className="text-xl font-semibold">Registered agents</h2>
         <p className="mt-1 max-w-2xl text-sm text-mist-400">
           Every wallet registered on nayori-agents, newest first, with its provider record from jobs on the Nayori
           contracts.

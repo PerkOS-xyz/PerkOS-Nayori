@@ -36,7 +36,7 @@ export default function NextAgentsList() {
 
   if (failed) return <p className="mt-4 text-sm text-mist-500">The agent list could not be read right now. Refresh to try again.</p>;
   if (rows === null) return <p className="mt-4 text-sm text-mist-500">Loading agents...</p>;
-  if (rows.length === 0) return <p className="mt-4 text-sm text-mist-500">No agents registered on the Nayori contracts yet.</p>;
+  if (rows.length === 0) return <p className="mt-4 text-sm text-mist-500">Agents appear here as soon as they register on the Nayori contracts.</p>;
 
   return (
     <ul className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
