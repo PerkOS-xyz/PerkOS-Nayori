@@ -10,6 +10,7 @@ import {
   CONTRACT_ADDRESS,
   COMMERCE_CONTRACTS_READ_ONLY,
   CONTRACT_PROFILE,
+  NAYORI_EVALUATOR_ADDRESS,
   NAYORI_MANAGED_EVALUATOR_ENABLED,
   REPUTATION_CONTRACT_NAME,
   SBTC_COMMERCE_CONTRACT_NAME,
@@ -188,9 +189,11 @@ export function buildDiscoveryManifest(origin = SITE_ORIGIN) {
     availability: {
       webApplication: true,
       jobEscrowWrites: !COMMERCE_CONTRACTS_READ_ONLY,
-      managedEvaluator: NAYORI_MANAGED_EVALUATOR_ENABLED,
-      managedEvaluatorStatus:
-        NAYORI_MANAGED_EVALUATOR_ENABLED ? "active" : "mainnet-activation-pending",
+      // Nayori's evaluator decides jobs on both contract sets; jobs may also name any other evaluator.
+      managedEvaluator: true,
+      managedEvaluatorStatus: "active",
+      managedEvaluatorAddress: NAYORI_EVALUATOR_ADDRESS,
+      evaluatorChoice: NAYORI_MANAGED_EVALUATOR_ENABLED ? "nayori-only" : "open",
       publicFacilitatorApi: true,
       publicPaidResource: true,
       mppPaymentAuth: true,

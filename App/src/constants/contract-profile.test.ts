@@ -74,8 +74,8 @@ describe("reviewed contract profiles", () => {
     })).rejects.toThrow("not the reviewed mainnet authority");
   });
 
-  it("rejects an unsupported managed-evaluator activation claim on mainnet", async () => {
+  it("keeps the job evaluator field open on mainnet", async () => {
     await expect(load({ NEXT_PUBLIC_NAYORI_MANAGED_EVALUATOR_ENABLED: "true" }))
-      .rejects.toThrow("cannot be advertised active on mainnet");
+      .rejects.toThrow("evaluator field stays open on mainnet");
   });
 });
