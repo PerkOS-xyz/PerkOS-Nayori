@@ -6,11 +6,11 @@ const routes = [
   "/agents",
   "/jobs",
   "/jobs/earlier",
-  "/dashboard",
   "/analytics",
   "/activity",
   "/search",
   "/stats",
+  "/participants",
   "/evidence",
 ];
 
