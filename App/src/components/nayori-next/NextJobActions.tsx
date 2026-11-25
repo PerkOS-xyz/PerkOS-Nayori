@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NAYORI_NEXT, NEXT_LIMITS, isMultisigAddress, nextEscrowContract } from "../../constants/nayori-next";
 import { LEATHER_MULTISIG_URL, MULTISIG_STEPS } from "../../services/nayori-next/multisig";
+import { forgetPendingProposal, readPendingProposal, rememberPendingProposal } from "../../services/nayori-next/pending-proposal";
 import type { NextRun, NextRunOptions, NextTxProgress } from "./useNextWallet";
 import { hasCriteriaCommitment } from "../../services/evaluable-jobs";
 import { CommittedEvidenceForm } from "../EvaluableJob";
@@ -62,6 +63,16 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run, 
   const [deliverable, setDeliverable] = useState("");
   const [note, setNote] = useState("");
   const [score, setScore] = useState(5);
+  // A proposal created earlier in this browser for this job (read after mount: storage is client-only).
+  const [storedProposal, setStoredProposal] = useState<string | null>(null);
+  useEffect(() => {
+    if (job.status !== 6) {
+      forgetPendingProposal(job.asset, job.id);
+      setStoredProposal(null);
+      return;
+    }
+    setStoredProposal(readPendingProposal(job.asset, job.id)?.action ?? null);
+  }, [job.asset, job.id, job.status]);
   const ref = { asset: job.asset, jobId: job.id };
   const amount = (value: number) => formatNextAmount(value, job.asset);
   const parties = [job.client, job.evaluator, job.treasury, job.appealAuthority];
@@ -89,8 +100,15 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run, 
   }
 
   const multisig = isMultisigAddress(wallet);
-  // The action whose proposal is waiting in Leather multisig, if any.
-  const proposed = progress?.state === "proposed" ? progress.key : undefined;
+  // The action whose proposal is waiting in Leather multisig, if any: from this visit, or remembered.
+  const proposed = (progress?.state === "proposed" ? progress.key : undefined) ?? (multisig ? storedProposal ?? undefined : undefined);
+  const afterResolve = () => {
+    setNote("");
+    if (multisig) {
+      rememberPendingProposal(job.asset, job.id, "resolve-appeal");
+      setStoredProposal("resolve-appeal");
+    }
+  };
   const button = (
     key: NextActionKey,
     label: string,
@@ -209,6 +227,16 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run, 
             text="Your resolution is waiting in Leather multisig. One proposal is enough: a second one would fail on chain and still pay its fee."
           >
             <MultisigSteps deadline={resolutionDeadline} height={burnHeight} />
+            <button
+              type="button"
+              className="self-start text-xs text-mist-500 underline"
+              onClick={() => {
+                forgetPendingProposal(job.asset, job.id);
+                setStoredProposal(null);
+              }}
+            >
+              The proposal was cancelled in Leather? Create a new one
+            </button>
           </Card>
         );
       }
@@ -221,9 +249,9 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run, 
           <EvidenceInput value={note} onChange={setNote} />
           <div className="flex flex-wrap gap-2">
             {button("resolve-appeal", "Approve and pay the provider", async () =>
-              buildResolveAppeal({ ...ref, budget: job.budget, decision: "approve", resolutionHash: await evidenceHashFrom(note) }), () => setNote(""), "btn-primary", options)}
+              buildResolveAppeal({ ...ref, budget: job.budget, decision: "approve", resolutionHash: await evidenceHashFrom(note) }), afterResolve, "btn-primary", options)}
             {button("resolve-appeal", "Reject and return to the client", async () =>
-              buildResolveAppeal({ ...ref, budget: job.budget, decision: "reject", resolutionHash: await evidenceHashFrom(note) }), () => setNote(""), "btn-ghost", options)}
+              buildResolveAppeal({ ...ref, budget: job.budget, decision: "reject", resolutionHash: await evidenceHashFrom(note) }), afterResolve, "btn-ghost", options)}
           </div>
         </Card>
       );
