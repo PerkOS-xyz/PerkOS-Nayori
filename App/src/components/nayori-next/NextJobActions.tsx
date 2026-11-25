@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { NAYORI_NEXT, NEXT_LIMITS, isMultisigAddress, nextEscrowContract } from "../../constants/nayori-next";
+import { NAYORI_NEXT, NEXT_HIRO_API, NEXT_LIMITS, isMultisigAddress, nextEscrowContract } from "../../constants/nayori-next";
 import { LEATHER_MULTISIG_URL, MULTISIG_STEPS } from "../../services/nayori-next/multisig";
 import { forgetPendingProposal, readPendingProposal, rememberPendingProposal } from "../../services/nayori-next/pending-proposal";
 import type { NextRun, NextRunOptions, NextTxProgress } from "./useNextWallet";
@@ -71,8 +71,35 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run, 
       setStoredProposal(null);
       return;
     }
-    setStoredProposal(readPendingProposal(job.asset, job.id)?.action ?? null);
+    const stored = readPendingProposal(job.asset, job.id);
+    setStoredProposal(stored?.action ?? null);
+    // A broadcast proposal that failed on chain leaves the job disputed: show the buttons again.
+    if (stored?.txid) {
+      let live = true;
+      fetch(`${NEXT_HIRO_API}/extended/v1/tx/${stored.txid}`)
+        .then((response) => (response.ok ? response.json() : null))
+        .then((tx) => {
+          if (live && typeof tx?.tx_status === "string" && tx.tx_status.startsWith("abort")) {
+            forgetPendingProposal(job.asset, job.id);
+            setStoredProposal(null);
+          }
+        })
+        .catch(() => {});
+      return () => {
+        live = false;
+      };
+    }
   }, [job.asset, job.id, job.status]);
+  // Keep the remembered proposal in step with this visit: record its id, drop it if it failed.
+  useEffect(() => {
+    if (progress?.key !== "resolve-appeal") return;
+    if (progress.state === "proposed" && progress.txid) {
+      rememberPendingProposal(job.asset, job.id, "resolve-appeal", progress.txid);
+    } else if (progress.state === "failed") {
+      forgetPendingProposal(job.asset, job.id);
+      setStoredProposal(null);
+    }
+  }, [progress, job.asset, job.id]);
   const ref = { asset: job.asset, jobId: job.id };
   const amount = (value: number) => formatNextAmount(value, job.asset);
   const parties = [job.client, job.evaluator, job.treasury, job.appealAuthority];
@@ -81,7 +108,16 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run, 
   const resolutionDeadline = detail.decision?.resolutionDeadline;
   // An appealed job waits for its appeal authority. When that is a Leather multisig, its members
   // may be connected with their own accounts, which have nothing to sign here: say where they act.
-  const awaitingAuthority = job.status === 6 && !actions.includes("resolve-appeal");
+  // Past the resolution deadline the vault can no longer resolve; anyone settles with the original decision.
+  const resolutionOpen = resolutionDeadline !== undefined && burnHeight > 0 && burnHeight <= resolutionDeadline;
+  const awaitingAuthority = job.status === 6 && resolutionOpen && !actions.includes("resolve-appeal");
+  const resolutionClosedNote =
+    job.status === 6 && resolutionDeadline !== undefined && burnHeight > resolutionDeadline ? (
+      <p className="text-xs text-mist-500 md:col-span-2">
+        The resolution window ended at Bitcoin block {resolutionDeadline.toLocaleString("en-US")}. The original decision
+        stands, and anyone can settle the job.
+      </p>
+    ) : null;
   const authorityGuide = awaitingAuthority && isMultisigAddress(job.appealAuthority) ? (
     <AppealAuthorityGuide authority={job.appealAuthority} deadline={resolutionDeadline} height={burnHeight} />
   ) : null;
@@ -90,9 +126,10 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run, 
     return (
       <div className="grid gap-4">
         {authorityGuide}
+        {resolutionClosedNote}
         <p className="text-sm text-mist-500">
           {wallet
-            ? "Nothing for this wallet to sign on this job right now."
+            ? "This wallet is up to date on this job."
             : "Connect a wallet to see the steps you can take."}
         </p>
       </div>
@@ -224,7 +261,7 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run, 
         return (
           <Card
             title="Proposal created"
-            text="Your resolution is waiting in Leather multisig. One proposal is enough: a second one would fail on chain and still pay its fee."
+            text="Your resolution is waiting in Leather multisig. One proposal is enough: wait for this one to be broadcast. Other browsers do not see it here, so members check Activity in Leather first."
           >
             <MultisigSteps deadline={resolutionDeadline} height={burnHeight} />
             <button
@@ -235,7 +272,7 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run, 
                 setStoredProposal(null);
               }}
             >
-              The proposal was cancelled in Leather? Create a new one
+              Proposal cancelled or failed? Create a new one
             </button>
           </Card>
         );
@@ -302,6 +339,7 @@ export default function NextJobActions({ detail, wallet, burnHeight, busy, run, 
         <div key={key}>{cards[key]()}</div>
       ))}
       {authorityGuide && <div className="md:col-span-2">{authorityGuide}</div>}
+      {resolutionClosedNote}
       {awaitingAuthority && !authorityGuide && wallet && (
         <p className="text-xs text-mist-500 md:col-span-2">
           The appeal authority pinned on this job, {shortAddr(job.appealAuthority)}, resolves the appeal.

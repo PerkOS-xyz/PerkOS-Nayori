@@ -12,6 +12,15 @@ const isWebLink = (value: string) => /^https?:\/\//i.test(value);
 
 type Row = { agent: NextAgent; stats: NextProviderStats | null };
 
+/** Reads a few at a time, so a long agent list stays within the public API's rate limits. */
+async function inBatches<T, R>(items: readonly T[], read: (item: T) => Promise<R>, size = 5): Promise<R[]> {
+  const out: R[] = [];
+  for (let start = 0; start < items.length; start += size) {
+    out.push(...(await Promise.all(items.slice(start, start + size).map(read))));
+  }
+  return out;
+}
+
 /** Agents registered on nayori-agents, newest first, with their provider record on the Nayori contracts. */
 export default function NextAgentsList() {
   const [rows, setRows] = useState<Row[] | null>(null);
@@ -23,7 +32,7 @@ export default function NextAgentsList() {
       try {
         const wallets = await getNayoriAgentCandidates();
         const agents = (await getNextAgentsFor(wallets)).sort((a, b) => b.registeredAt - a.registeredAt);
-        const stats = await Promise.all(agents.map((agent) => getNextProviderStats(agent.wallet).catch(() => null)));
+        const stats = await inBatches(agents, (agent) => getNextProviderStats(agent.wallet).catch(() => null));
         if (live) setRows(agents.map((agent, index) => ({ agent, stats: stats[index] })));
       } catch {
         if (live) setFailed(true);
@@ -34,7 +43,7 @@ export default function NextAgentsList() {
     };
   }, []);
 
-  if (failed) return <p className="mt-4 text-sm text-mist-500">The agent list could not be read right now. Refresh to try again.</p>;
+  if (failed) return <p className="mt-4 text-sm text-mist-500">The agent list is taking longer than usual. Refresh to load it again.</p>;
   if (rows === null) return <p className="mt-4 text-sm text-mist-500">Loading agents...</p>;
   if (rows.length === 0) return <p className="mt-4 text-sm text-mist-500">Agents appear here as soon as they register on the Nayori contracts.</p>;
 

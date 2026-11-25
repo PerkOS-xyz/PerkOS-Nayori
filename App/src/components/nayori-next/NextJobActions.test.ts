@@ -40,9 +40,9 @@ function appealedJob(): NextJobDetail {
   };
 }
 
-const render = (wallet: string, progress: Parameters<typeof NextJobActions>[0]["progress"] = null) =>
+const render = (wallet: string, progress: Parameters<typeof NextJobActions>[0]["progress"] = null, burnHeight = 977_526) =>
   renderToStaticMarkup(
-    createElement(NextJobActions, { detail: appealedJob(), wallet, burnHeight: 977_526, busy: null, run: async () => {}, progress })
+    createElement(NextJobActions, { detail: appealedJob(), wallet, burnHeight, busy: null, run: async () => {}, progress })
   );
 
 describe("appeal resolution by a Leather multisig vault", () => {
@@ -54,6 +54,12 @@ describe("appeal resolution by a Leather multisig vault", () => {
       expect(html).toContain("leather.io/multisig");
       expect(html).toContain("977,669");
     }
+  });
+
+  it("says the original decision stands once the resolution window has ended", () => {
+    const html = render(MEMBER, null, 977_700);
+    expect(html).not.toContain("Waiting for the appeal authority");
+    expect(html).toContain("The resolution window ended at Bitcoin block 977,669");
   });
 
   it("offers the resolve buttons to the vault account itself", () => {

@@ -935,17 +935,11 @@ export default function EarlierJobsPage() {
                   <>
                   {job.status === 0 && (permissions.canSetBudget || permissions.canFund || permissions.canAssign) && (
                     <p className="w-full text-xs text-mist-400">
-                      This job was never funded. New money goes to the Nayori contracts:{" "}
+                      This job is unfunded. New budgets go to the Nayori contracts:{" "}
                       <Link href="/jobs" className="text-brand-300 underline">create it there</Link>.
                     </p>
                   )}
-                  {job.status !== 0 && permissions.canSetBudget && (
-                    <button onClick={() => setActionForm({ jobId: job.id, mode: "budget", value: "" })} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white">Set Budget</button>
-                  )}
-                  {job.status !== 0 && permissions.canFund && (
-                    <button disabled={hasServiceFees(currency) && (!job.serviceFee || job.serviceFeeUnavailable || !acceptedFees[feeAcceptanceKey(job, address)])} onClick={() => void handleFundJob(job)} className="btn-sm border border-bitcoin/30 text-bitcoin-400 hover:bg-bitcoin/10 disabled:opacity-40">Fund with {unit}</button>
-                  )}
-                  {job.status !== 0 && permissions.canAssign && (
+                  {permissions.canAssign && (
                     <button onClick={() => setActionForm({ jobId: job.id, mode: "provider", value: "" })} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white">Assign Provider</button>
                   )}
                   {permissions.canSubmit && (

@@ -17,7 +17,7 @@ describe("pending multisig proposals", () => {
   it("remembers a proposal per job and asset, and forgets it", () => {
     const store = memory();
     expect(readPendingProposal("stx", 1, store)).toBeNull();
-    rememberPendingProposal("stx", 1, "resolve-appeal", store);
+    rememberPendingProposal("stx", 1, "resolve-appeal", undefined, store);
     expect(readPendingProposal("stx", 1, store)?.action).toBe("resolve-appeal");
     expect(readPendingProposal("sbtc", 1, store)).toBeNull();
     expect(readPendingProposal("stx", 2, store)).toBeNull();
@@ -31,6 +31,18 @@ describe("pending multisig proposals", () => {
     expect(readPendingProposal("stx", 3, store)).toBeNull();
     const broken = { ...memory(), getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); } } as Storage;
     expect(readPendingProposal("stx", 3, broken)).toBeNull();
-    expect(() => rememberPendingProposal("stx", 3, "resolve-appeal", broken)).not.toThrow();
+    expect(() => rememberPendingProposal("stx", 3, "resolve-appeal", undefined, broken)).not.toThrow();
+  });
+
+  it("keeps a valid transaction id and the first creation time", () => {
+    const store = memory();
+    rememberPendingProposal("sbtc", 4, "resolve-appeal", undefined, store);
+    const first = readPendingProposal("sbtc", 4, store)!;
+    rememberPendingProposal("sbtc", 4, "resolve-appeal", "0x" + "a".repeat(64), store);
+    const second = readPendingProposal("sbtc", 4, store)!;
+    expect(second.txid).toBe("0x" + "a".repeat(64));
+    expect(second.createdAt).toBe(first.createdAt);
+    store.setItem("nayori:proposal:sbtc:5", JSON.stringify({ action: "resolve-appeal", createdAt: 1, txid: "nope" }));
+    expect(readPendingProposal("sbtc", 5, store)?.txid).toBeUndefined();
   });
 });
