@@ -134,10 +134,12 @@ const managedEvaluatorEnabled =
 if (!["true", "false"].includes(managedEvaluatorEnabled)) {
   throw new Error("NEXT_PUBLIC_NAYORI_MANAGED_EVALUATOR_ENABLED must be true or false");
 }
+// Locks the job form's evaluator field to Nayori's evaluator. It does not describe the evaluator
+// itself, which decides jobs on both networks; on mainnet the field stays open to any evaluator.
 export const NAYORI_MANAGED_EVALUATOR_ENABLED = managedEvaluatorEnabled === "true";
 if (NETWORK_NAME === "mainnet" && NAYORI_MANAGED_EVALUATOR_ENABLED) {
   throw new Error(
-    "Nayori managed evaluator cannot be advertised active on mainnet before runtime activation"
+    "The evaluator field stays open on mainnet: NEXT_PUBLIC_NAYORI_MANAGED_EVALUATOR_ENABLED must be false"
   );
 }
 export const NAYORI_APPEAL_AUTHORITY_ADDRESS =

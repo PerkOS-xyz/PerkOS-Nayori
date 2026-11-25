@@ -600,8 +600,8 @@ requirePattern(
 );
 requirePattern(
   "App/src/constants/contract.ts",
-  /NETWORK_NAME === "mainnet" && NAYORI_MANAGED_EVALUATOR_ENABLED[\s\S]*?cannot be advertised active on mainnet/,
-  "the Web must not advertise an inactive managed evaluator on mainnet",
+  /NETWORK_NAME === "mainnet" && NAYORI_MANAGED_EVALUATOR_ENABLED[\s\S]*?evaluator field stays open on mainnet/,
+  "the Web must keep the job evaluator field open on mainnet",
 );
 requirePattern(
   "App/src/constants/discovery.ts",

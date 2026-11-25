@@ -13,6 +13,7 @@ import { resolveSiteOrigin } from "./site";
 import { NETWORK_NAME } from "./network";
 import {
   CONTRACT_ADDRESS,
+  NAYORI_EVALUATOR_ADDRESS,
   REPUTATION_CONTRACT_NAME,
   SBTC_COMMERCE_CONTRACT_NAME,
   STX_COMMERCE_CONTRACT_NAME,
@@ -115,6 +116,9 @@ describe("agent discovery", () => {
     expect(manifest.availability.mcp).toBe(true);
     expect(manifest.availability.sponsorship).toBe(false);
     expect(manifest.availability.a2aProtocolEndpoint).toBe(false);
+    expect(manifest.availability.managedEvaluatorStatus).toBe("active");
+    expect(manifest.availability.managedEvaluatorAddress).toBe(NAYORI_EVALUATOR_ADDRESS);
+    expect(manifest.availability.evaluatorChoice).toBe(NETWORK_NAME === "mainnet" ? "open" : "nayori-only");
     expect(manifest.capabilities[3].quoteService).toMatchObject({
       status: `${NETWORK_NAME}-challenge-issuance-only`,
       network: COMMERCE_NETWORK_ID,
