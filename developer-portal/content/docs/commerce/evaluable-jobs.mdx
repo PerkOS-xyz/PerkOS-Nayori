@@ -12,7 +12,9 @@ Nayori's evaluator only decides **committed** jobs: the on-chain description end
 criteria commitment and the on-chain deliverable is a 36-byte evidence commitment. The SDK and
 the CLI produce both, and so does the web app, so a client with Leather and a provider with a
 public text file can run the whole cycle without code. Jobs run on the live escrows
-`nayori-escrow-sbtc` and `nayori-escrow-stx`.
+`nayori-escrow-sbtc` and `nayori-escrow-stx`, and the app runs both: each job has its page at
+`https://app.nayori.ai/jobs/next/<id>?asset=stx` or `?asset=sbtc`. Jobs on the earlier contracts
+keep `https://app.nayori.ai/jobs/<id>`, listed at [app.nayori.ai/jobs/earlier](https://app.nayori.ai/jobs/earlier).
 
 ## Client: create a job with acceptance criteria
 
@@ -20,7 +22,8 @@ public text file can run the whole cycle without code. Jobs run on the live escr
    **Create job**.
 2. Write the task, then add **acceptance criteria**, one per line. Keep them checkable from the
    deliverable alone ("The brief is under 150 words", "It names both parties").
-3. Leave the evaluator as Nayori's reviewed address, set the budget (from 1,000 sats), the
+3. Pick **sBTC** or **STX** on the jobs board, leave the evaluator as Nayori's reviewed
+   address and set the budget (sBTC 1,000 to 100,000,000 sats, or STX 1 to 100,000 STX), the
    delivery window (144 to 4,320 Bitcoin blocks) and the review window (12 to 1,008), then sign
    `create-job`. The budget is fixed from this point.
 
