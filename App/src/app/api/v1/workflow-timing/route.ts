@@ -31,7 +31,8 @@ export async function GET(request: Request) {
       (job.status === 7 && !deadlineProgress(job.decision?.appealDeadline, burnHeight)) ||
       (job.status === 8 && !deadlineProgress(job.decision?.resolutionDeadline, burnHeight)))) throw Error("timing_unavailable");
     const terminal = job && [3, 4, 5, 6].includes(job.status);
-    return reply({ schemaVersion: 1, network: NETWORK_NAME, asset, contract: `${CONTRACT_ADDRESS}.${contractName}`,
+    return reply({ schemaVersion: 1, network: NETWORK_NAME, asset, contractSet: "earlier", contract: `${CONTRACT_ADDRESS}.${contractName}`,
+      nayoriContracts: { note: "On the Nayori contracts the delivery and review windows are set per job; read them from the job record (get-job) and its submission and decision." },
       observedAt: new Date().toISOString(), observedBurnHeight: burnHeight,
       confirmationPolicy: { ...confirmationPolicy, scope: "operator-baseline-not-wallet-enforcement", boundPermitIsAuthoritative: true },
       contractWindows: { reviewWindowBurnBlocks, appealWindowBurnBlocks, source: "on-chain", configurablePerJob: false },

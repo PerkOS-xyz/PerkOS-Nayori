@@ -3,8 +3,9 @@ import type { FeeEvidence } from "../services/fee-evidence";
 
 export default function ServiceFeeEvidence({ evidence, loading = false }: { evidence?: FeeEvidence; loading?: boolean }) {
   return <section className="mt-12" aria-labelledby="service-fee-evidence">
-    <h2 id="service-fee-evidence" className="text-xl font-semibold">Escrow service-fee accounting</h2>
-    <p className="mt-1 text-sm text-mist-500">Selected contracts only; not lifetime totals, treasury balances or verified external revenue.
+    <h2 id="service-fee-evidence" className="text-xl font-semibold">Escrow service-fee accounting on the earlier contracts</h2>
+    <p className="mt-1 text-sm text-mist-500">On the Nayori contracts every settlement pays a fixed 2% of the budget to the treasury pinned on the job,
+      a Leather multisig vault; each job page shows it. The figures below cover the earlier contracts only; not lifetime totals, treasury balances or verified external revenue.
       Quotes are not charges. Waivers are not refunds. Internal QA activity does not count as adoption.</p>
     {loading || !evidence ? <p className="mt-4 text-sm text-mist-400">{loading ? "Loading fee accounting…" : "Fee accounting unavailable."}</p> :
       <div className="mt-4 grid gap-4 lg:grid-cols-2">{evidence.assets.map(asset => <article key={asset.currency} className="card min-w-0 p-5">
